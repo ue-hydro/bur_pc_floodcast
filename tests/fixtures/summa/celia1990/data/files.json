@@ -1,0 +1,170 @@
+[
+  {
+    "source_member": "summaTestCases_3.0/output_benchmark/syntheticTestCases/celia1990/celia1990_output_testSumma_timestep.nc",
+    "source_sha256": "a71f317578337b7f3516af379f22fa290ae226a6a2d8497a2fd2325110c6bbd2",
+    "path": "output_benchmark/syntheticTestCases/celia1990/celia1990_output_testSumma_timestep.nc",
+    "sha256": "a71f317578337b7f3516af379f22fa290ae226a6a2d8497a2fd2325110c6bbd2"
+  },
+  {
+    "source_member": "summaTestCases_3.0/output_benchmark/syntheticTestCases/celia1990/runinfo.txt",
+    "source_sha256": "8a2be348139d44ddb3cfa5b3588d34ba44d12fb6b9123cfeca83fc7c2308e284",
+    "path": "output_benchmark/syntheticTestCases/celia1990/runinfo.txt",
+    "sha256": "8a2be348139d44ddb3cfa5b3588d34ba44d12fb6b9123cfeca83fc7c2308e284"
+  },
+  {
+    "source_member": "summaTestCases_3.0/settings_org/GENPARM.TBL",
+    "source_sha256": "9c02832a0e4a2ecaf47fcee485539aad95cd732c379c5c258161a88eb3d25ea2",
+    "path": "settings/GENPARM.TBL",
+    "sha256": "9c02832a0e4a2ecaf47fcee485539aad95cd732c379c5c258161a88eb3d25ea2"
+  },
+  {
+    "source_member": "summaTestCases_3.0/settings_org/meta/Model_Output.txt",
+    "source_sha256": "658bdbbe9c50bcc44db3fcab16342eaa4c45c7c7124ba49b6f128611f7d0161a",
+    "path": "settings/meta/Model_Output.txt",
+    "sha256": "658bdbbe9c50bcc44db3fcab16342eaa4c45c7c7124ba49b6f128611f7d0161a"
+  },
+  {
+    "source_member": "summaTestCases_3.0/settings_org/meta/summa_zBasinModelVarMeta.txt",
+    "source_sha256": "bc3511285c140c803de34040a2d284f87c3d67ff45d070d45c92926e73222f34",
+    "path": "settings/meta/summa_zBasinModelVarMeta.txt",
+    "sha256": "bc3511285c140c803de34040a2d284f87c3d67ff45d070d45c92926e73222f34"
+  },
+  {
+    "source_member": "summaTestCases_3.0/settings_org/meta/summa_zBasinParamMeta.txt",
+    "source_sha256": "703902bfb1ed875b92a08816df2607fdc35314e25575e2253a6f9fbebb0a2270",
+    "path": "settings/meta/summa_zBasinParamMeta.txt",
+    "sha256": "703902bfb1ed875b92a08816df2607fdc35314e25575e2253a6f9fbebb0a2270"
+  },
+  {
+    "source_member": "summaTestCases_3.0/settings_org/meta/summa_zCategoryMeta.txt",
+    "source_sha256": "388b5fec06d533bb06f50846e521052aab9a9fde5845e497daaf583c15d37257",
+    "path": "settings/meta/summa_zCategoryMeta.txt",
+    "sha256": "388b5fec06d533bb06f50846e521052aab9a9fde5845e497daaf583c15d37257"
+  },
+  {
+    "source_member": "summaTestCases_3.0/settings_org/meta/summa_zForceMeta.txt",
+    "source_sha256": "3ebdb4659071e2e60d3e84e87c5d48c7c0d9a3fe35f025f01112443e0ae61b05",
+    "path": "settings/meta/summa_zForceMeta.txt",
+    "sha256": "3ebdb4659071e2e60d3e84e87c5d48c7c0d9a3fe35f025f01112443e0ae61b05"
+  },
+  {
+    "source_member": "summaTestCases_3.0/settings_org/meta/summa_zLocalAttributeMeta.txt",
+    "source_sha256": "7d33c1ef5af36f2f9a4d5b3017e7121b7651c062fc06d40bab13d83355f88103",
+    "path": "settings/meta/summa_zLocalAttributeMeta.txt",
+    "sha256": "7d33c1ef5af36f2f9a4d5b3017e7121b7651c062fc06d40bab13d83355f88103"
+  },
+  {
+    "source_member": "summaTestCases_3.0/settings_org/meta/summa_zLocalModelIndexMeta.txt",
+    "source_sha256": "f8484773a65176764a4da03ab36368cefa25f54edfd3d925c52268d10fe43a55",
+    "path": "settings/meta/summa_zLocalModelIndexMeta.txt",
+    "sha256": "f8484773a65176764a4da03ab36368cefa25f54edfd3d925c52268d10fe43a55"
+  },
+  {
+    "source_member": "summaTestCases_3.0/settings_org/meta/summa_zLocalModelVarMeta.txt",
+    "source_sha256": "4ed326dae320b07c7d6c936f4e9c1eec5f26ae892152e433b552e040fba37f5a",
+    "path": "settings/meta/summa_zLocalModelVarMeta.txt",
+    "sha256": "4ed326dae320b07c7d6c936f4e9c1eec5f26ae892152e433b552e040fba37f5a"
+  },
+  {
+    "source_member": "summaTestCases_3.0/settings_org/meta/summa_zLocalParamMeta.txt",
+    "source_sha256": "9787a7dbad1e3651593b3d7dc7f29c36b9e0eb60e50239c03256a4bf1f7646f2",
+    "path": "settings/meta/summa_zLocalParamMeta.txt",
+    "sha256": "9787a7dbad1e3651593b3d7dc7f29c36b9e0eb60e50239c03256a4bf1f7646f2"
+  },
+  {
+    "source_member": "summaTestCases_3.0/settings_org/meta/summa_zModelIndexMeta.txt",
+    "source_sha256": "f8484773a65176764a4da03ab36368cefa25f54edfd3d925c52268d10fe43a55",
+    "path": "settings/meta/summa_zModelIndexMeta.txt",
+    "sha256": "f8484773a65176764a4da03ab36368cefa25f54edfd3d925c52268d10fe43a55"
+  },
+  {
+    "source_member": "summaTestCases_3.0/settings_org/meta/summa_zParamMeta.txt",
+    "source_sha256": "8472a8cd9d110d63d8d5ebca10378d56e365b2ee53e30bd8a80fa251ab4f1f0a",
+    "path": "settings/meta/summa_zParamMeta.txt",
+    "sha256": "8472a8cd9d110d63d8d5ebca10378d56e365b2ee53e30bd8a80fa251ab4f1f0a"
+  },
+  {
+    "source_member": "summaTestCases_3.0/settings_org/meta/summa_zTimeMeta.txt",
+    "source_sha256": "5b7ff8d8d0b456bcf1bcca3054cfff6525c851fb24c35687570b807f692c252b",
+    "path": "settings/meta/summa_zTimeMeta.txt",
+    "sha256": "5b7ff8d8d0b456bcf1bcca3054cfff6525c851fb24c35687570b807f692c252b"
+  },
+  {
+    "source_member": "summaTestCases_3.0/settings_org/MPTABLE.TBL",
+    "source_sha256": "ffacce494a0f19635606abf8d6c0effd7a3023ef7934c376bdfff63ac34c5df8",
+    "path": "settings/MPTABLE.TBL",
+    "sha256": "ffacce494a0f19635606abf8d6c0effd7a3023ef7934c376bdfff63ac34c5df8"
+  },
+  {
+    "source_member": "summaTestCases_3.0/settings_org/SOILPARM.TBL",
+    "source_sha256": "a8e9fb0f893c6d8aea2bffafda7389f3b9d2566acf42a6ff0932efd2430df131",
+    "path": "settings/SOILPARM.TBL",
+    "sha256": "a8e9fb0f893c6d8aea2bffafda7389f3b9d2566acf42a6ff0932efd2430df131"
+  },
+  {
+    "source_member": "summaTestCases_3.0/settings_org/syntheticTestCases/celia1990/summa_fileManager_celia1990.txt",
+    "source_sha256": "a9e4a36b93dc50c6df6b0b1efcbdfef77db7638e97463012f6cb25d2457ccaf4",
+    "path": "settings/syntheticTestCases/celia1990/summa_fileManager_celia1990.txt",
+    "sha256": "002a7c841e2a0ca839be8580acf83e61e6f4cbc493cb8dc2885dc8ba1a051743"
+  },
+  {
+    "source_member": "summaTestCases_3.0/settings_org/syntheticTestCases/celia1990/summa_zBasinParamInfo.txt",
+    "source_sha256": "6624ff56e88940769ed5eebc0aa4fb1c0bbf6e4aa5bb1124441f46a33b5d94b1",
+    "path": "settings/syntheticTestCases/celia1990/summa_zBasinParamInfo.txt",
+    "sha256": "6624ff56e88940769ed5eebc0aa4fb1c0bbf6e4aa5bb1124441f46a33b5d94b1"
+  },
+  {
+    "source_member": "summaTestCases_3.0/settings_org/syntheticTestCases/celia1990/summa_zDecisions_celia1990.txt",
+    "source_sha256": "c2f9af38d335f27f918272f67d4052ec5d21fafbca49acc980e449710f68aa9f",
+    "path": "settings/syntheticTestCases/celia1990/summa_zDecisions_celia1990.txt",
+    "sha256": "c2f9af38d335f27f918272f67d4052ec5d21fafbca49acc980e449710f68aa9f"
+  },
+  {
+    "source_member": "summaTestCases_3.0/settings_org/syntheticTestCases/celia1990/summa_zForcingFileList.txt",
+    "source_sha256": "24a491cf235a8c47f4a3092252bf50246822bf98dee8d8389856a46e3a60f06d",
+    "path": "settings/syntheticTestCases/celia1990/summa_zForcingFileList.txt",
+    "sha256": "24a491cf235a8c47f4a3092252bf50246822bf98dee8d8389856a46e3a60f06d"
+  },
+  {
+    "source_member": "summaTestCases_3.0/settings_org/syntheticTestCases/celia1990/summa_zForcingInfo_celia1990.txt",
+    "source_sha256": "be5f7ac85deae4d9ed42fa517587b1216b47a5553bfb587422028e3e1abb769e",
+    "path": "settings/syntheticTestCases/celia1990/summa_zForcingInfo_celia1990.txt",
+    "sha256": "be5f7ac85deae4d9ed42fa517587b1216b47a5553bfb587422028e3e1abb769e"
+  },
+  {
+    "source_member": "summaTestCases_3.0/settings_org/syntheticTestCases/celia1990/summa_zInitialCond_celia1990.nc",
+    "source_sha256": "7d05884fd56f69ca3e8ded305128597b58c83762ab18acda40fedca879e9eb2c",
+    "path": "settings/syntheticTestCases/celia1990/summa_zInitialCond_celia1990.nc",
+    "sha256": "7d05884fd56f69ca3e8ded305128597b58c83762ab18acda40fedca879e9eb2c"
+  },
+  {
+    "source_member": "summaTestCases_3.0/settings_org/syntheticTestCases/celia1990/summa_zLocalAttributes.nc",
+    "source_sha256": "51e2976f622f36d66ec6935bcb47ad1408c5ca0d4fd8553698920436a2006804",
+    "path": "settings/syntheticTestCases/celia1990/summa_zLocalAttributes.nc",
+    "sha256": "51e2976f622f36d66ec6935bcb47ad1408c5ca0d4fd8553698920436a2006804"
+  },
+  {
+    "source_member": "summaTestCases_3.0/settings_org/syntheticTestCases/celia1990/summa_zLocalParamInfo.txt",
+    "source_sha256": "8eb9504b103462256aa5daa589be63080a17ed3362d5c779e00ae39ab3f45466",
+    "path": "settings/syntheticTestCases/celia1990/summa_zLocalParamInfo.txt",
+    "sha256": "8eb9504b103462256aa5daa589be63080a17ed3362d5c779e00ae39ab3f45466"
+  },
+  {
+    "source_member": "summaTestCases_3.0/settings_org/syntheticTestCases/celia1990/summa_zParamTrial_celia1990.nc",
+    "source_sha256": "fe8521433945ee0abce00f51a3446c2852e5d708dde4c2744705f180398a83c4",
+    "path": "settings/syntheticTestCases/celia1990/summa_zParamTrial_celia1990.nc",
+    "sha256": "fe8521433945ee0abce00f51a3446c2852e5d708dde4c2744705f180398a83c4"
+  },
+  {
+    "source_member": "summaTestCases_3.0/settings_org/VEGPARM.TBL",
+    "source_sha256": "1e4869833f65cedb3a9e692a7c62bc453b0bd5a3694f0b0bcead2575092199ae",
+    "path": "settings/VEGPARM.TBL",
+    "sha256": "1e4869833f65cedb3a9e692a7c62bc453b0bd5a3694f0b0bcead2575092199ae"
+  },
+  {
+    "source_member": "summaTestCases_3.0/testCases_data_org/inputData/syntheticData/celia1990/celia1990_forcing.nc",
+    "source_sha256": "5b44e22897dbef18fe91017a8101bcb9d0df64047dfe29703630d96f916a54ef",
+    "path": "forcing/celia1990_forcing.nc",
+    "sha256": "5b44e22897dbef18fe91017a8101bcb9d0df64047dfe29703630d96f916a54ef"
+  }
+]

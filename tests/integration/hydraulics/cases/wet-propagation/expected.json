@@ -1,0 +1,53 @@
+{
+  "case_id": "wet-propagation-v1",
+  "kind": "analytical-regression",
+  "description": "Positive flat 9x9 grid with 0.01 m3/s inflow to centre cell, exceeding the dry threshold. Check conservation Q*t, spreading, finite nonnegative depths and exact time coverage before water reaches the boundary; this is an invariant test, not an external hydraulic benchmark. Spreading is required at 2 s; the dry initial state delays the wet-domain update during the first step.",
+  "external_data": false,
+  "project_authored": true,
+  "licensing": "No third-party data. Repository license is not assigned; this fixture is for the authorized local tests.",
+  "time_semantics": "Record after the numeric first row: seconds elapsed; mean discharge on the interval ending at that timestamp. No extrapolation after t=2.",
+  "snapshots": {
+    "1.txt": {
+      "volume_m3": 0.01,
+      "minimum_wet_cells": 1,
+      "forbid_boundary_wet": true
+    },
+    "2.txt": {
+      "volume_m3": 0.02,
+      "minimum_wet_cells": 2,
+      "forbid_boundary_wet": true
+    }
+  },
+  "cell_area_m2": 1,
+  "relative_tolerance": 1e-05,
+  "absolute_volume_tolerance_m3": 1e-08,
+  "tolerance_basis": "Numerical storage regression using float32 forcing and text serialization. Tolerances cover rounding, not physical-model error.",
+  "limitations": [
+    "No external reference solution; verifies storage conservation and spreading only.",
+    "Does not validate real-basin hydraulics, tide, restart, triangular mesh or mizuRoute handoff."
+  ],
+  "output_columns": [
+    "irow [-]",
+    "icol [-]",
+    "Xcoord",
+    "Ycoord",
+    "z [m]",
+    "h [m]",
+    "ux [m/s]",
+    "uy [m/s]",
+    "qx * dxy [m3/sec]",
+    "qy * dxy [m3/sec]",
+    "us [m/s]",
+    "conc_SW [mg/l]",
+    "fe_1 [m2/s]",
+    "fn_1 [m2/s]",
+    "twetimetracer [sec]"
+  ],
+  "grid": {
+    "nrows": 9,
+    "ncols": 9,
+    "xllcorner": 100,
+    "yllcorner": 200,
+    "cellsize": 1
+  }
+}

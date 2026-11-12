@@ -1,0 +1,16 @@
+.venv/
+.tools/
+.worktrees/
+.cache/
+.pytest_cache/
+.ruff_cache/
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+data/
+artifacts/
+.coverage
+htmlcov/
+.pixi/

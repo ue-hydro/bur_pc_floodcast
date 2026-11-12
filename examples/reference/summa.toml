@@ -1,0 +1,19 @@
+# Celia1990 reference with the SUNDIALS IDA decision set supplied by D02.
+schema_version = 1
+data_root = "../../data"
+
+[run]
+model_id = "summa"
+arguments = ["-p", "never", "-s", "_testSumma", "-m", "/data/settings/syntheticTestCases/celia1990/summa_fileManager_celia1990.txt"]
+working_directory = "/output"
+timeout_s = 600
+
+[[run.mounts]]
+source = "../../tests/fixtures/summa/celia1990-ida/data"
+target = "/data"
+mode = "ro"
+
+[run.resources]
+memory_bytes = 2147483648
+mpi_ranks = 1
+omp_threads = 1

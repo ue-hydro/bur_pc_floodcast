@@ -1,0 +1,10 @@
+{
+  "schema_version": 1,
+  "kind": "exit_code",
+  "expected_exit_code": 0,
+  "assertions": [
+    "ELF dependencies load with libgomp and no missing library.",
+    "Executable hash equals recorded toolchain.",
+    "Missing modset probe exits1 with expected diagnostic; no simulation claimed."
+  ]
+}

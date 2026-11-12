@@ -1,0 +1,14 @@
+{
+  "kind": "exit_code",
+  "expected_exit_code": 0,
+  "assertions": [
+    "one history NetCDF, 6736 unique basin IDs and 6895 unique reach IDs matched by identity",
+    "three continuous positive 86400-second time bounds from 1950-01-01T12:00 to 1950-01-04T12:00",
+    "history timestamps denote interval starts and discharges are interval means",
+    "basRunoff preserves forcing mm/s after HRU identity alignment",
+    "DWroutedRunoff dimensions (time, seg), units m3/s, finite nonnegative values",
+    "2507 headwater hydrographs match the independent gamma convolution of forcing and HRU area",
+    "all 6895 reaches satisfy integrated incoming plus lateral minus outgoing volume equals final storage",
+    "restart time equals the final interval end; restart basin_q matches the independent basin hydrograph"
+  ]
+}

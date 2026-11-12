@@ -1,0 +1,25 @@
+{
+  "schema_version": 1,
+  "fixture_id": "summa-celia1990-ida-operational-v1",
+  "description": "Synthetic Celia numerical reference; one ice-free 0.6 m soil column with 100 cells. Original physical parameters, initial state, forcing and prescribed-head boundaries preserved. Derived IDA decisions: num_method=ida, nrgConserv=closedForm, infRateMax=topmodel_GA; numerical absTolMatric=relTolMatric=1e-8. Matric heads compared with independent input-only finite-volume Richards integrations, not the legacy solver output. No basin, coupled-chain or general multiphysics validation.",
+  "source": "Knoben, W. J. M.; Clark, M. P.; Nijssen, B.; Wood, A. W.; Bennett, A. (2023). SUMMA v3.x Test Cases, HydroShare. https://www.hydroshare.org/resource/e4df3065264341a48017f6d2f4ad030c/ Archive SHA256 35a66bd3fadf3e4cd3a1ba4a1fcc328b8d69c06f1264a29068751da25e23d829",
+  "license": "CC-BY-4.0 https://creativecommons.org/licenses/by/4.0/; generated reference and generator CC0-1.0; source input attribution retained",
+  "model_ids": [
+    "summa"
+  ],
+  "expectations": [
+    "one timestep NetCDF with 120 half-hourly times from 2000-01-01 00:30",
+    "one HRU and GRU, HRU ID equal to attributes, 100 soil layers",
+    "mLayerMatricHead dimensions exactly (time, midSoil, hru), units m, finite and unmasked",
+    "all 120x100 matric heads agree with independent converged Richards reference",
+    "forcing precipitation and temperature preserved"
+  ],
+  "tolerances": {
+    "time_absolute_tolerance_seconds": 0.0001,
+    "forcing_relative_tolerance": 1e-06,
+    "forcing_absolute_tolerance": 1e-07,
+    "matric_head_relative_tolerance": 1e-06,
+    "matric_head_absolute_tolerance_m": 0.0001
+  },
+  "tolerance_rationale": "Date conversion permits 0.1 ms; forcing permits float32 output roundoff. Independent temporal refinement and Radau/BDF agreement are below 7.3e-9 m; 1e-4 m absolute plus 1e-6 relative allows the explicitly configured IDA error and the simplified isothermal reference discrepancy, while rejecting a local 1 mm perturbation. This is a declared fixture acceptance budget, not a rigorous error bound for other cases. See containers/hydrology/NUMERICAL-REFERENCES.md."
+}

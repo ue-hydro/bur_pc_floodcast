@@ -1,0 +1,17 @@
+{
+  "schema_version": 1,
+  "fixture_id": "failure-regressions-v1",
+  "description": "Failure handling with mutations of copied synthetic configurations only.",
+  "source": "Floodcast-authored failure regressions using subthreshold-storage-v1.",
+  "license": "Project-authored data for authorized Floodcast development; repository redistribution license not yet assigned.",
+  "model_ids": [
+    "fluxos"
+  ],
+  "expectations": [
+    "33 real executable failures return1 with expected diagnostic and without normal completion.",
+    "Reject missing/malformed forcing fields for both inflow and rain, empty paths, zero horizon, invalid PRINT_STEP types/ranges, restart requests, unwritable output and read-only model log.",
+    "Empty restart state remains byte-identical after rejection."
+  ],
+  "tolerances": {},
+  "tolerance_rationale": "Exact exit code and diagnostic checks; no numeric tolerance."
+}

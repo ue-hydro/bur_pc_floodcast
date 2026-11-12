@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "fixture_id": "wet-propagation-v1",
+  "description": "Positive flat 9x9 grid with 0.01 m3/s inflow to centre cell, exceeding the dry threshold. Check conservation Q*t, spreading, finite nonnegative depths and exact time coverage before water reaches the boundary; this is an invariant test, not an external hydraulic benchmark. Spreading is required at 2 s; the dry initial state delays the wet-domain update during the first step.",
+  "source": "Floodcast-authored analytic synthetic fixture; no external geographic or scientific data.",
+  "license": "Project-authored data for authorized Floodcast development; no third-party data. Repository redistribution license is not yet assigned.",
+  "model_ids": [
+    "fluxos"
+  ],
+  "expectations": [
+    "Model exit0 and normal completion in stdout and persisted model log.",
+    "Exact snapshot times/columns, finite nonnegative depths, unique integer cell IDs inside DEM bounds, and coordinates consistent with grid spacing and origin; wet-propagation excludes boundary wetting.",
+    "Stored volume equals independently derived Q*t or rain-depth times area within declared tolerances; expected cell coverage/spreading verified."
+  ],
+  "tolerances": {
+    "volume_absolute_m3": 1e-08,
+    "volume_relative": 1e-05
+  },
+  "tolerance_rationale": "Allow float32 forcing representation and text output rounding. These are numerical regression tolerances, not physical accuracy estimates."
+}

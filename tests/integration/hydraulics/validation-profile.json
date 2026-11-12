@@ -1,0 +1,644 @@
+{
+  "schema_version": 1,
+  "group": "hydraulics",
+  "models": [
+    {
+      "model_id": "fluxos",
+      "group": "hydraulics",
+      "executable": "/opt/floodcast/bin/fluxos",
+      "check_ids": [
+        "fluxos-provenance",
+        "fluxos-load",
+        "fluxos-subthreshold-storage",
+        "fluxos-interval-pulse",
+        "fluxos-dry-domain",
+        "fluxos-uniform-rain",
+        "fluxos-wet-propagation",
+        "fluxos-failure-regressions"
+      ],
+      "supports_mpi": false,
+      "allowed_environment": [
+        "OMP_NUM_THREADS",
+        "OPENBLAS_NUM_THREADS"
+      ]
+    }
+  ],
+  "checks": [
+    {
+      "check_id": "fluxos-provenance",
+      "model_id": "fluxos",
+      "level": "provenance",
+      "fixture": {
+        "fixture_id": "fluxos-technical-checks-v1",
+        "metadata_ref": {
+          "path": "metadata.json",
+          "sha256": "7f600d9f941dfcad643efcad525cf6fee320e8262626698b813cb9af64397fac"
+        },
+        "files": [
+          {
+            "path": "metadata.json",
+            "sha256": "7f600d9f941dfcad643efcad525cf6fee320e8262626698b813cb9af64397fac"
+          },
+          {
+            "path": "provenance-expected.json",
+            "sha256": "b4d3324183ffef1c0776da5fbc6a96180925f8f899547643f11f70a3f5feb3ec"
+          },
+          {
+            "path": "verify_fluxos.py",
+            "sha256": "5e2dfb8c0045f345e69e1e0ffbcfaad339d36ff65f8e77c67ae52583e0da12e7"
+          }
+        ],
+        "execution": {
+          "argv": [
+            "/usr/bin/python3",
+            "/checks/verify_fluxos.py",
+            "--provenance"
+          ],
+          "timeout_s": 60,
+          "mounts": [
+            {
+              "source": "verify_fluxos.py",
+              "target": "/checks/verify_fluxos.py",
+              "mode": "ro"
+            }
+          ],
+          "resources": {
+            "omp_threads": 1,
+            "cpus_per_rank": 1,
+            "memory_bytes": 536870912
+          },
+          "environment": {
+            "OPENBLAS_NUM_THREADS": "1"
+          }
+        },
+        "expected_result_ref": {
+          "path": "provenance-expected.json",
+          "sha256": "b4d3324183ffef1c0776da5fbc6a96180925f8f899547643f11f70a3f5feb3ec"
+        }
+      }
+    },
+    {
+      "check_id": "fluxos-load",
+      "model_id": "fluxos",
+      "level": "load",
+      "fixture": {
+        "fixture_id": "fluxos-technical-checks-v1",
+        "metadata_ref": {
+          "path": "metadata.json",
+          "sha256": "7f600d9f941dfcad643efcad525cf6fee320e8262626698b813cb9af64397fac"
+        },
+        "files": [
+          {
+            "path": "metadata.json",
+            "sha256": "7f600d9f941dfcad643efcad525cf6fee320e8262626698b813cb9af64397fac"
+          },
+          {
+            "path": "load-expected.json",
+            "sha256": "598a21ce1a2ba3aec3d9744c224be793f494992e708cbee4056c365a2cdceea9"
+          },
+          {
+            "path": "verify_fluxos.py",
+            "sha256": "5e2dfb8c0045f345e69e1e0ffbcfaad339d36ff65f8e77c67ae52583e0da12e7"
+          }
+        ],
+        "execution": {
+          "argv": [
+            "/usr/bin/python3",
+            "/checks/verify_fluxos.py",
+            "--load"
+          ],
+          "timeout_s": 60,
+          "mounts": [
+            {
+              "source": "verify_fluxos.py",
+              "target": "/checks/verify_fluxos.py",
+              "mode": "ro"
+            }
+          ],
+          "resources": {
+            "omp_threads": 1,
+            "cpus_per_rank": 1,
+            "memory_bytes": 536870912
+          },
+          "environment": {
+            "OPENBLAS_NUM_THREADS": "1"
+          }
+        },
+        "expected_result_ref": {
+          "path": "load-expected.json",
+          "sha256": "598a21ce1a2ba3aec3d9744c224be793f494992e708cbee4056c365a2cdceea9"
+        }
+      }
+    },
+    {
+      "check_id": "fluxos-subthreshold-storage",
+      "model_id": "fluxos",
+      "level": "reference",
+      "fixture": {
+        "fixture_id": "subthreshold-storage-v1",
+        "metadata_ref": {
+          "path": "cases/subthreshold-storage/metadata.json",
+          "sha256": "161e25da3d88c100d8ea2904650368064709081f35da5a68ffc9ea1b28683ffe"
+        },
+        "files": [
+          {
+            "path": "cases/subthreshold-storage/dem.asc",
+            "sha256": "3d77b9d485c9ec313867d15553c545ae93f4d486cf48956e971cf01e94885976"
+          },
+          {
+            "path": "cases/subthreshold-storage/exit-expected.json",
+            "sha256": "a751841761c1f8665823c17645df87de512b17cb8a500ecac4635d11c62375fa"
+          },
+          {
+            "path": "cases/subthreshold-storage/expected.json",
+            "sha256": "0b5051763f2b38bf5dc277a742928bd91e5861785532d86131543acdd9af6f2a"
+          },
+          {
+            "path": "cases/subthreshold-storage/inflow.csv",
+            "sha256": "d760e6a5bf3e82d838e85e9c6603a3a3377c881b6049097bcd2798d279382a6f"
+          },
+          {
+            "path": "cases/subthreshold-storage/metadata.json",
+            "sha256": "161e25da3d88c100d8ea2904650368064709081f35da5a68ffc9ea1b28683ffe"
+          },
+          {
+            "path": "cases/subthreshold-storage/modset.json",
+            "sha256": "1c021bb3ec9a868bbd798f07825670e33fd83a65e732767b34d1cb9dc1f668ec"
+          },
+          {
+            "path": "verify_fluxos.py",
+            "sha256": "5e2dfb8c0045f345e69e1e0ffbcfaad339d36ff65f8e77c67ae52583e0da12e7"
+          }
+        ],
+        "execution": {
+          "argv": [
+            "/usr/bin/python3",
+            "/checks/verify_fluxos.py",
+            "--reference",
+            "/input/expected.json",
+            "--config",
+            "/work/config/modset.json",
+            "--output",
+            "/output",
+            "--report",
+            "/work/reference-report.json"
+          ],
+          "mounts": [
+            {
+              "source": "cases/subthreshold-storage",
+              "target": "/input",
+              "mode": "ro"
+            },
+            {
+              "source": "verify_fluxos.py",
+              "target": "/checks/verify_fluxos.py",
+              "mode": "ro"
+            }
+          ],
+          "staged_files": [
+            {
+              "source": "cases/subthreshold-storage/modset.json",
+              "work_relative_path": "config/modset.json"
+            }
+          ],
+          "resources": {
+            "omp_threads": 1,
+            "cpus_per_rank": 1,
+            "memory_bytes": 536870912
+          },
+          "environment": {
+            "OPENBLAS_NUM_THREADS": "1"
+          },
+          "timeout_s": 60
+        },
+        "expected_result_ref": {
+          "path": "cases/subthreshold-storage/exit-expected.json",
+          "sha256": "a751841761c1f8665823c17645df87de512b17cb8a500ecac4635d11c62375fa"
+        }
+      }
+    },
+    {
+      "check_id": "fluxos-interval-pulse",
+      "model_id": "fluxos",
+      "level": "reference",
+      "fixture": {
+        "fixture_id": "interval-pulse-v1",
+        "metadata_ref": {
+          "path": "cases/interval-pulse/metadata.json",
+          "sha256": "0cb69f267a1817deab8db2f16b6729e2221165c7311002b1b530cb97428b74ec"
+        },
+        "files": [
+          {
+            "path": "cases/interval-pulse/dem.asc",
+            "sha256": "3d77b9d485c9ec313867d15553c545ae93f4d486cf48956e971cf01e94885976"
+          },
+          {
+            "path": "cases/interval-pulse/exit-expected.json",
+            "sha256": "a751841761c1f8665823c17645df87de512b17cb8a500ecac4635d11c62375fa"
+          },
+          {
+            "path": "cases/interval-pulse/expected.json",
+            "sha256": "cd9d539fb0383a555f8a093a6a57064ccda04d9a3fc1a5fc1838ca1d53bb998e"
+          },
+          {
+            "path": "cases/interval-pulse/inflow.csv",
+            "sha256": "b5ad2b294a8d15ecbdb96dc4db4ecef43aab4430a24d83b476d335246ae902f3"
+          },
+          {
+            "path": "cases/interval-pulse/metadata.json",
+            "sha256": "0cb69f267a1817deab8db2f16b6729e2221165c7311002b1b530cb97428b74ec"
+          },
+          {
+            "path": "cases/interval-pulse/modset.json",
+            "sha256": "094d89a66527f4281c364f64703ae899183ecb9eb1b146343f6197b0e8b30f48"
+          },
+          {
+            "path": "verify_fluxos.py",
+            "sha256": "5e2dfb8c0045f345e69e1e0ffbcfaad339d36ff65f8e77c67ae52583e0da12e7"
+          }
+        ],
+        "execution": {
+          "argv": [
+            "/usr/bin/python3",
+            "/checks/verify_fluxos.py",
+            "--reference",
+            "/input/expected.json",
+            "--config",
+            "/work/config/modset.json",
+            "--output",
+            "/output",
+            "--report",
+            "/work/reference-report.json"
+          ],
+          "mounts": [
+            {
+              "source": "cases/interval-pulse",
+              "target": "/input",
+              "mode": "ro"
+            },
+            {
+              "source": "verify_fluxos.py",
+              "target": "/checks/verify_fluxos.py",
+              "mode": "ro"
+            }
+          ],
+          "staged_files": [
+            {
+              "source": "cases/interval-pulse/modset.json",
+              "work_relative_path": "config/modset.json"
+            }
+          ],
+          "resources": {
+            "omp_threads": 1,
+            "cpus_per_rank": 1,
+            "memory_bytes": 536870912
+          },
+          "environment": {
+            "OPENBLAS_NUM_THREADS": "1"
+          },
+          "timeout_s": 60
+        },
+        "expected_result_ref": {
+          "path": "cases/interval-pulse/exit-expected.json",
+          "sha256": "a751841761c1f8665823c17645df87de512b17cb8a500ecac4635d11c62375fa"
+        }
+      }
+    },
+    {
+      "check_id": "fluxos-dry-domain",
+      "model_id": "fluxos",
+      "level": "reference",
+      "fixture": {
+        "fixture_id": "dry-domain-v1",
+        "metadata_ref": {
+          "path": "cases/dry-domain/metadata.json",
+          "sha256": "587abe88583b466824fdb38c3d388d1167c8e0c54e00ac2d4439465a11248740"
+        },
+        "files": [
+          {
+            "path": "cases/dry-domain/dem.asc",
+            "sha256": "3d77b9d485c9ec313867d15553c545ae93f4d486cf48956e971cf01e94885976"
+          },
+          {
+            "path": "cases/dry-domain/exit-expected.json",
+            "sha256": "a751841761c1f8665823c17645df87de512b17cb8a500ecac4635d11c62375fa"
+          },
+          {
+            "path": "cases/dry-domain/expected.json",
+            "sha256": "095ac364d9caf6e84e0899539ce28ca16cdb578b4cefd554faafd0a5839b43bb"
+          },
+          {
+            "path": "cases/dry-domain/inflow.csv",
+            "sha256": "045bebb26c6dc87a68e1a43fcb746b7c7e7d6003878d9e28b710f2dcc113bc3e"
+          },
+          {
+            "path": "cases/dry-domain/metadata.json",
+            "sha256": "587abe88583b466824fdb38c3d388d1167c8e0c54e00ac2d4439465a11248740"
+          },
+          {
+            "path": "cases/dry-domain/modset.json",
+            "sha256": "0461a9af7b517be70fe8667d439314aedb761c3f7eeed88cb764c80087ef89de"
+          },
+          {
+            "path": "verify_fluxos.py",
+            "sha256": "5e2dfb8c0045f345e69e1e0ffbcfaad339d36ff65f8e77c67ae52583e0da12e7"
+          }
+        ],
+        "execution": {
+          "argv": [
+            "/usr/bin/python3",
+            "/checks/verify_fluxos.py",
+            "--reference",
+            "/input/expected.json",
+            "--config",
+            "/work/config/modset.json",
+            "--output",
+            "/output",
+            "--report",
+            "/work/reference-report.json"
+          ],
+          "mounts": [
+            {
+              "source": "cases/dry-domain",
+              "target": "/input",
+              "mode": "ro"
+            },
+            {
+              "source": "verify_fluxos.py",
+              "target": "/checks/verify_fluxos.py",
+              "mode": "ro"
+            }
+          ],
+          "staged_files": [
+            {
+              "source": "cases/dry-domain/modset.json",
+              "work_relative_path": "config/modset.json"
+            }
+          ],
+          "resources": {
+            "omp_threads": 1,
+            "cpus_per_rank": 1,
+            "memory_bytes": 536870912
+          },
+          "environment": {
+            "OPENBLAS_NUM_THREADS": "1"
+          },
+          "timeout_s": 60
+        },
+        "expected_result_ref": {
+          "path": "cases/dry-domain/exit-expected.json",
+          "sha256": "a751841761c1f8665823c17645df87de512b17cb8a500ecac4635d11c62375fa"
+        }
+      }
+    },
+    {
+      "check_id": "fluxos-uniform-rain",
+      "model_id": "fluxos",
+      "level": "reference",
+      "fixture": {
+        "fixture_id": "uniform-rain-v1",
+        "metadata_ref": {
+          "path": "cases/uniform-rain/metadata.json",
+          "sha256": "39440b5ab5b136ab469ac0a60c767dce80d637876c06cd77d820500321a3fb40"
+        },
+        "files": [
+          {
+            "path": "cases/uniform-rain/dem.asc",
+            "sha256": "3d77b9d485c9ec313867d15553c545ae93f4d486cf48956e971cf01e94885976"
+          },
+          {
+            "path": "cases/uniform-rain/exit-expected.json",
+            "sha256": "a751841761c1f8665823c17645df87de512b17cb8a500ecac4635d11c62375fa"
+          },
+          {
+            "path": "cases/uniform-rain/expected.json",
+            "sha256": "324766604cbc6cd0c3a76fcae7b672b59bfc91ce458fba4dcb4e021a3a8bbd6a"
+          },
+          {
+            "path": "cases/uniform-rain/metadata.json",
+            "sha256": "39440b5ab5b136ab469ac0a60c767dce80d637876c06cd77d820500321a3fb40"
+          },
+          {
+            "path": "cases/uniform-rain/modset.json",
+            "sha256": "e60e5eb7c994c2b5d088b8eebf9acfded0fed878821e11cb00abe6e6af7228e0"
+          },
+          {
+            "path": "cases/uniform-rain/rain.csv",
+            "sha256": "79a0480f492656d188ea436092e4f8285db3e5457298c9e42a6004a6a2ff7d67"
+          },
+          {
+            "path": "verify_fluxos.py",
+            "sha256": "5e2dfb8c0045f345e69e1e0ffbcfaad339d36ff65f8e77c67ae52583e0da12e7"
+          }
+        ],
+        "execution": {
+          "argv": [
+            "/usr/bin/python3",
+            "/checks/verify_fluxos.py",
+            "--reference",
+            "/input/expected.json",
+            "--config",
+            "/work/config/modset.json",
+            "--output",
+            "/output",
+            "--report",
+            "/work/reference-report.json"
+          ],
+          "mounts": [
+            {
+              "source": "cases/uniform-rain",
+              "target": "/input",
+              "mode": "ro"
+            },
+            {
+              "source": "verify_fluxos.py",
+              "target": "/checks/verify_fluxos.py",
+              "mode": "ro"
+            }
+          ],
+          "staged_files": [
+            {
+              "source": "cases/uniform-rain/modset.json",
+              "work_relative_path": "config/modset.json"
+            }
+          ],
+          "resources": {
+            "omp_threads": 1,
+            "cpus_per_rank": 1,
+            "memory_bytes": 536870912
+          },
+          "environment": {
+            "OPENBLAS_NUM_THREADS": "1"
+          },
+          "timeout_s": 60
+        },
+        "expected_result_ref": {
+          "path": "cases/uniform-rain/exit-expected.json",
+          "sha256": "a751841761c1f8665823c17645df87de512b17cb8a500ecac4635d11c62375fa"
+        }
+      }
+    },
+    {
+      "check_id": "fluxos-wet-propagation",
+      "model_id": "fluxos",
+      "level": "reference",
+      "fixture": {
+        "fixture_id": "wet-propagation-v1",
+        "metadata_ref": {
+          "path": "cases/wet-propagation/metadata.json",
+          "sha256": "39966c00e36b7a29a984cd21388234b3326352b25aa72dde2cbede88460e7e61"
+        },
+        "files": [
+          {
+            "path": "cases/wet-propagation/dem.asc",
+            "sha256": "25e81c67680c11412354c67546ace27866c0a9ff6aff391a75ad712604d692dd"
+          },
+          {
+            "path": "cases/wet-propagation/exit-expected.json",
+            "sha256": "a751841761c1f8665823c17645df87de512b17cb8a500ecac4635d11c62375fa"
+          },
+          {
+            "path": "cases/wet-propagation/expected.json",
+            "sha256": "8146237579caf6f57181222492f3790c8c1dd310d48de8e1740e56f3cedb67de"
+          },
+          {
+            "path": "cases/wet-propagation/inflow.csv",
+            "sha256": "30de8b90de4f73608d282e51d29964b4ca8f5caa087e4d88d1f94556b198c899"
+          },
+          {
+            "path": "cases/wet-propagation/metadata.json",
+            "sha256": "39966c00e36b7a29a984cd21388234b3326352b25aa72dde2cbede88460e7e61"
+          },
+          {
+            "path": "cases/wet-propagation/modset.json",
+            "sha256": "f8f40115fe601b64089880274f73639c3d548be4b3e6d04c98bd078f931df457"
+          },
+          {
+            "path": "verify_fluxos.py",
+            "sha256": "5e2dfb8c0045f345e69e1e0ffbcfaad339d36ff65f8e77c67ae52583e0da12e7"
+          }
+        ],
+        "execution": {
+          "argv": [
+            "/usr/bin/python3",
+            "/checks/verify_fluxos.py",
+            "--reference",
+            "/input/expected.json",
+            "--config",
+            "/work/config/modset.json",
+            "--output",
+            "/output",
+            "--report",
+            "/work/reference-report.json"
+          ],
+          "mounts": [
+            {
+              "source": "cases/wet-propagation",
+              "target": "/input",
+              "mode": "ro"
+            },
+            {
+              "source": "verify_fluxos.py",
+              "target": "/checks/verify_fluxos.py",
+              "mode": "ro"
+            }
+          ],
+          "staged_files": [
+            {
+              "source": "cases/wet-propagation/modset.json",
+              "work_relative_path": "config/modset.json"
+            }
+          ],
+          "resources": {
+            "omp_threads": 1,
+            "cpus_per_rank": 1,
+            "memory_bytes": 536870912
+          },
+          "environment": {
+            "OPENBLAS_NUM_THREADS": "1"
+          },
+          "timeout_s": 60
+        },
+        "expected_result_ref": {
+          "path": "cases/wet-propagation/exit-expected.json",
+          "sha256": "a751841761c1f8665823c17645df87de512b17cb8a500ecac4635d11c62375fa"
+        }
+      }
+    },
+    {
+      "check_id": "fluxos-failure-regressions",
+      "model_id": "fluxos",
+      "level": "reference",
+      "fixture": {
+        "fixture_id": "failure-regressions-v1",
+        "metadata_ref": {
+          "path": "failure-metadata.json",
+          "sha256": "645d227a1c30052944d6db6c6739f0c4273c25d10acdd6fc31e60d323420ebe8"
+        },
+        "files": [
+          {
+            "path": "cases/subthreshold-storage/dem.asc",
+            "sha256": "3d77b9d485c9ec313867d15553c545ae93f4d486cf48956e971cf01e94885976"
+          },
+          {
+            "path": "cases/subthreshold-storage/exit-expected.json",
+            "sha256": "a751841761c1f8665823c17645df87de512b17cb8a500ecac4635d11c62375fa"
+          },
+          {
+            "path": "cases/subthreshold-storage/expected.json",
+            "sha256": "0b5051763f2b38bf5dc277a742928bd91e5861785532d86131543acdd9af6f2a"
+          },
+          {
+            "path": "cases/subthreshold-storage/inflow.csv",
+            "sha256": "d760e6a5bf3e82d838e85e9c6603a3a3377c881b6049097bcd2798d279382a6f"
+          },
+          {
+            "path": "cases/subthreshold-storage/metadata.json",
+            "sha256": "161e25da3d88c100d8ea2904650368064709081f35da5a68ffc9ea1b28683ffe"
+          },
+          {
+            "path": "cases/subthreshold-storage/modset.json",
+            "sha256": "1c021bb3ec9a868bbd798f07825670e33fd83a65e732767b34d1cb9dc1f668ec"
+          },
+          {
+            "path": "verify_errors.py",
+            "sha256": "b6d691d3ee3adc36c3fe847e19dcbe760b44b71e9ccc36d2d394bc6402b1defd"
+          }
+        ],
+        "execution": {
+          "argv": [
+            "/usr/bin/python3",
+            "/checks/verify_errors.py",
+            "--config",
+            "/input/modset.json",
+            "--work",
+            "/work",
+            "--report",
+            "/work/failure-report.json"
+          ],
+          "mounts": [
+            {
+              "source": "cases/subthreshold-storage",
+              "target": "/input",
+              "mode": "ro"
+            },
+            {
+              "source": "verify_errors.py",
+              "target": "/checks/verify_errors.py",
+              "mode": "ro"
+            }
+          ],
+          "resources": {
+            "omp_threads": 1,
+            "memory_bytes": 536870912
+          },
+          "timeout_s": 120
+        },
+        "expected_result_ref": {
+          "path": "failure-expected.json",
+          "sha256": "390018eb10cf6f964608c9aa99e685f0ea535c59730190c4d8bc7b50ea8d3130"
+        }
+      }
+    }
+  ]
+}

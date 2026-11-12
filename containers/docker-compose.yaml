@@ -1,0 +1,116 @@
+# Manual services share each group's Dockerfile and scientific build stages.
+# Scientific args mirror model-sources.toml: test_compose_profiles.py checks parity.
+# The host installer supplies canonical args explicitly to its two private services.
+x-runtime: &runtime
+  platform: linux/amd64
+  network_mode: none
+  pull_policy: never
+  read_only: true
+  cap_drop: [ALL]
+  security_opt: ["no-new-privileges:true"]
+  cpus: 1
+  mem_limit: 2g
+  tmpfs:
+    - /tmp:rw,nosuid,nodev,size=128m
+    - /work:rw,nosuid,nodev,size=128m,uid=65532,gid=65532
+
+x-hydrology-build: &hydrology-build
+  context: ..
+  dockerfile: containers/hydrology/Dockerfile
+  additional_contexts:
+    framework: ..
+  args:
+    BASE_IMAGE: "ubuntu@sha256:78d4744ead1f5b19b04d0df558ab182a5300903900755e515b2ca4d10eb2044d"
+    APT_SNAPSHOT: "20261101T000000Z"
+    CA_CERTIFICATES_VERSION: "20240203"
+    BUILD_JOBS: "1"
+    SUMMA_REPOSITORY: "https://github.com/CH-Earth/summa.git"
+    SUMMA_REVISION: "22d479b9d44f769db4d2c2489bcbf19083bd6283"
+    SUNDIALS_REPOSITORY: "https://github.com/LLNL/sundials.git"
+    SUNDIALS_REVISION: "8e17876d3b4d682b4098684b07a85b005a122f81"
+    MIZUROUTE_REPOSITORY: "https://github.com/ESCOMP/mizuRoute.git"
+    MIZUROUTE_REVISION: "dd9b204c12ff6c6e4c52b3ccdcd8cc65c71e45f0"
+    PIO_REPOSITORY: "https://github.com/NCAR/ParallelIO.git"
+    PIO_REVISION: "1d516b82768ef9d2cade524724c38ab63fbe08e4"
+    PIO_CMAKE_REPOSITORY: "https://github.com/CESM-Development/CMake_Fortran_utils.git"
+    PIO_CMAKE_REVISION: "05ff8d8e4c88786e94a02c853d3ff921113d785c"
+
+x-hydraulics-build: &hydraulics-build
+  context: ..
+  dockerfile: containers/hydraulics/Dockerfile
+  additional_contexts:
+    framework: ..
+  args:
+    BASE_IMAGE: "ubuntu@sha256:78d4744ead1f5b19b04d0df558ab182a5300903900755e515b2ca4d10eb2044d"
+    APT_SNAPSHOT: "20261101T000000Z"
+    BOOTSTRAP_CA_VERSION: "20240203"
+    BUILD_JOBS: "1"
+    FLUXOS_REPOSITORY: "https://github.com/ue-hydro/FLUXOS_cpp.git"
+    FLUXOS_REVISION: "c50cc2154fe668a6b598cfd0d2dc9ce58e56e82c"
+
+services:
+  hydrology-pip:
+    <<: *runtime
+    profiles: [pip]
+    image: floodcast/hydrology:pip-local
+    build:
+      <<: *hydrology-build
+      target: pip
+
+  hydraulics-pip:
+    <<: *runtime
+    profiles: [pip]
+    image: floodcast/hydraulics:pip-local
+    build:
+      <<: *hydraulics-build
+      target: pip
+
+  hydrology-conda:
+    <<: *runtime
+    profiles: [conda]
+    image: floodcast/hydrology:conda-local
+    build:
+      <<: *hydrology-build
+      target: conda
+
+  hydraulics-conda:
+    <<: *runtime
+    profiles: [conda]
+    image: floodcast/hydraulics:conda-local
+    build:
+      <<: *hydraulics-build
+      target: conda
+
+  hydrology-source-manual:
+    <<: *runtime
+    profiles: [source-manual]
+    image: floodcast/hydrology:source-manual-local
+    build:
+      <<: *hydrology-build
+      target: source-manual
+
+  hydraulics-source-manual:
+    <<: *runtime
+    profiles: [source-manual]
+    image: floodcast/hydraulics:source-manual-local
+    build:
+      <<: *hydraulics-build
+      target: source-manual
+
+  # Compatibility services selected explicitly by the host installer.
+  # Their profile keeps them out of all three public method builds.
+  hydrology:
+    <<: *runtime
+    profiles: [installer]
+    image: ${FLOODCAST_HYDROLOGY_IMAGE:-floodcast/hydrology:local}
+    build:
+      context: ..
+      dockerfile: containers/hydrology/Dockerfile
+
+  hydraulics:
+    <<: *runtime
+    profiles: [installer]
+    image: ${FLOODCAST_HYDRAULICS_IMAGE:-floodcast/hydraulics:local}
+    build:
+      context: ..
+      dockerfile: containers/hydraulics/Dockerfile

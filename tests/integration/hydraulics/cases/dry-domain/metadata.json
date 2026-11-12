@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "fixture_id": "dry-domain-v1",
+  "description": "Zero input to a dry flat 5x5 grid. Both snapshots must contain the header and no fabricated wet-cell rows.",
+  "source": "Floodcast-authored analytic synthetic fixture; no external geographic or scientific data.",
+  "license": "Project-authored data for authorized Floodcast development; no third-party data. Repository redistribution license is not yet assigned.",
+  "model_ids": [
+    "fluxos"
+  ],
+  "expectations": [
+    "Model exit0 and normal completion in stdout and persisted model log.",
+    "Exact snapshot times/columns, finite nonnegative depths, unique integer cell IDs inside DEM bounds, and coordinates consistent with grid spacing and origin; wet-propagation excludes boundary wetting.",
+    "Stored volume equals independently derived Q*t or rain-depth times area within declared tolerances; expected cell coverage/spreading verified."
+  ],
+  "tolerances": {
+    "volume_absolute_m3": 1e-08,
+    "volume_relative": 1e-05
+  },
+  "tolerance_rationale": "Allow float32 forcing representation and text output rounding. These are numerical regression tolerances, not physical accuracy estimates."
+}

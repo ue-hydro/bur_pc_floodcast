@@ -1,0 +1,42 @@
+{
+  "schema_version": 1,
+  "reference_id": "celia-isothermal-finite-volume-v1",
+  "license": "CC0-1.0 generated reference/generator; source inputs CC-BY-4.0",
+  "generator_sha256": "bfdde9e087056309a59697e504ac124977e9944757e684ffeef1fd684a0763c1",
+  "inputs": {
+    "settings/syntheticTestCases/celia1990/summa_zParamTrial_celia1990.nc": "8780288a61691966a4ddb974b4aa2992747b819681e32b1c59efd86db50923d4",
+    "settings/syntheticTestCases/celia1990/summa_zInitialCond_celia1990.nc": "7d05884fd56f69ca3e8ded305128597b58c83762ab18acda40fedca879e9eb2c",
+    "settings/syntheticTestCases/celia1990/summa_zLocalParamInfo.txt": "8eb9504b103462256aa5daa589be63080a17ed3362d5c779e00ae39ab3f45466",
+    "settings/syntheticTestCases/celia1990/summa_zLocalAttributes.nc": "51e2976f622f36d66ec6935bcb47ad1408c5ca0d4fd8553698920436a2006804"
+  },
+  "reference_sha256": "2fcbfcccfbc8c2c23c787ee74fd4f1ddc8ee026bb56fdd0ede6250e65ebc83d2",
+  "environment": {
+    "python": "3.14.0",
+    "numpy": "2.5.4",
+    "scipy": "1.17.1",
+    "netCDF4": "1.7.5.1.post1"
+  },
+  "integrations": [
+    {
+      "method": "Radau",
+      "rtol": 1e-09,
+      "atol_m": 1e-10,
+      "function_evaluations": 40459
+    },
+    {
+      "method": "Radau",
+      "rtol": 1e-11,
+      "atol_m": 1e-12,
+      "function_evaluations": 111405
+    },
+    {
+      "method": "BDF",
+      "rtol": 1e-11,
+      "atol_m": 1e-12,
+      "function_evaluations": 26514
+    }
+  ],
+  "temporal_refinement_max_abs_m": 7.179889571773401e-09,
+  "cross_integrator_max_abs_m": 7.286601544365112e-09,
+  "scope": "independent temporal solution of the 100-cell isothermal Richards problem; not a spatial-convergence or general SUMMA multiphysics certificate"
+}

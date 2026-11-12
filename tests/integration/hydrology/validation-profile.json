@@ -1,0 +1,743 @@
+{
+  "schema_version": 1,
+  "group": "hydrology",
+  "models": [
+    {
+      "model_id": "summa",
+      "group": "hydrology",
+      "executable": "/opt/floodcast/hydrology/bin/summa_sundials.exe",
+      "check_ids": [
+        "summa-provenance",
+        "summa-load",
+        "summa-reference",
+        "summa-reference-ida"
+      ],
+      "supports_mpi": false,
+      "allowed_environment": [
+        "OPENBLAS_NUM_THREADS"
+      ]
+    },
+    {
+      "model_id": "mizuroute",
+      "group": "hydrology",
+      "executable": "/opt/floodcast/hydrology/bin/route_runoff",
+      "check_ids": [
+        "mizuroute-provenance",
+        "mizuroute-load",
+        "mizuroute-reference"
+      ],
+      "supports_mpi": false,
+      "allowed_environment": [
+        "OPENBLAS_NUM_THREADS"
+      ]
+    }
+  ],
+  "checks": [
+    {
+      "check_id": "summa-provenance",
+      "model_id": "summa",
+      "level": "provenance",
+      "required_for_promotion": true,
+      "fixture": {
+        "fixture_id": "hydrology-technical-checks-v1",
+        "metadata_ref": {
+          "path": "checks/metadata.json",
+          "sha256": "bfc5f41e2bc40c5c798c8745a5f675ce363282042b8c7e87f2470be70e8cab31"
+        },
+        "files": [
+          {
+            "path": "check_model.py",
+            "sha256": "7618b473e22b908b84c44334291e004fe45fd1020f1131db6e229473ca0d1d42"
+          },
+          {
+            "path": "validate_outputs.py",
+            "sha256": "8a779d39313032f8d2398953920486e25efdaa8fbb57ed9083743fd6a071af9c"
+          }
+        ],
+        "expected_result_ref": {
+          "path": "checks/provenance.json",
+          "sha256": "faa861de992bd41e745b1bde2d41a9d5b60dd4aef1c4cbcb0e183887d4e108bc"
+        },
+        "execution": {
+          "argv": [
+            "/usr/bin/python3",
+            "/checks/check_model.py",
+            "provenance",
+            "summa"
+          ],
+          "timeout_s": 60,
+          "working_directory": "/output",
+          "mounts": [
+            {
+              "source": "check_model.py",
+              "target": "/checks/check_model.py",
+              "mode": "ro"
+            },
+            {
+              "source": "validate_outputs.py",
+              "target": "/checks/validate_outputs.py",
+              "mode": "ro"
+            }
+          ],
+          "staged_files": [],
+          "environment": {
+            "OPENBLAS_NUM_THREADS": "1"
+          },
+          "resources": {
+            "nodes": 1,
+            "mpi_ranks": 1,
+            "omp_threads": 1,
+            "cpus_per_rank": 1,
+            "memory_bytes": 2147483648,
+            "gpus": 0
+          }
+        }
+      }
+    },
+    {
+      "check_id": "summa-load",
+      "model_id": "summa",
+      "level": "load",
+      "required_for_promotion": true,
+      "fixture": {
+        "fixture_id": "hydrology-technical-checks-v1",
+        "metadata_ref": {
+          "path": "checks/metadata.json",
+          "sha256": "bfc5f41e2bc40c5c798c8745a5f675ce363282042b8c7e87f2470be70e8cab31"
+        },
+        "files": [
+          {
+            "path": "check_model.py",
+            "sha256": "7618b473e22b908b84c44334291e004fe45fd1020f1131db6e229473ca0d1d42"
+          },
+          {
+            "path": "validate_outputs.py",
+            "sha256": "8a779d39313032f8d2398953920486e25efdaa8fbb57ed9083743fd6a071af9c"
+          }
+        ],
+        "expected_result_ref": {
+          "path": "checks/load.json",
+          "sha256": "26245faaa81a397ab56e40e2525f26460c9623b8494e022f17327ca909c50b74"
+        },
+        "execution": {
+          "argv": [
+            "/usr/bin/python3",
+            "/checks/check_model.py",
+            "load",
+            "summa"
+          ],
+          "timeout_s": 60,
+          "working_directory": "/output",
+          "mounts": [
+            {
+              "source": "check_model.py",
+              "target": "/checks/check_model.py",
+              "mode": "ro"
+            },
+            {
+              "source": "validate_outputs.py",
+              "target": "/checks/validate_outputs.py",
+              "mode": "ro"
+            }
+          ],
+          "staged_files": [],
+          "environment": {
+            "OPENBLAS_NUM_THREADS": "1"
+          },
+          "resources": {
+            "nodes": 1,
+            "mpi_ranks": 1,
+            "omp_threads": 1,
+            "cpus_per_rank": 1,
+            "memory_bytes": 2147483648,
+            "gpus": 0
+          }
+        }
+      }
+    },
+    {
+      "check_id": "summa-reference",
+      "model_id": "summa",
+      "level": "reference",
+      "required_for_promotion": true,
+      "fixture": {
+        "fixture_id": "summa-celia1990-operational-v1",
+        "metadata_ref": {
+          "path": "../../fixtures/summa/celia1990/metadata.json",
+          "sha256": "f4767dd56fd47e78b58b5b21075d587c3ab3e58d742138c16fe77b9714f72687"
+        },
+        "files": [
+          {
+            "path": "../../fixtures/summa/celia1990/data/files.json",
+            "sha256": "981494406ce466028bd9bbd8fddcba7e23dd57bf8af3bf580bfa69c1a676001b"
+          },
+          {
+            "path": "../../fixtures/summa/celia1990/data/forcing/celia1990_forcing.nc",
+            "sha256": "5b44e22897dbef18fe91017a8101bcb9d0df64047dfe29703630d96f916a54ef"
+          },
+          {
+            "path": "../../fixtures/summa/celia1990/data/output_benchmark/syntheticTestCases/celia1990/celia1990_output_testSumma_timestep.nc",
+            "sha256": "a71f317578337b7f3516af379f22fa290ae226a6a2d8497a2fd2325110c6bbd2"
+          },
+          {
+            "path": "../../fixtures/summa/celia1990/data/output_benchmark/syntheticTestCases/celia1990/runinfo.txt",
+            "sha256": "8a2be348139d44ddb3cfa5b3588d34ba44d12fb6b9123cfeca83fc7c2308e284"
+          },
+          {
+            "path": "../../fixtures/summa/celia1990/data/settings/GENPARM.TBL",
+            "sha256": "9c02832a0e4a2ecaf47fcee485539aad95cd732c379c5c258161a88eb3d25ea2"
+          },
+          {
+            "path": "../../fixtures/summa/celia1990/data/settings/meta/Model_Output.txt",
+            "sha256": "658bdbbe9c50bcc44db3fcab16342eaa4c45c7c7124ba49b6f128611f7d0161a"
+          },
+          {
+            "path": "../../fixtures/summa/celia1990/data/settings/meta/summa_zBasinModelVarMeta.txt",
+            "sha256": "bc3511285c140c803de34040a2d284f87c3d67ff45d070d45c92926e73222f34"
+          },
+          {
+            "path": "../../fixtures/summa/celia1990/data/settings/meta/summa_zBasinParamMeta.txt",
+            "sha256": "703902bfb1ed875b92a08816df2607fdc35314e25575e2253a6f9fbebb0a2270"
+          },
+          {
+            "path": "../../fixtures/summa/celia1990/data/settings/meta/summa_zCategoryMeta.txt",
+            "sha256": "388b5fec06d533bb06f50846e521052aab9a9fde5845e497daaf583c15d37257"
+          },
+          {
+            "path": "../../fixtures/summa/celia1990/data/settings/meta/summa_zForceMeta.txt",
+            "sha256": "3ebdb4659071e2e60d3e84e87c5d48c7c0d9a3fe35f025f01112443e0ae61b05"
+          },
+          {
+            "path": "../../fixtures/summa/celia1990/data/settings/meta/summa_zLocalAttributeMeta.txt",
+            "sha256": "7d33c1ef5af36f2f9a4d5b3017e7121b7651c062fc06d40bab13d83355f88103"
+          },
+          {
+            "path": "../../fixtures/summa/celia1990/data/settings/meta/summa_zLocalModelIndexMeta.txt",
+            "sha256": "f8484773a65176764a4da03ab36368cefa25f54edfd3d925c52268d10fe43a55"
+          },
+          {
+            "path": "../../fixtures/summa/celia1990/data/settings/meta/summa_zLocalModelVarMeta.txt",
+            "sha256": "4ed326dae320b07c7d6c936f4e9c1eec5f26ae892152e433b552e040fba37f5a"
+          },
+          {
+            "path": "../../fixtures/summa/celia1990/data/settings/meta/summa_zLocalParamMeta.txt",
+            "sha256": "9787a7dbad1e3651593b3d7dc7f29c36b9e0eb60e50239c03256a4bf1f7646f2"
+          },
+          {
+            "path": "../../fixtures/summa/celia1990/data/settings/meta/summa_zModelIndexMeta.txt",
+            "sha256": "f8484773a65176764a4da03ab36368cefa25f54edfd3d925c52268d10fe43a55"
+          },
+          {
+            "path": "../../fixtures/summa/celia1990/data/settings/meta/summa_zParamMeta.txt",
+            "sha256": "8472a8cd9d110d63d8d5ebca10378d56e365b2ee53e30bd8a80fa251ab4f1f0a"
+          },
+          {
+            "path": "../../fixtures/summa/celia1990/data/settings/meta/summa_zTimeMeta.txt",
+            "sha256": "5b7ff8d8d0b456bcf1bcca3054cfff6525c851fb24c35687570b807f692c252b"
+          },
+          {
+            "path": "../../fixtures/summa/celia1990/data/settings/MPTABLE.TBL",
+            "sha256": "ffacce494a0f19635606abf8d6c0effd7a3023ef7934c376bdfff63ac34c5df8"
+          },
+          {
+            "path": "../../fixtures/summa/celia1990/data/settings/SOILPARM.TBL",
+            "sha256": "a8e9fb0f893c6d8aea2bffafda7389f3b9d2566acf42a6ff0932efd2430df131"
+          },
+          {
+            "path": "../../fixtures/summa/celia1990/data/settings/syntheticTestCases/celia1990/summa_fileManager_celia1990.txt",
+            "sha256": "002a7c841e2a0ca839be8580acf83e61e6f4cbc493cb8dc2885dc8ba1a051743"
+          },
+          {
+            "path": "../../fixtures/summa/celia1990/data/settings/syntheticTestCases/celia1990/summa_zBasinParamInfo.txt",
+            "sha256": "6624ff56e88940769ed5eebc0aa4fb1c0bbf6e4aa5bb1124441f46a33b5d94b1"
+          },
+          {
+            "path": "../../fixtures/summa/celia1990/data/settings/syntheticTestCases/celia1990/summa_zDecisions_celia1990.txt",
+            "sha256": "c2f9af38d335f27f918272f67d4052ec5d21fafbca49acc980e449710f68aa9f"
+          },
+          {
+            "path": "../../fixtures/summa/celia1990/data/settings/syntheticTestCases/celia1990/summa_zForcingFileList.txt",
+            "sha256": "24a491cf235a8c47f4a3092252bf50246822bf98dee8d8389856a46e3a60f06d"
+          },
+          {
+            "path": "../../fixtures/summa/celia1990/data/settings/syntheticTestCases/celia1990/summa_zForcingInfo_celia1990.txt",
+            "sha256": "be5f7ac85deae4d9ed42fa517587b1216b47a5553bfb587422028e3e1abb769e"
+          },
+          {
+            "path": "../../fixtures/summa/celia1990/data/settings/syntheticTestCases/celia1990/summa_zInitialCond_celia1990.nc",
+            "sha256": "7d05884fd56f69ca3e8ded305128597b58c83762ab18acda40fedca879e9eb2c"
+          },
+          {
+            "path": "../../fixtures/summa/celia1990/data/settings/syntheticTestCases/celia1990/summa_zLocalAttributes.nc",
+            "sha256": "51e2976f622f36d66ec6935bcb47ad1408c5ca0d4fd8553698920436a2006804"
+          },
+          {
+            "path": "../../fixtures/summa/celia1990/data/settings/syntheticTestCases/celia1990/summa_zLocalParamInfo.txt",
+            "sha256": "8eb9504b103462256aa5daa589be63080a17ed3362d5c779e00ae39ab3f45466"
+          },
+          {
+            "path": "../../fixtures/summa/celia1990/data/settings/syntheticTestCases/celia1990/summa_zParamTrial_celia1990.nc",
+            "sha256": "fe8521433945ee0abce00f51a3446c2852e5d708dde4c2744705f180398a83c4"
+          },
+          {
+            "path": "../../fixtures/summa/celia1990/data/settings/VEGPARM.TBL",
+            "sha256": "1e4869833f65cedb3a9e692a7c62bc453b0bd5a3694f0b0bcead2575092199ae"
+          },
+          {
+            "path": "check_model.py",
+            "sha256": "7618b473e22b908b84c44334291e004fe45fd1020f1131db6e229473ca0d1d42"
+          },
+          {
+            "path": "validate_outputs.py",
+            "sha256": "8a779d39313032f8d2398953920486e25efdaa8fbb57ed9083743fd6a071af9c"
+          }
+        ],
+        "expected_result_ref": {
+          "path": "../../fixtures/summa/celia1990/expected.json",
+          "sha256": "ed6b64350a6ffa8420d805326325836061122559cb6fcd96e0cbf64197aef8ef"
+        },
+        "execution": {
+          "argv": [
+            "/usr/bin/python3",
+            "/checks/check_model.py",
+            "reference",
+            "summa"
+          ],
+          "timeout_s": 600,
+          "working_directory": "/output",
+          "mounts": [
+            {
+              "source": "../../fixtures/summa/celia1990/data",
+              "target": "/data",
+              "mode": "ro"
+            },
+            {
+              "source": "check_model.py",
+              "target": "/checks/check_model.py",
+              "mode": "ro"
+            },
+            {
+              "source": "validate_outputs.py",
+              "target": "/checks/validate_outputs.py",
+              "mode": "ro"
+            }
+          ],
+          "staged_files": [],
+          "environment": {
+            "OPENBLAS_NUM_THREADS": "1"
+          },
+          "resources": {
+            "nodes": 1,
+            "mpi_ranks": 1,
+            "omp_threads": 1,
+            "cpus_per_rank": 1,
+            "memory_bytes": 2147483648,
+            "gpus": 0
+          }
+        }
+      }
+    },
+    {
+      "check_id": "summa-reference-ida",
+      "model_id": "summa",
+      "level": "reference",
+      "required_for_promotion": true,
+      "fixture": {
+        "fixture_id": "summa-celia1990-ida-operational-v1",
+        "metadata_ref": {
+          "path": "../../fixtures/summa/celia1990-ida/metadata.json",
+          "sha256": "6371dcabbb2702186b18a6b3a208d41a06f9094e278b36b49f7213d4fe7e255c"
+        },
+        "files": [
+          {
+            "path": "../../fixtures/summa/celia1990-ida/data/files.json",
+            "sha256": "ea9551ba3b74d979289b9c97372a82d3491679c8a02a2d2d4f7f8b433058d9d4"
+          },
+          {
+            "path": "../../fixtures/summa/celia1990-ida/data/forcing/celia1990_forcing.nc",
+            "sha256": "5b44e22897dbef18fe91017a8101bcb9d0df64047dfe29703630d96f916a54ef"
+          },
+          {
+            "path": "../../fixtures/summa/celia1990-ida/data/output_benchmark/syntheticTestCases/celia1990/celia1990_output_testSumma_timestep.nc",
+            "sha256": "a71f317578337b7f3516af379f22fa290ae226a6a2d8497a2fd2325110c6bbd2"
+          },
+          {
+            "path": "../../fixtures/summa/celia1990-ida/data/output_benchmark/syntheticTestCases/celia1990/runinfo.txt",
+            "sha256": "8a2be348139d44ddb3cfa5b3588d34ba44d12fb6b9123cfeca83fc7c2308e284"
+          },
+          {
+            "path": "../../fixtures/summa/celia1990-ida/data/reference/reference.json",
+            "sha256": "4e9146b2f3a85b7affa16c111fab9c435e758e4f9ca33f2cc5f649c28d242ea5"
+          },
+          {
+            "path": "../../fixtures/summa/celia1990-ida/data/reference/richards.npz",
+            "sha256": "2fcbfcccfbc8c2c23c787ee74fd4f1ddc8ee026bb56fdd0ede6250e65ebc83d2"
+          },
+          {
+            "path": "../../fixtures/summa/celia1990-ida/data/settings/GENPARM.TBL",
+            "sha256": "9c02832a0e4a2ecaf47fcee485539aad95cd732c379c5c258161a88eb3d25ea2"
+          },
+          {
+            "path": "../../fixtures/summa/celia1990-ida/data/settings/meta/Model_Output.txt",
+            "sha256": "658bdbbe9c50bcc44db3fcab16342eaa4c45c7c7124ba49b6f128611f7d0161a"
+          },
+          {
+            "path": "../../fixtures/summa/celia1990-ida/data/settings/meta/summa_zBasinModelVarMeta.txt",
+            "sha256": "bc3511285c140c803de34040a2d284f87c3d67ff45d070d45c92926e73222f34"
+          },
+          {
+            "path": "../../fixtures/summa/celia1990-ida/data/settings/meta/summa_zBasinParamMeta.txt",
+            "sha256": "703902bfb1ed875b92a08816df2607fdc35314e25575e2253a6f9fbebb0a2270"
+          },
+          {
+            "path": "../../fixtures/summa/celia1990-ida/data/settings/meta/summa_zCategoryMeta.txt",
+            "sha256": "388b5fec06d533bb06f50846e521052aab9a9fde5845e497daaf583c15d37257"
+          },
+          {
+            "path": "../../fixtures/summa/celia1990-ida/data/settings/meta/summa_zForceMeta.txt",
+            "sha256": "3ebdb4659071e2e60d3e84e87c5d48c7c0d9a3fe35f025f01112443e0ae61b05"
+          },
+          {
+            "path": "../../fixtures/summa/celia1990-ida/data/settings/meta/summa_zLocalAttributeMeta.txt",
+            "sha256": "7d33c1ef5af36f2f9a4d5b3017e7121b7651c062fc06d40bab13d83355f88103"
+          },
+          {
+            "path": "../../fixtures/summa/celia1990-ida/data/settings/meta/summa_zLocalModelIndexMeta.txt",
+            "sha256": "f8484773a65176764a4da03ab36368cefa25f54edfd3d925c52268d10fe43a55"
+          },
+          {
+            "path": "../../fixtures/summa/celia1990-ida/data/settings/meta/summa_zLocalModelVarMeta.txt",
+            "sha256": "4ed326dae320b07c7d6c936f4e9c1eec5f26ae892152e433b552e040fba37f5a"
+          },
+          {
+            "path": "../../fixtures/summa/celia1990-ida/data/settings/meta/summa_zLocalParamMeta.txt",
+            "sha256": "9787a7dbad1e3651593b3d7dc7f29c36b9e0eb60e50239c03256a4bf1f7646f2"
+          },
+          {
+            "path": "../../fixtures/summa/celia1990-ida/data/settings/meta/summa_zModelIndexMeta.txt",
+            "sha256": "f8484773a65176764a4da03ab36368cefa25f54edfd3d925c52268d10fe43a55"
+          },
+          {
+            "path": "../../fixtures/summa/celia1990-ida/data/settings/meta/summa_zParamMeta.txt",
+            "sha256": "8472a8cd9d110d63d8d5ebca10378d56e365b2ee53e30bd8a80fa251ab4f1f0a"
+          },
+          {
+            "path": "../../fixtures/summa/celia1990-ida/data/settings/meta/summa_zTimeMeta.txt",
+            "sha256": "5b7ff8d8d0b456bcf1bcca3054cfff6525c851fb24c35687570b807f692c252b"
+          },
+          {
+            "path": "../../fixtures/summa/celia1990-ida/data/settings/MPTABLE.TBL",
+            "sha256": "ffacce494a0f19635606abf8d6c0effd7a3023ef7934c376bdfff63ac34c5df8"
+          },
+          {
+            "path": "../../fixtures/summa/celia1990-ida/data/settings/SOILPARM.TBL",
+            "sha256": "a8e9fb0f893c6d8aea2bffafda7389f3b9d2566acf42a6ff0932efd2430df131"
+          },
+          {
+            "path": "../../fixtures/summa/celia1990-ida/data/settings/syntheticTestCases/celia1990/summa_fileManager_celia1990.txt",
+            "sha256": "002a7c841e2a0ca839be8580acf83e61e6f4cbc493cb8dc2885dc8ba1a051743"
+          },
+          {
+            "path": "../../fixtures/summa/celia1990-ida/data/settings/syntheticTestCases/celia1990/summa_zBasinParamInfo.txt",
+            "sha256": "6624ff56e88940769ed5eebc0aa4fb1c0bbf6e4aa5bb1124441f46a33b5d94b1"
+          },
+          {
+            "path": "../../fixtures/summa/celia1990-ida/data/settings/syntheticTestCases/celia1990/summa_zDecisions_celia1990.txt",
+            "sha256": "d7adcd5164daa4aecaff49fae5bd75d34d70db54a4f106c8f7c0383e7ee4d656"
+          },
+          {
+            "path": "../../fixtures/summa/celia1990-ida/data/settings/syntheticTestCases/celia1990/summa_zForcingFileList.txt",
+            "sha256": "24a491cf235a8c47f4a3092252bf50246822bf98dee8d8389856a46e3a60f06d"
+          },
+          {
+            "path": "../../fixtures/summa/celia1990-ida/data/settings/syntheticTestCases/celia1990/summa_zForcingInfo_celia1990.txt",
+            "sha256": "be5f7ac85deae4d9ed42fa517587b1216b47a5553bfb587422028e3e1abb769e"
+          },
+          {
+            "path": "../../fixtures/summa/celia1990-ida/data/settings/syntheticTestCases/celia1990/summa_zInitialCond_celia1990.nc",
+            "sha256": "7d05884fd56f69ca3e8ded305128597b58c83762ab18acda40fedca879e9eb2c"
+          },
+          {
+            "path": "../../fixtures/summa/celia1990-ida/data/settings/syntheticTestCases/celia1990/summa_zLocalAttributes.nc",
+            "sha256": "51e2976f622f36d66ec6935bcb47ad1408c5ca0d4fd8553698920436a2006804"
+          },
+          {
+            "path": "../../fixtures/summa/celia1990-ida/data/settings/syntheticTestCases/celia1990/summa_zLocalParamInfo.txt",
+            "sha256": "8eb9504b103462256aa5daa589be63080a17ed3362d5c779e00ae39ab3f45466"
+          },
+          {
+            "path": "../../fixtures/summa/celia1990-ida/data/settings/syntheticTestCases/celia1990/summa_zParamTrial_celia1990.nc",
+            "sha256": "8780288a61691966a4ddb974b4aa2992747b819681e32b1c59efd86db50923d4"
+          },
+          {
+            "path": "../../fixtures/summa/celia1990-ida/data/settings/VEGPARM.TBL",
+            "sha256": "1e4869833f65cedb3a9e692a7c62bc453b0bd5a3694f0b0bcead2575092199ae"
+          },
+          {
+            "path": "check_model.py",
+            "sha256": "7618b473e22b908b84c44334291e004fe45fd1020f1131db6e229473ca0d1d42"
+          },
+          {
+            "path": "validate_outputs.py",
+            "sha256": "8a779d39313032f8d2398953920486e25efdaa8fbb57ed9083743fd6a071af9c"
+          }
+        ],
+        "expected_result_ref": {
+          "path": "../../fixtures/summa/celia1990-ida/expected.json",
+          "sha256": "78e75d8dabe5dbecfe6177f4437c5f704256765ef265ae0f1665af0ba2f7ced4"
+        },
+        "execution": {
+          "argv": [
+            "/usr/bin/python3",
+            "/checks/check_model.py",
+            "reference",
+            "summa"
+          ],
+          "timeout_s": 600,
+          "working_directory": "/output",
+          "mounts": [
+            {
+              "source": "../../fixtures/summa/celia1990-ida/data",
+              "target": "/data",
+              "mode": "ro"
+            },
+            {
+              "source": "check_model.py",
+              "target": "/checks/check_model.py",
+              "mode": "ro"
+            },
+            {
+              "source": "validate_outputs.py",
+              "target": "/checks/validate_outputs.py",
+              "mode": "ro"
+            }
+          ],
+          "staged_files": [],
+          "environment": {
+            "OPENBLAS_NUM_THREADS": "1"
+          },
+          "resources": {
+            "nodes": 1,
+            "mpi_ranks": 1,
+            "omp_threads": 1,
+            "cpus_per_rank": 1,
+            "memory_bytes": 2147483648,
+            "gpus": 0
+          }
+        }
+      }
+    },
+    {
+      "check_id": "mizuroute-provenance",
+      "model_id": "mizuroute",
+      "level": "provenance",
+      "required_for_promotion": true,
+      "fixture": {
+        "fixture_id": "hydrology-technical-checks-v1",
+        "metadata_ref": {
+          "path": "checks/metadata.json",
+          "sha256": "bfc5f41e2bc40c5c798c8745a5f675ce363282042b8c7e87f2470be70e8cab31"
+        },
+        "files": [
+          {
+            "path": "check_model.py",
+            "sha256": "7618b473e22b908b84c44334291e004fe45fd1020f1131db6e229473ca0d1d42"
+          },
+          {
+            "path": "validate_outputs.py",
+            "sha256": "8a779d39313032f8d2398953920486e25efdaa8fbb57ed9083743fd6a071af9c"
+          }
+        ],
+        "expected_result_ref": {
+          "path": "checks/provenance.json",
+          "sha256": "faa861de992bd41e745b1bde2d41a9d5b60dd4aef1c4cbcb0e183887d4e108bc"
+        },
+        "execution": {
+          "argv": [
+            "/usr/bin/python3",
+            "/checks/check_model.py",
+            "provenance",
+            "mizuroute"
+          ],
+          "timeout_s": 60,
+          "working_directory": "/output",
+          "mounts": [
+            {
+              "source": "check_model.py",
+              "target": "/checks/check_model.py",
+              "mode": "ro"
+            },
+            {
+              "source": "validate_outputs.py",
+              "target": "/checks/validate_outputs.py",
+              "mode": "ro"
+            }
+          ],
+          "staged_files": [],
+          "environment": {
+            "OPENBLAS_NUM_THREADS": "1"
+          },
+          "resources": {
+            "nodes": 1,
+            "mpi_ranks": 1,
+            "omp_threads": 1,
+            "cpus_per_rank": 1,
+            "memory_bytes": 2147483648,
+            "gpus": 0
+          }
+        }
+      }
+    },
+    {
+      "check_id": "mizuroute-load",
+      "model_id": "mizuroute",
+      "level": "load",
+      "required_for_promotion": true,
+      "fixture": {
+        "fixture_id": "hydrology-technical-checks-v1",
+        "metadata_ref": {
+          "path": "checks/metadata.json",
+          "sha256": "bfc5f41e2bc40c5c798c8745a5f675ce363282042b8c7e87f2470be70e8cab31"
+        },
+        "files": [
+          {
+            "path": "check_model.py",
+            "sha256": "7618b473e22b908b84c44334291e004fe45fd1020f1131db6e229473ca0d1d42"
+          },
+          {
+            "path": "validate_outputs.py",
+            "sha256": "8a779d39313032f8d2398953920486e25efdaa8fbb57ed9083743fd6a071af9c"
+          }
+        ],
+        "expected_result_ref": {
+          "path": "checks/load.json",
+          "sha256": "26245faaa81a397ab56e40e2525f26460c9623b8494e022f17327ca909c50b74"
+        },
+        "execution": {
+          "argv": [
+            "/usr/bin/python3",
+            "/checks/check_model.py",
+            "load",
+            "mizuroute"
+          ],
+          "timeout_s": 60,
+          "working_directory": "/output",
+          "mounts": [
+            {
+              "source": "check_model.py",
+              "target": "/checks/check_model.py",
+              "mode": "ro"
+            },
+            {
+              "source": "validate_outputs.py",
+              "target": "/checks/validate_outputs.py",
+              "mode": "ro"
+            }
+          ],
+          "staged_files": [],
+          "environment": {
+            "OPENBLAS_NUM_THREADS": "1"
+          },
+          "resources": {
+            "nodes": 1,
+            "mpi_ranks": 1,
+            "omp_threads": 1,
+            "cpus_per_rank": 1,
+            "memory_bytes": 2147483648,
+            "gpus": 0
+          }
+        }
+      }
+    },
+    {
+      "check_id": "mizuroute-reference",
+      "model_id": "mizuroute",
+      "level": "reference",
+      "required_for_promotion": true,
+      "fixture": {
+        "fixture_id": "mizuroute-cameo-three-day-operational-v1",
+        "metadata_ref": {
+          "path": "../../fixtures/mizuroute/cameo/metadata.json",
+          "sha256": "63493e9e31473c8879ea520c32137edcf32db9e8bd9cb81e8f0b5ab73871db53"
+        },
+        "files": [
+          {
+            "path": "../../fixtures/mizuroute/cameo/data/ancillary_data/ntopo_nhdplus_cameo_pfaf.nc",
+            "sha256": "e52114f589e8c4d197cd4d670284076915953a2415960f995730b2aa4e6f5677"
+          },
+          {
+            "path": "../../fixtures/mizuroute/cameo/data/control.txt",
+            "sha256": "ce55e4f23cbee814db3c015384f97cdbf547b60e54e77b1ea966d322ec8e2068"
+          },
+          {
+            "path": "../../fixtures/mizuroute/cameo/data/files.json",
+            "sha256": "d2c357431f4ac3695c971b06284f9aaee0a33d8c96142b6fdf9db61f2091eb7a"
+          },
+          {
+            "path": "../../fixtures/mizuroute/cameo/data/input/param.nml.default",
+            "sha256": "81d2dba11eadc50cb862220995e3b6aaa664044547c60007fc74be6a3756c01d"
+          },
+          {
+            "path": "../../fixtures/mizuroute/cameo/data/input/runoff_case1.in",
+            "sha256": "e377846624c33b9022ecc20f8342e0c4dd0470282928cbe22dadca573694b239"
+          },
+          {
+            "path": "../../fixtures/mizuroute/cameo/data/input/RUNOFF_case1.nc",
+            "sha256": "825d4e6bbfff690445992693bd0c8443637be64b554951d1db6964627c4ea222"
+          },
+          {
+            "path": "check_model.py",
+            "sha256": "7618b473e22b908b84c44334291e004fe45fd1020f1131db6e229473ca0d1d42"
+          },
+          {
+            "path": "validate_outputs.py",
+            "sha256": "8a779d39313032f8d2398953920486e25efdaa8fbb57ed9083743fd6a071af9c"
+          }
+        ],
+        "expected_result_ref": {
+          "path": "../../fixtures/mizuroute/cameo/expected.json",
+          "sha256": "f0c8837fa2974b13a9b5c07bdfce785bfacae73100af683a750e483c68370a2d"
+        },
+        "execution": {
+          "argv": [
+            "/usr/bin/python3",
+            "/checks/check_model.py",
+            "reference",
+            "mizuroute"
+          ],
+          "timeout_s": 600,
+          "working_directory": "/output",
+          "mounts": [
+            {
+              "source": "../../fixtures/mizuroute/cameo/data",
+              "target": "/data",
+              "mode": "ro"
+            },
+            {
+              "source": "check_model.py",
+              "target": "/checks/check_model.py",
+              "mode": "ro"
+            },
+            {
+              "source": "validate_outputs.py",
+              "target": "/checks/validate_outputs.py",
+              "mode": "ro"
+            }
+          ],
+          "staged_files": [],
+          "environment": {
+            "OPENBLAS_NUM_THREADS": "1"
+          },
+          "resources": {
+            "nodes": 1,
+            "mpi_ranks": 1,
+            "omp_threads": 1,
+            "cpus_per_rank": 1,
+            "memory_bytes": 2147483648,
+            "gpus": 0
+          }
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,32 @@
+[
+  {
+    "source_member": "testCase_cameo_v3.1/ancillary_data/ntopo_nhdplus_cameo_pfaf.nc",
+    "source_sha256": "e52114f589e8c4d197cd4d670284076915953a2415960f995730b2aa4e6f5677",
+    "path": "ancillary_data/ntopo_nhdplus_cameo_pfaf.nc",
+    "sha256": "e52114f589e8c4d197cd4d670284076915953a2415960f995730b2aa4e6f5677"
+  },
+  {
+    "source_member": "testCase_cameo_v3.1/ancillary_data/param.nml.default",
+    "source_sha256": "81d2dba11eadc50cb862220995e3b6aaa664044547c60007fc74be6a3756c01d",
+    "path": "input/param.nml.default",
+    "sha256": "81d2dba11eadc50cb862220995e3b6aaa664044547c60007fc74be6a3756c01d"
+  },
+  {
+    "source_member": "testCase_cameo_v3.1/input/RUNOFF_case1.nc",
+    "source_sha256": "825d4e6bbfff690445992693bd0c8443637be64b554951d1db6964627c4ea222",
+    "path": "input/RUNOFF_case1.nc",
+    "sha256": "825d4e6bbfff690445992693bd0c8443637be64b554951d1db6964627c4ea222"
+  },
+  {
+    "source_member": "testCase_cameo_v3.1/input/runoff_case1.in",
+    "source_sha256": "e377846624c33b9022ecc20f8342e0c4dd0470282928cbe22dadca573694b239",
+    "path": "input/runoff_case1.in",
+    "sha256": "e377846624c33b9022ecc20f8342e0c4dd0470282928cbe22dadca573694b239"
+  },
+  {
+    "source_member": "testCase_cameo_v3.1/settings/v3.1/testCase_cameo_case1.control",
+    "source_sha256": "3738e5d262c77ee3bb298673cb241bba348730062e2d908b57e747419bb90bd3",
+    "path": "control.txt",
+    "sha256": "ce55e4f23cbee814db3c015384f97cdbf547b60e54e77b1ea966d322ec8e2068"
+  }
+]

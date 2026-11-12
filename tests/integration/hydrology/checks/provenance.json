@@ -1,0 +1,6 @@
+{
+  "kind": "exit_code",
+  "expected_exit_code": 0,
+  "assertions": ["Hydrology toolchain identifies x86_64 and full source revisions", "Every recorded binary and library hash matches actual image content", "Compiled model artifact contains the recorded source Git commit (libsumma for SUMMA)"]
+}
+

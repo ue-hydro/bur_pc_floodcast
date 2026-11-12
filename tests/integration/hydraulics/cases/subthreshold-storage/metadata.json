@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "fixture_id": "subthreshold-storage-v1",
+  "description": "Flat positive-elevation 5x5 grid. Constant 0.0001 m3/s input to a 1 m2 cell; no infiltration/ADE. Depth stays below roughness/dry threshold 0.005 m, so water is stored in the receiving cell.",
+  "source": "Floodcast-authored analytic synthetic fixture; no external geographic or scientific data.",
+  "license": "Project-authored data for authorized Floodcast development; no third-party data. Repository redistribution license is not yet assigned.",
+  "model_ids": [
+    "fluxos"
+  ],
+  "expectations": [
+    "Model exit0 and normal completion in stdout and persisted model log.",
+    "Exact snapshot times/columns, finite nonnegative depths, unique integer cell IDs inside DEM bounds, and coordinates consistent with grid spacing and origin; wet-propagation excludes boundary wetting.",
+    "Stored volume equals independently derived Q*t or rain-depth times area within declared tolerances; expected cell coverage/spreading verified."
+  ],
+  "tolerances": {
+    "volume_absolute_m3": 1e-08,
+    "volume_relative": 1e-05
+  },
+  "tolerance_rationale": "Allow float32 forcing representation and text output rounding. These are numerical regression tolerances, not physical accuracy estimates."
+}

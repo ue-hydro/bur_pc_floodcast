@@ -1,0 +1,10 @@
+{
+  "schema_version": 1,
+  "kind": "exit_code",
+  "expected_exit_code": 0,
+  "assertions": [
+    "33 real executable failures return1 with expected diagnostic and without normal completion.",
+    "Reject missing/malformed forcing fields for both inflow and rain, empty paths, zero horizon, invalid PRINT_STEP types/ranges, restart requests, unwritable output and read-only model log.",
+    "Empty restart state remains byte-identical after rejection."
+  ]
+}
