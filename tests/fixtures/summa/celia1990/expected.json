@@ -1,0 +1,11 @@
+{
+  "kind": "exit_code",
+  "expected_exit_code": 0,
+  "assertions": [
+    "one timestep NetCDF with 120 half-hourly times from 2000-01-01 00:30",
+    "one HRU and GRU, HRU ID equal to attributes, 100 soil layers",
+    "mLayerMatricHead dimensions exactly (time, midSoil, hru), units m, finite and unmasked",
+    "all 120x100 matric heads agree with the public iterative benchmark",
+    "forcing precipitation and temperature preserved"
+  ]
+}

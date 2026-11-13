@@ -1,0 +1,17 @@
+{
+  "schema_version": 1,
+  "fixture_id": "fluxos-technical-checks-v1",
+  "description": "Technical provenance and loader checks for FLUXOS. These checks do not perform a hydraulic simulation or establish scientific validity.",
+  "source": "Floodcast-authored checks against recorded build evidence and loader diagnostics.",
+  "license": "Project-authored validation metadata; no third-party data. Repository redistribution license is not yet assigned.",
+  "model_ids": [
+    "fluxos"
+  ],
+  "expectations": [
+    "Provenance verifies executable, declared recipe and evidence hashes, then exact installed packages against build inventory or a SHA-256-linked runtime inventory.",
+    "The loader verifies the executable hash, shared libraries and OpenMP, then checks that a missing-modset probe returns exit 1 with its expected diagnostic.",
+    "The mounted verifier is independently identified by its fixture SHA-256; no simulation is claimed by either technical check."
+  ],
+  "tolerances": {},
+  "tolerance_rationale": "Exact content hashes, package inventory and diagnostic/exit-code checks."
+}

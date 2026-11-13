@@ -1,0 +1,257 @@
+{
+  "case_id": "uniform-rain-v1",
+  "kind": "analytical-regression",
+  "description": "Uniform rain 8.64 mm/day = 1e-7 m/s on 25 one-square-metre cells; no other source or sink. Analytic volumes at 1 and 2 seconds: 2.5e-6 and 5e-6 m3.",
+  "external_data": false,
+  "project_authored": true,
+  "licensing": "No third-party data. Repository license is not assigned; this fixture is for the authorized local tests.",
+  "time_semantics": "Numeric first row is ignored. Subsequent timestamps are seconds elapsed; rain in mm/day is the interval mean on (t[i-1], t[i]]. No extrapolation after t=2.",
+  "snapshots": {
+    "1.txt": {
+      "time_s": 1,
+      "volume_m3": 2.4999999999999998e-06,
+      "wet_cells": 25,
+      "cell_ids": [
+        [
+          1,
+          1
+        ],
+        [
+          1,
+          2
+        ],
+        [
+          1,
+          3
+        ],
+        [
+          1,
+          4
+        ],
+        [
+          1,
+          5
+        ],
+        [
+          2,
+          1
+        ],
+        [
+          2,
+          2
+        ],
+        [
+          2,
+          3
+        ],
+        [
+          2,
+          4
+        ],
+        [
+          2,
+          5
+        ],
+        [
+          3,
+          1
+        ],
+        [
+          3,
+          2
+        ],
+        [
+          3,
+          3
+        ],
+        [
+          3,
+          4
+        ],
+        [
+          3,
+          5
+        ],
+        [
+          4,
+          1
+        ],
+        [
+          4,
+          2
+        ],
+        [
+          4,
+          3
+        ],
+        [
+          4,
+          4
+        ],
+        [
+          4,
+          5
+        ],
+        [
+          5,
+          1
+        ],
+        [
+          5,
+          2
+        ],
+        [
+          5,
+          3
+        ],
+        [
+          5,
+          4
+        ],
+        [
+          5,
+          5
+        ]
+      ]
+    },
+    "2.txt": {
+      "time_s": 2,
+      "volume_m3": 4.9999999999999996e-06,
+      "wet_cells": 25,
+      "cell_ids": [
+        [
+          1,
+          1
+        ],
+        [
+          1,
+          2
+        ],
+        [
+          1,
+          3
+        ],
+        [
+          1,
+          4
+        ],
+        [
+          1,
+          5
+        ],
+        [
+          2,
+          1
+        ],
+        [
+          2,
+          2
+        ],
+        [
+          2,
+          3
+        ],
+        [
+          2,
+          4
+        ],
+        [
+          2,
+          5
+        ],
+        [
+          3,
+          1
+        ],
+        [
+          3,
+          2
+        ],
+        [
+          3,
+          3
+        ],
+        [
+          3,
+          4
+        ],
+        [
+          3,
+          5
+        ],
+        [
+          4,
+          1
+        ],
+        [
+          4,
+          2
+        ],
+        [
+          4,
+          3
+        ],
+        [
+          4,
+          4
+        ],
+        [
+          4,
+          5
+        ],
+        [
+          5,
+          1
+        ],
+        [
+          5,
+          2
+        ],
+        [
+          5,
+          3
+        ],
+        [
+          5,
+          4
+        ],
+        [
+          5,
+          5
+        ]
+      ]
+    }
+  },
+  "cell_area_m2": 1,
+  "relative_tolerance": 1e-05,
+  "absolute_volume_tolerance_m3": 1e-10,
+  "tolerance_basis": "Numerical storage regression using float32 forcing and text serialization. Tolerances cover rounding, not physical-model error.",
+  "limitations": [
+    "Exercises time stepping, inflow storage, OpenMP code path and output persistence.",
+    "Does not validate wet-domain propagation, real basin hydraulics, tide, restart or the mizuRoute interface."
+  ],
+  "output_columns": [
+    "irow [-]",
+    "icol [-]",
+    "Xcoord",
+    "Ycoord",
+    "z [m]",
+    "h [m]",
+    "ux [m/s]",
+    "uy [m/s]",
+    "qx * dxy [m3/sec]",
+    "qy * dxy [m3/sec]",
+    "us [m/s]",
+    "conc_SW [mg/l]",
+    "fe_1 [m2/s]",
+    "fn_1 [m2/s]",
+    "twetimetracer [sec]"
+  ],
+  "grid": {
+    "nrows": 5,
+    "ncols": 5,
+    "xllcorner": 100,
+    "yllcorner": 200,
+    "cellsize": 1
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "schema_version": 1,
+  "fixture_id": "mizuroute-cameo-three-day-operational-v1",
+  "description": "Operational reference with input-derived checks. Legacy comparison is rejected because it disagrees in runoff units by factor 1000 and does not contain the selected diffusive-wave routing output. No basin validation. mizuRoute 3.2.0 candidate; GNU/OpenMPI/OpenMP; diffusive wave route_opt=5; original mm/s runoff and topology Transformations: Select case1 regular input and topology members; Copy original ancillary param.nml.default instead of extracting a symlink; Set absolute /data and /output directories; Shorten end time from 1950-12-31 noon to 1950-01-03 noon; keep full input series and all parameters; explicitly select pio_netcdf_type=netcdf (classic file format), matching the supported PIO 2.6.6 serial I/O backend (upstream default pnetcdf is unavailable). Strengthened acceptance uses input-derived analytic gamma headwater hydrographs and per-reach integral storage conservation. Three daily interval-start timestamps span 1950-01-01 noon through the final bound 1950-01-04 noon. Interior transient DW accuracy is not certified.",
+  "source": "Mizukami, Naoki (2025). mizuRoute testCase v3.1, Zenodo, doi:10.5281/zenodo.17794327. https://doi.org/10.5281/zenodo.17794327 Archive SHA256 b65b5ab692e0c59808a93dcfd8f1ffebe4db88797cd80557dbbd228f9e90afac",
+  "license": "CC-BY-4.0 https://creativecommons.org/licenses/by/4.0/",
+  "model_ids": [
+    "mizuroute"
+  ],
+  "expectations": [
+    "one history NetCDF, 6736 unique basin IDs and 6895 unique reach IDs matched by identity",
+    "three continuous positive 86400-second time bounds from 1950-01-01T12:00 to 1950-01-04T12:00",
+    "history timestamps denote interval starts and discharges are interval means",
+    "basRunoff preserves forcing mm/s after HRU identity alignment",
+    "DWroutedRunoff dimensions (time, seg), units m3/s, finite nonnegative values",
+    "2507 headwater hydrographs match the independent gamma convolution of forcing and HRU area",
+    "all 6895 reaches satisfy integrated incoming plus lateral minus outgoing volume equals final storage",
+    "restart time equals the final interval end; restart basin_q matches the independent basin hydrograph"
+  ],
+  "tolerances": {
+    "time_absolute_tolerance_seconds": 0.0001,
+    "runoff_relative_tolerance": 0,
+    "minimum_discharge_m3_s": -1e-10,
+    "headwater_relative_tolerance": 2e-07,
+    "headwater_absolute_tolerance_m3_s": 1e-10,
+    "volume_absolute_tolerance_m3": 1e-06,
+    "volume_relative_roundoff_budget": 2e-07
+  },
+  "tolerance_rationale": "Input passthrough compares exact float32 values after ID alignment. Headwater comparison allows 2e-7 relative plus 1e-10 m3/s absolute for float32 history encoding. The reach volume budget is 1e-6 m3 plus 2e-7 times the sum of absolute inflow, outflow and final storage; it accounts for rounding of both sides of the integral balance. Exact bounds/continuity and 1e-9 time-unit endpoint tolerance enforce three complete days. No candidate discharge golden is used. See containers/hydrology/NUMERICAL-REFERENCES.md for limits."
+}

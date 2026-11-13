@@ -1,0 +1,2 @@
+# Preserve bytes used by validation SHA256 hashes across platforms.
+* -text whitespace=cr-at-eol

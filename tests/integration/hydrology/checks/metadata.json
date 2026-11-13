@@ -1,0 +1,16 @@
+{
+  "schema_version": 1,
+  "fixture_id": "hydrology-technical-checks-v1",
+  "description": "Project-authored technical checks shared by SUMMA and mizuRoute. The fixture consists only of the two validation scripts, mounted read-only. Provenance checks verify recorded artefact hashes and embedded source identity; load checks verify ELF format, dynamic linkage and the supported SUMMA version command. These checks contain no scientific case and do not establish numerical or forecasting validity.",
+  "source": "Floodcast tests/integration/hydrology/check_model.py and validate_outputs.py, identified by the validation profile hashes.",
+  "license": "Not separately specified; Floodcast project-authored validation code, with no third-party fixture data included.",
+  "model_ids": ["summa", "mizuroute"],
+  "expectations": [
+    "Recorded model artefact hashes and full source revisions match the installed image",
+    "Compiled binaries are little-endian 64-bit ELF files and their dynamic libraries resolve",
+    "SUMMA supports its documented version command; no mizuRoute version flag is invented",
+    "A zero exit status applies only to the explicitly selected technical check"
+  ],
+  "tolerances": {},
+  "tolerance_rationale": "These are exact identity, format and linkage checks. There are no numerical quantities or scientific tolerances in this technical fixture."
+}

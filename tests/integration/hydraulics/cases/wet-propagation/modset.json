@@ -1,0 +1,30 @@
+{
+  "COMMENT": "Positive flat 9x9 grid with 0.01 m3/s inflow to centre cell, exceeding the dry threshold. Check conservation Q*t, spreading, finite nonnegative depths and exact time coverage before water reaches the boundary; this is an invariant test, not an external hydraulic benchmark.",
+  "DEM_FILE": "/input/dem.asc",
+  "SIM_DATETIME_START": "2000-01-01 00:00:00",
+  "RESTART": false,
+  "INFLOW_FILE": {
+    "FILENAME": "/input/inflow.csv",
+    "DISCHARGE_LOCATION": {
+      "X_COORDINATE": 105,
+      "Y_COORDINATE": 205
+    }
+  },
+  "OUTPUT": {
+    "OUTPUT_FOLDER": "/output",
+    "PRINT_STEP": 1,
+    "H_MIN_TO_PRINT": 0
+  },
+  "ROUGNESS_HEIGHT": 0.005,
+  "STEADY_STATE": {
+    "STATUS": false
+  },
+  "SOIL_INFILTRATION": {
+    "STATUS": false
+  },
+  "EXTERNAL_MODULES": {
+    "ADE_TRANSPORT": {
+      "STATUS": false
+    }
+  }
+}

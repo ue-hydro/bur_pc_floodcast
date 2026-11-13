@@ -1,0 +1,11 @@
+# Alternative to Pixi: create this environment, activate it, then run
+# python -m pip install . from the checkout. Python dependencies belong in
+# pyproject.toml; do not duplicate them here or in a requirements directory.
+name: floodcast
+channels:
+  - conda-forge
+  - nodefaults
+dependencies:
+  # Same tested interpreter as [tool.pixi.dependencies] in pyproject.toml.
+  - python=3.12.16
+  - pip=26.2.2

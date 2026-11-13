@@ -1,0 +1,7 @@
+schema_version = 1
+checkout_root = "."
+data_root = "data"
+runtime = "docker"
+scheduler = "local"
+build_jobs = 1
+registry_lock_timeout_s = 60

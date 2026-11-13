@@ -1,0 +1,63 @@
+schema_version = 1
+
+# Source intention is defined here; recipes receive full revisions as build args.
+[sources.summa]
+kind = "git"
+url = "https://github.com/CH-Earth/summa.git"
+revision = "22d479b9d44f769db4d2c2489bcbf19083bd6283"
+
+[sources.sundials]
+kind = "git"
+url = "https://github.com/LLNL/sundials.git"
+revision = "8e17876d3b4d682b4098684b07a85b005a122f81"
+
+[sources.mizuroute]
+kind = "git"
+url = "https://github.com/ESCOMP/mizuRoute.git"
+revision = "dd9b204c12ff6c6e4c52b3ccdcd8cc65c71e45f0"
+
+[sources.pio]
+kind = "git"
+url = "https://github.com/NCAR/ParallelIO.git"
+revision = "1d516b82768ef9d2cade524724c38ab63fbe08e4"
+
+[sources.fluxos]
+kind = "git"
+url = "https://github.com/ue-hydro/FLUXOS_cpp.git"
+revision = "c50cc2154fe668a6b598cfd0d2dc9ce58e56e82c"
+
+[sources.pio_cmake]
+kind = "git"
+url = "https://github.com/CESM-Development/CMake_Fortran_utils.git"
+revision = "05ff8d8e4c88786e94a02c853d3ff921113d785c"
+
+[groups.hydrology]
+build_context = "checkout"
+platform = "linux/amd64"
+base_ref = "ubuntu@sha256:78d4744ead1f5b19b04d0df558ab182a5300903900755e515b2ca4d10eb2044d"
+sources = ["summa", "sundials", "mizuroute", "pio", "pio_cmake"]
+models = [
+    { model_id = "summa", executable = "/opt/floodcast/hydrology/bin/summa_sundials.exe", allowed_environment = ["OPENBLAS_NUM_THREADS"] },
+    { model_id = "mizuroute", executable = "/opt/floodcast/hydrology/bin/route_runoff", allowed_environment = ["OPENBLAS_NUM_THREADS"] },
+]
+validation_profile = "../tests/integration/hydrology/validation-profile.json"
+toolchain_path = "/opt/floodcast/hydrology/toolchain.json"
+
+[groups.hydrology.build_options]
+APT_SNAPSHOT = "20261101T000000Z"
+CA_CERTIFICATES_VERSION = "20240203"
+
+[groups.hydraulics]
+build_context = "checkout"
+platform = "linux/amd64"
+base_ref = "ubuntu@sha256:78d4744ead1f5b19b04d0df558ab182a5300903900755e515b2ca4d10eb2044d"
+sources = ["fluxos"]
+models = [
+    { model_id = "fluxos", executable = "/opt/floodcast/bin/fluxos", allowed_environment = ["OMP_NUM_THREADS", "OPENBLAS_NUM_THREADS"] },
+]
+validation_profile = "../tests/integration/hydraulics/validation-profile.json"
+toolchain_path = "/opt/floodcast/share/hydraulics/toolchain.json"
+
+[groups.hydraulics.build_options]
+APT_SNAPSHOT = "20261101T000000Z"
+BOOTSTRAP_CA_VERSION = "20240203"

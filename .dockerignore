@@ -1,0 +1,23 @@
+# Explicit build inputs; data, tests, evidence and local environments stay outside.
+**
+!containers/
+!containers/docker-compose.yaml
+!containers/model-sources.toml
+!containers/hydrology/
+!containers/hydrology/Dockerfile
+!containers/hydraulics/
+!containers/hydraulics/Dockerfile
+!scripts/
+!scripts/build_hydrology.py
+!scripts/build_fluxos.sh
+!scripts/patch_fluxos.py
+!scripts/toolchain.py
+!pyproject.toml
+!environment.yml
+!src/
+!src/floodcast/
+!src/floodcast/**
+**/__pycache__/
+**/*.pyc
+**/*.pyo
+**/*.egg-info/

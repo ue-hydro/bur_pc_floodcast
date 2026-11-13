@@ -1,0 +1,24 @@
+{
+  "COMMENT": "Uniform rain 8.64 mm/day = 1e-7 m/s on 25 one-square-metre cells; no other source or sink. Analytic volumes at 1 and 2 seconds: 2.5e-6 and 5e-6 m3.",
+  "DEM_FILE": "/input/dem.asc",
+  "SIM_DATETIME_START": "2000-01-01 00:00:00",
+  "RESTART": false,
+  "OUTPUT": {
+    "OUTPUT_FOLDER": "/output",
+    "PRINT_STEP": 1,
+    "H_MIN_TO_PRINT": 0
+  },
+  "ROUGNESS_HEIGHT": 0.005,
+  "STEADY_STATE": {
+    "STATUS": false
+  },
+  "SOIL_INFILTRATION": {
+    "STATUS": false
+  },
+  "EXTERNAL_MODULES": {
+    "ADE_TRANSPORT": {
+      "STATUS": false
+    }
+  },
+  "METEO_FILE": "/input/rain.csv"
+}

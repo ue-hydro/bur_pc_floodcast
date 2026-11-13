@@ -1,0 +1,30 @@
+{
+  "COMMENT": "Flat 5x5 grid: right-closed interval means Q=0.0001 m3/s on (0,1], Q=0.0003 on (1,2]. Exact storage at 1 and 2 seconds is 0.0001 and 0.0004 m3.",
+  "DEM_FILE": "/input/dem.asc",
+  "SIM_DATETIME_START": "2000-01-01 00:00:00",
+  "RESTART": false,
+  "INFLOW_FILE": {
+    "FILENAME": "/input/inflow.csv",
+    "DISCHARGE_LOCATION": {
+      "X_COORDINATE": 102,
+      "Y_COORDINATE": 202
+    }
+  },
+  "OUTPUT": {
+    "OUTPUT_FOLDER": "/output",
+    "PRINT_STEP": 1,
+    "H_MIN_TO_PRINT": 0
+  },
+  "ROUGNESS_HEIGHT": 0.005,
+  "STEADY_STATE": {
+    "STATUS": false
+  },
+  "SOIL_INFILTRATION": {
+    "STATUS": false
+  },
+  "EXTERNAL_MODULES": {
+    "ADE_TRANSPORT": {
+      "STATUS": false
+    }
+  }
+}

@@ -1,0 +1,19 @@
+# Cameo upstream reference, one MPI rank and classic NetCDF output.
+schema_version = 1
+data_root = "../../data"
+
+[run]
+model_id = "mizuroute"
+arguments = ["/data/control.txt"]
+working_directory = "/output"
+timeout_s = 600
+
+[[run.mounts]]
+source = "../../tests/fixtures/mizuroute/cameo/data"
+target = "/data"
+mode = "ro"
+
+[run.resources]
+memory_bytes = 2147483648
+mpi_ranks = 1
+omp_threads = 1

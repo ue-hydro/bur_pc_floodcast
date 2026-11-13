@@ -1,0 +1,9 @@
+{
+  "schema_version": 1,
+  "kind": "exit_code",
+  "expected_exit_code": 0,
+  "assertions": [
+    "Executable, recipe and evidence hashes equal their build-time records.",
+    "Installed package inventory equals recorded build inventory or the exact runtime inventory linked to the original toolchain by SHA-256."
+  ]
+}

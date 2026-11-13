@@ -1,0 +1,24 @@
+# Analytic closed-cell storage case; configuration is copied before running.
+schema_version = 1
+data_root = "/results"
+runtime = "local"
+
+[run]
+model_id = "fluxos"
+arguments = ["/work/config/modset.json"]
+working_directory = "/work"
+timeout_s = 60
+
+[[run.mounts]]
+source = "/input"
+target = "/input"
+mode = "ro"
+
+[[run.staged_files]]
+source = "/input/modset.json"
+work_relative_path = "config/modset.json"
+
+[run.resources]
+memory_bytes = 2147483648
+mpi_ranks = 1
+omp_threads = 1

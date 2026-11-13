@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "fixture_id": "uniform-rain-v1",
+  "description": "Uniform rain 8.64 mm/day = 1e-7 m/s on 25 one-square-metre cells; no other source or sink. Analytic volumes at 1 and 2 seconds: 2.5e-6 and 5e-6 m3.",
+  "source": "Floodcast-authored analytic synthetic fixture; no external geographic or scientific data.",
+  "license": "Project-authored data for authorized Floodcast development; no third-party data. Repository redistribution license is not yet assigned.",
+  "model_ids": [
+    "fluxos"
+  ],
+  "expectations": [
+    "Model exit0 and normal completion in stdout and persisted model log.",
+    "Exact snapshot times/columns, finite nonnegative depths, unique integer cell IDs inside DEM bounds, and coordinates consistent with grid spacing and origin; wet-propagation excludes boundary wetting.",
+    "Stored volume equals independently derived Q*t or rain-depth times area within declared tolerances; expected cell coverage/spreading verified."
+  ],
+  "tolerances": {
+    "volume_absolute_m3": 1e-10,
+    "volume_relative": 1e-05
+  },
+  "tolerance_rationale": "Allow float32 forcing representation and text output rounding. These are numerical regression tolerances, not physical accuracy estimates."
+}

@@ -1,0 +1,65 @@
+{
+  "case_id": "subthreshold-storage-v1",
+  "kind": "analytical-regression",
+  "description": "Flat positive-elevation 5x5 grid. Constant 0.0001 m3/s input to a 1 m2 cell; no infiltration/ADE. Depth stays below roughness/dry threshold 0.005 m, so water is stored in the receiving cell.",
+  "external_data": false,
+  "project_authored": true,
+  "licensing": "No third-party data. Repository license is not assigned; this fixture is for the authorized local tests.",
+  "time_semantics": "Record after the numeric first row: seconds elapsed; mean discharge on the interval ending at that timestamp. No extrapolation after t=2.",
+  "snapshots": {
+    "1.txt": {
+      "time_s": 1,
+      "volume_m3": 0.0001,
+      "wet_cells": 1,
+      "cell_ids": [
+        [
+          2,
+          2
+        ]
+      ]
+    },
+    "2.txt": {
+      "time_s": 2,
+      "volume_m3": 0.0002,
+      "wet_cells": 1,
+      "cell_ids": [
+        [
+          2,
+          2
+        ]
+      ]
+    }
+  },
+  "cell_area_m2": 1,
+  "relative_tolerance": 1e-05,
+  "absolute_volume_tolerance_m3": 1e-08,
+  "tolerance_basis": "Numerical storage regression using float32 forcing and text serialization. Tolerances cover rounding, not physical-model error.",
+  "limitations": [
+    "Exercises time stepping, inflow storage, OpenMP code path and output persistence.",
+    "Does not validate wet-domain propagation, real basin hydraulics, tide, restart or the mizuRoute interface."
+  ],
+  "output_columns": [
+    "irow [-]",
+    "icol [-]",
+    "Xcoord",
+    "Ycoord",
+    "z [m]",
+    "h [m]",
+    "ux [m/s]",
+    "uy [m/s]",
+    "qx * dxy [m3/sec]",
+    "qy * dxy [m3/sec]",
+    "us [m/s]",
+    "conc_SW [mg/l]",
+    "fe_1 [m2/s]",
+    "fn_1 [m2/s]",
+    "twetimetracer [sec]"
+  ],
+  "grid": {
+    "nrows": 5,
+    "ncols": 5,
+    "xllcorner": 100,
+    "yllcorner": 200,
+    "cellsize": 1
+  }
+}
