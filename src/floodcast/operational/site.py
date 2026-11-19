@@ -624,7 +624,7 @@ def _precip_chart(i18n: _I18n, screening: dict, ens: dict | None = None) -> str:
         return ""
     times, interval = times[:count], interval[:count]
     cumulative = cumulative[:count] if len(cumulative) >= count else []
-    w, h = 440, 286
+    w, h = 1200, 300   # wide chart, full section width
     x0, x1, y0, y1 = 40, w - 42, 20, h - 40
     pw, ph = x1 - x0, y1 - y0
     ymax = _nice_max(max(interval) * 1.15 if max(interval) > 0 else 1)
@@ -679,7 +679,7 @@ def _precip_chart(i18n: _I18n, screening: dict, ens: dict | None = None) -> str:
             y = y1 - ph * tick / cmax
             parts.append(f'<text x="{x1 + 6}" y="{y + 4:.1f}">{tick:g}</text>')
     parts.append(f'<line class="axis" x1="{x0}" x2="{x1}" y1="{y1}" y2="{y1}"/>')
-    labels = _time_labels(times, x0 + slot / 2, pw - slot, 4).replace("{y}", str(y1 + 18))
+    labels = _time_labels(times, x0 + slot / 2, pw - slot, 10).replace("{y}", str(y1 + 18))
     parts.append(labels)
     parts.append("</svg>")
     legend = (
@@ -708,7 +708,7 @@ def _hydro_chart(i18n: _I18n, summary: dict) -> str:
     data_max = max(series["p90"] + (series["max"] if len(series["max"]) == count else []) + [0.0])
     ymax_raw = max(data_max * 1.1, (min(thresholds.values()) * 1.15) if thresholds else 0, 1.0)
     ymax = _nice_max(ymax_raw)
-    w, h = 440, 306
+    w, h = 1200, 300   # wide chart, full section width
     x0, x1, y0, y1 = 48, w - 12, 20, h - 40
     pw, ph = x1 - x0, y1 - y0
 
@@ -746,7 +746,7 @@ def _hydro_chart(i18n: _I18n, summary: dict) -> str:
                 f'<text class="thr-t" x="{x1 - 4}" y="{y - 4:.1f}" text-anchor="end">{label}<tspan> {value:g}</tspan></text>'
             )
     parts.append(f'<line class="axis" x1="{x0}" x2="{x1}" y1="{y1}" y2="{y1}"/>')
-    parts.append(_time_labels(times, x0, pw, 4).replace("{y}", str(y1 + 18)))
+    parts.append(_time_labels(times, x0, pw, 10).replace("{y}", str(y1 + 18)))
     parts.append("</svg>")
     legend = (
         f'<p class="legend"><span><i style="background:var(--band)"></i>{i18n.raw("band")}</span>'
@@ -920,6 +920,13 @@ def _anim_map(i18n: _I18n, kind: str, data_src: str | None, geo_src: str, title_
     )
 
 
+def _wide_layout(chart: str, map_html: str, side: str) -> str:
+    """Sections 1 and 2: wide chart across the section, then the animated map with a side panel."""
+    return (f'<div class="wide-chart">{chart}</div>'
+            + (f'<div class="mapside"><div class="ms-map">{map_html}</div><div class="ms-side">{side}</div></div>'
+               if map_html else f'<div class="ms-side">{side}</div>'))
+
+
 def _split(left: str, right: str) -> str:
     return f'<div class="split"><div>{left}</div>{right}</div>' if right else left
 
@@ -948,9 +955,10 @@ def _screening_block(i18n: _I18n, screening: dict | None, rain_src: str | None =
     scn_src = (rain_src.replace("precip_grid.json", "precip_scenarios.json")
                if rain_src and ens and ens.get("_scn_file") else None)
     src_details: list = []
-    chart = _split(_precip_chart(i18n, screening, ens) + _sources_block(i18n, ens, src_details),
-                   _anim_map(i18n, "rain", scn_src or rain_src, geo + "hrus.geojson",
-                             "rainmap_scn_h" if scn_src else "rainmap_h", "rainmap_unit", scenarios=bool(ens)))
+    chart = _wide_layout(_precip_chart(i18n, screening, ens),
+                         _anim_map(i18n, "rain", scn_src or rain_src, geo + "hrus.geojson",
+                                   "rainmap_scn_h" if scn_src else "rainmap_h", "rainmap_unit", scenarios=bool(ens)),
+                         _sources_block(i18n, ens, src_details))
     thresholds = screening.get("thresholds") or {}
     rows = []
     for win in screening.get("windows") or []:
@@ -982,10 +990,10 @@ def _screening_block(i18n: _I18n, screening: dict | None, rain_src: str | None =
 def _hydrology_block(i18n: _I18n, summary: dict | None, flow_src: str | None = None, geo: str = "") -> str:
     if not summary:
         return ""
-    chart = _split(_hydro_chart(i18n, summary),
-                   _anim_map(i18n, "flow", flow_src, geo + "rivers.geojson",
-                             "flowmap_scn_h" if summary.get("scenario_levels") else "flowmap_h", "flowmap_unit",
-                             scenarios=bool(summary.get("scenario_levels"))))
+    flow_map = _anim_map(i18n, "flow", flow_src, geo + "rivers.geojson",
+                         "flowmap_scn_h" if summary.get("scenario_levels") else "flowmap_h", "flowmap_unit",
+                         scenarios=bool(summary.get("scenario_levels")))
+    hydro_chart = _hydro_chart(i18n, summary)
     peak = summary.get("peak") or {}
     peak_txt = i18n.raw(
         "peak_txt",
@@ -1013,7 +1021,7 @@ def _hydrology_block(i18n: _I18n, summary: dict | None, flow_src: str | None = N
         return (
             f'<section class="card" id="hydrology"><h2><span class="num">2</span>{i18n.raw("hydro_h")}</h2>'
             f'<p class="muted">{i18n.raw("hydro_p_scn")}</p>'
-            f'{chart}<h3>{i18n.raw("peak")}</h3><p>{peak_txt}</p>{table}'
+            f'{_wide_layout(hydro_chart, flow_map, "<h3>" + i18n.raw("peak") + "</h3><p>" + peak_txt + "</p>" + table)}'
             f'{_details(i18n, state_html + _reasons(i18n, summary.get("decision")))}</section>'
         )
     for level in ("watch", "warning", "alert"):
@@ -1040,7 +1048,7 @@ def _hydrology_block(i18n: _I18n, summary: dict | None, flow_src: str | None = N
         )
     return (
         f'<section class="card" id="hydrology"><h2><span class="num">2</span>{i18n.raw("hydro_h")}</h2><p class="muted">{i18n.raw("hydro_p")}</p>'
-        f'{chart}<h3>{i18n.raw("peak")}</h3><p>{peak_txt}</p>{table}'
+        f'{_wide_layout(hydro_chart, flow_map, "<h3>" + i18n.raw("peak") + "</h3><p>" + peak_txt + "</p>" + table)}'
         f'{_details(i18n, state_html + _reasons(i18n, summary.get("decision")))}</section>'
     )
 
@@ -1203,7 +1211,7 @@ def _hydraulics_block(i18n: _I18n, scenarios: list[dict], status: dict, prefix: 
     )
 
 
-STRIP_W, STRIP_H = 1200, 128   # rain / flow / sea-level strips: full page width, stacked, short
+STRIP_W, STRIP_H = 1200, 72   # rain / flow / sea-level strips: full page width, stacked, short
 
 
 def _anim_rain_strip(i18n: _I18n, ens: dict | None, hours: int = 72) -> str:

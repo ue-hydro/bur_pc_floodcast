@@ -759,3 +759,18 @@ svg.chart .hoverl{stroke:var(--ink);stroke-width:1;stroke-dasharray:3 3;opacity:
 .flood3 .strip3 .animhyd{display:block;margin:2px 0 6px}
 .flood3 .strip3 .chart.strip{max-height:none;width:100%;height:auto}
 @container (min-width:900px){ .flood3 .strip3{display:block} .flood3 .strip3 .chart.strip{max-height:none} }
+
+/* sections 1 and 2: wide chart on top, then map + side panel (like section 3) */
+.wide-chart svg.chart{width:100%;height:auto;max-width:none}
+.wide-chart .legend{margin:4px 0 12px}
+.mapside{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(0,1fr);gap:20px;align-items:start}
+.mapside .amap{height:clamp(300px,44vh,480px)}
+.ms-side h3:first-child{margin-top:0}
+.ms-side .tablewrap{margin-top:6px}
+@media (max-width:900px){.mapside{grid-template-columns:minmax(0,1fr)}}
+/* phones: wide charts keep a readable size and scroll sideways inside their box */
+@media (max-width:760px){
+  .wide-chart,.flood3 .strip3 .animhyd{overflow-x:auto;-webkit-overflow-scrolling:touch}
+  .wide-chart svg.chart{min-width:760px}
+  .flood3 .strip3 .chart.strip{min-width:760px}
+}
