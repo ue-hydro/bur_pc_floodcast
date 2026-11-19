@@ -57,14 +57,20 @@
 
   // animation speed for every chart, map and the 3-D view (one shared clock); remembered per visitor
   (function () {
-    var box = document.querySelector(".speedctl"), sel = box && box.querySelector("select");
-    if (!sel || !document.getElementById("clockwin")) return;
-    box.hidden = false;
-    try { var v = localStorage.getItem("fc-speed"); if (v !== null && sel.querySelector('option[value="' + v + '"]')) sel.value = v; } catch (e) {}
-    FC.speed = parseFloat(sel.value) || 0;
-    sel.addEventListener("change", function () {
-      FC.speed = parseFloat(sel.value) || 0;
-      try { localStorage.setItem("fc-speed", sel.value); } catch (e) {}
+    var btns = document.querySelectorAll(".jb-speed button[data-speed]");
+    if (!btns.length) return;
+    function pick(v) {
+      FC.speed = parseFloat(v) || 0;
+      Array.prototype.forEach.call(btns, function (b) { b.setAttribute("aria-pressed", b.getAttribute("data-speed") === v ? "true" : "false"); });
+    }
+    var v0 = "1";
+    try { var st = localStorage.getItem("fc-speed"); if (st !== null && document.querySelector('.jb-speed button[data-speed="' + st + '"]')) v0 = st; } catch (e) {}
+    pick(v0);
+    Array.prototype.forEach.call(btns, function (b) {
+      b.addEventListener("click", function () {
+        var v = b.getAttribute("data-speed"); pick(v);
+        try { localStorage.setItem("fc-speed", v); } catch (e) {}
+      });
     });
   })();
 
@@ -846,11 +852,29 @@
         if (py < 8) py = ev.clientY + 16;
         tip.style.left = px + "px"; tip.style.top = py + "px";
       }
-      function hide() { ln.style.display = "none"; tip.hidden = true; }
-      svg.addEventListener("pointermove", move);
-      svg.addEventListener("pointerdown", move);
+      function hide() { if (!drag) { ln.style.display = "none"; tip.hidden = true; } }
+      // press and drag on a chart = move the shared clock (every chart, map and the 3-D view follow)
+      var drag = false;
+      function seekAt(ev) {
+        var m = svg.getScreenCTM(); if (!m) return;
+        var x = (ev.clientX - m.e) / m.a, i = 0, best = Infinity;
+        for (var k = 0; k < d.x.length; k++) { var dd = Math.abs(d.x[k] - x); if (dd < best) { best = dd; i = k; } }
+        // interpolate between neighbouring samples so dragging is smooth
+        var j = x > d.x[i] ? Math.min(i + 1, d.x.length - 1) : Math.max(i - 1, 0), t = d.t[i];
+        if (j !== i && d.x[j] !== d.x[i]) t = d.t[i] + (d.t[j] - d.t[i]) * Math.max(0, Math.min(1, (x - d.x[i]) / (d.x[j] - d.x[i])));
+        fcSeek(t * 1000);
+      }
+      svg.addEventListener("pointermove", function (ev) { move(ev); if (drag) seekAt(ev); });
+      svg.addEventListener("pointerdown", function (ev) {
+        drag = true; try { svg.setPointerCapture(ev.pointerId); } catch (e) {}
+        move(ev); seekAt(ev); ev.preventDefault();
+      });
+      function endDrag(ev) { if (!drag) return; drag = false; try { svg.releasePointerCapture(ev.pointerId); } catch (e) {} }
+      svg.addEventListener("pointerup", endDrag);
+      svg.addEventListener("pointercancel", endDrag);
       svg.addEventListener("pointerleave", hide);
-      svg.style.cursor = "crosshair";
+      svg.style.cursor = "ew-resize";
+      svg.style.touchAction = "pan-y";
     }
     Array.prototype.forEach.call(document.querySelectorAll("svg.chart[data-cursor]"), attach);
     window.addEventListener("scroll", function () { tip.hidden = true; }, { passive: true });

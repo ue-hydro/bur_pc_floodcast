@@ -599,15 +599,13 @@ svg.chart .hoverl{stroke:var(--ink);stroke-width:1;stroke-dasharray:3 3;opacity:
 .charttip .ct-k.up{background:#c62828}.charttip .ct-k.ce{background:#003a70}.charttip .ct-k.lo{background:#2e7d32}
 .charttip .ct-k.tide{background:#0f6b63}
 
-/* animation speed (header) */
-.speedctl{display:inline-flex;align-items:center;gap:4px;height:34px;padding:0 4px 0 8px;border:1px solid rgba(255,255,255,.45);border-radius:2px;color:#fff;cursor:pointer}
-.speedctl[hidden]{display:none}
-.speedctl svg{width:16px;height:16px;flex:0 0 16px}
-.speedctl select{appearance:none;-webkit-appearance:none;background:transparent;color:#fff;border:0;font:600 .85rem/1 system-ui,sans-serif;padding:4px 14px 4px 2px;cursor:pointer;
-  background-image:linear-gradient(45deg,transparent 50%,#fff 50%),linear-gradient(135deg,#fff 50%,transparent 50%);background-position:calc(100% - 7px) 55%,calc(100% - 3px) 55%;background-size:4px 4px;background-repeat:no-repeat}
-.speedctl select option{color:#1d2329;background:#fff}
-.speedctl:hover{background:rgba(255,255,255,.12)}
-@media (max-width:720px){.speedctl{order:2;height:30px}}
+/* animation speed (sticky section bar, right end) */
+.jb-speed{margin-left:auto;display:flex;align-items:center;gap:2px;flex:none;padding:4px 0 4px 12px}
+.jb-sp-l{font-size:.82rem;font-weight:600;color:var(--mute);margin-right:4px}
+.jb-speed button{border:1px solid var(--line);background:var(--surface);color:var(--ink);font:600 .82rem/1 system-ui,sans-serif;
+  padding:6px 8px;min-width:34px;border-radius:2px;cursor:pointer}
+.jb-speed button:hover{border-color:var(--accent)}
+.jb-speed button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
 
 .maplegend .ln-river{display:inline-block;width:18px;height:0;border-top:2px solid #1565c0;margin-right:6px;vertical-align:middle}
 .maplegend>span{margin-right:10px;white-space:nowrap}

@@ -7,6 +7,8 @@ ES = {
     "j_summary": "Resumen",
     "j_rain": "Lluvia",
     "j_flow": "Caudal",
+    "speed_l": "Velocidad",
+    "speed_pause": "Pausa",
     "j_flood": "Áreas inundadas",
     "j_anim": "Animación 3D",
     "j_official": "Fuentes oficiales",

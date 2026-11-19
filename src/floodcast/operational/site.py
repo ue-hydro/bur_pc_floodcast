@@ -44,6 +44,8 @@ T: dict[str, tuple[str, str]] = {
     "j_summary": ("Resumo", "Summary"),
     "j_rain": ("Chuva", "Rainfall"),
     "j_flow": ("Caudal", "River flow"),
+    "speed_l": ("Velocidade", "Speed"),
+    "speed_pause": ("Pausa", "Pause"),
     "j_flood": ("Áreas inundadas", "Flooded areas"),
     "j_anim": ("Animação 3D", "3-D animation"),
     "j_official": ("Fontes oficiais", "Official sources"),
@@ -1450,7 +1452,14 @@ def _jumpbar(i18n: _I18n, data: dict) -> str:
         links.append(("flood-group" if has_anim else "map-card", "j_flood"))
     links += [("official", "j_official"), ("opendata", "j_data")]
     items = "".join(f'<a href="#{a}" data-target="{a}">{i18n.raw(k)}</a>' for a, k in links)
-    return f'<nav class="jumpbar" aria-label="{_esc(i18n.plain("jump"))}"><div class="wrap">{items}</div></nav>'
+    # animation speed of every chart, map and the 3-D view (one shared clock); the bar stays on screen
+    speeds = [("0", "&#10074;&#10074;", "speed_pause"), ("0.5", "&frac12;&times;", ""), ("1", "1&times;", ""),
+              ("2", "2&times;", ""), ("4", "4&times;", "")]
+    sp = "".join(f'<button type="button" data-speed="{v}" aria-pressed="{"true" if v == "1" else "false"}"'
+                 + (f' title="{_esc(i18n.plain(t))}"' if t else "") + f'>{lab}</button>' for v, lab, t in speeds)
+    speed = (f'<div class="jb-speed" role="group" aria-label="{_esc(i18n.plain("speed_l"))}">'
+             f'<span class="jb-sp-l">{i18n.raw("speed_l")}</span>{sp}</div>')
+    return f'<nav class="jumpbar" aria-label="{_esc(i18n.plain("jump"))}"><div class="wrap">{items}{speed}</div></nav>'
 
 
 def _uncal_block(i18n: _I18n, latest: dict | None) -> str:
