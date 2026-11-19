@@ -673,3 +673,5 @@ svg.chart .hoverl{stroke:var(--ink);stroke-width:1;stroke-dasharray:3 3;opacity:
    the chat panel and the sticky section bar always stay on top */
 .leaflet-container{isolation:isolate;z-index:0}
 .chat-fab{z-index:1200}.chat-panel{z-index:1201}.chat-teaser{z-index:1202}.charttip{z-index:1300}
+
+.decwhy{margin:8px 0 6px;padding:8px 12px;background:var(--bg);border-left:3px solid var(--accent);font-size:.9rem;line-height:1.45}

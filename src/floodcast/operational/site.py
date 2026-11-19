@@ -89,6 +89,12 @@ T: dict[str, tuple[str, str]] = {
     "tide_ref": ("relativo ao nível médio", "relative to mean sea level"),
     "tide_hw": ("preia-mar", "high tide"),
     "dec_h": ("Resumo para decisão", "Decision summary"),
+    "dec_same": ("Todos os cenários (inferior, central e superior)", "All scenarios (lower, central and upper)"),
+    "dec_why_start": ("<b>Porque são iguais:</b> o caudal máximo ({q} m³/s) acontece logo no início da previsão ({t}) — o rio ainda vem cheio da chuva anterior e está a descer. A chuva prevista é pouca ({lo}–{hi} mm em 72 h, conforme o cenário) e só aumenta ligeiramente o caudal mais tarde, sem chegar a esse valor. Como os mapas e os impactos usam a água mais alta das 72 h, os três cenários dão a mesma inundação.",
+                      "<b>Why they are the same:</b> the highest flow ({q} m³/s) happens right at the start of the forecast ({t}) — the river is still high from earlier rain and falling. The forecast rain is small ({lo}–{hi} mm in 72 h, depending on the scenario) and only raises the flow slightly later on, never reaching that value. Since the maps and impacts use the highest water of the 72 h, all three scenarios give the same flood."),
+    "dec_why_gen": ("<b>Porque são iguais:</b> os três cenários de chuva ({lo}–{hi} mm em 72 h) dão caudais máximos praticamente iguais (≈ {q} m³/s), por isso a inundação máxima é a mesma.",
+                    "<b>Why they are the same:</b> the three rainfall scenarios ({lo}–{hi} mm in 72 h) give practically the same peak flow (≈ {q} m³/s), so the maximum flood is the same."),
+    "dec_why_min": ("Os três cenários dão o mesmo resultado nesta previsão.", "The three scenarios give the same result in this forecast."),
     "dec_central": ("Cenário central", "Central scenario"),
     "dec_upper": ("Pior cenário plausível", "Plausible worst case"),
     "dec_lower": ("Cenário inferior", "Lower scenario"),
@@ -1375,7 +1381,7 @@ def _decision_block(i18n: _I18n, data: dict) -> str:
     byname = {sc.get("scenario"): sc for sc in data.get("scenarios") or [] if sc.get("impacts")}
     if not byname:
         return ""
-    lines = []
+    lines, texts = [], []
     for pid, key in (("p50", "dec_central"), ("p90", "dec_upper"), ("p10", "dec_lower")):
         sc = byname.get(pid)
         if not sc:
@@ -1389,14 +1395,39 @@ def _decision_block(i18n: _I18n, data: dict) -> str:
         if first:
             txt += " " + i18n.raw("dec_from", t=first)
         scn = {"p50": "central", "p90": "upper", "p10": "lower"}[pid]
+        texts.append(txt)
         lines.append(f"<li><strong>{i18n.raw(key)}:</strong> {txt} "
                      f'<a class="detbtn" href="#impacts" data-scn="{scn}">{i18n.raw("dec_more")}</a></li>')
+    why = ""
+    if len(texts) > 1 and len(set(texts)) == 1:   # every scenario gives the same result: say it once, and why
+        lines = [f"<li><strong>{i18n.raw('dec_same')}:</strong> {texts[0]} "
+                 f'<a class="detbtn" href="#impacts" data-scn="central">{i18n.raw("dec_more")}</a></li>']
+        why = _same_reason(i18n, data)
     tide_bc = any(sc.get("tide_boundary") for sc in data.get("scenarios") or [])
     tide = data.get("tide") or {}
     hw = ", ".join(_fmt_ts(h["time_utc"]) for h in (tide.get("high_tides") or [])[:4])
     tide_html = f'<p class="muted">{i18n.raw("dec_tide", t=hw)}</p>' if hw else ""
-    return (f'<div class="decision"><h2>{i18n.raw("dec_h")}</h2><ul>{"".join(lines)}</ul>{tide_html}'
+    return (f'<div class="decision"><h2>{i18n.raw("dec_h")}</h2><ul>{"".join(lines)}</ul>{why}{tide_html}'
             f'<p class="muted small">{i18n.raw("dec_note_tide" if tide_bc else "dec_note")}</p></div>')
+
+
+def _same_reason(i18n: _I18n, data: dict) -> str:
+    """Plain explanation when the lower / central / upper scenarios give identical flood results."""
+    hyd = data.get("hydrology") or {}
+    q, times = hyd.get("quantiles_m3s") or {}, hyd.get("times_utc") or []
+    ens = (data.get("precip_ens") or {}).get("scenarios") or {}
+    tot = [float(v.get("total_mm")) for v in ens.values() if v.get("total_mm") is not None]
+    peaks = [(max(q[k]), q[k].index(max(q[k]))) for k in ("p10", "p50", "p90") if q.get(k)]
+    if peaks and times and tot:
+        qmax = max(p[0] for p in peaks)
+        early = all(p[1] <= 2 for p in peaks)   # the peak is at the forecast start
+        if early:
+            txt = i18n.raw("dec_why_start", q=_num(qmax), t=_Html(_short_t(times[peaks[0][1]])),
+                           lo=_num(min(tot), 0), hi=_num(max(tot), 0))
+        else:
+            txt = i18n.raw("dec_why_gen", q=_num(qmax), lo=_num(min(tot), 0), hi=_num(max(tot), 0))
+        return f'<p class="decwhy">{txt}</p>'
+    return f'<p class="decwhy">{i18n.raw("dec_why_min")}</p>'
 
 
 def _first_utc(sc: dict) -> str | None:
