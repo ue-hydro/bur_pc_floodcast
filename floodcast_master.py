@@ -243,7 +243,7 @@ def handle_cycle(cfg: OperationalConfig, p: CycleProcessor, cycle: datetime, *, 
         try:  # sea level at the Sado mouth (tide + surge); optional
             from floodcast.operational import tide as _tide
 
-            td = _tide.fetch(cycle, 72, cache / "tide.json")
+            td = _tide.fetch(cycle, max(72, int(cfg.hydraulics.simulated_hours)), cache / f"tide_{int(cfg.hydraulics.simulated_hours)}h.json")
             if td:
                 write_json(out / "tide.json", td)
         except Exception as exc:
@@ -251,7 +251,7 @@ def handle_cycle(cfg: OperationalConfig, p: CycleProcessor, cycle: datetime, *, 
         if prog:
             prog.update("precip", 0.2, "ECMWF IFS")
         try:  # rain on the native IFS grid for the animated map (first 72 h)
-            write_json(out / "precip_grid.json", precip_grid(control["tp"], cycle))
+            write_json(out / "precip_grid.json", precip_grid(control["tp"], cycle, max_h=float(cfg.hydraulics.simulated_hours)))
         except Exception as exc:
             log.warning("precip_grid.json not written: %s", exc)
         rain_trigger = screen["decision"]["outcome"] == "activate"
@@ -288,7 +288,8 @@ def handle_cycle(cfg: OperationalConfig, p: CycleProcessor, cycle: datetime, *, 
                       "area_km2": p.domain.area_km2}
             summary = policies.scenario_summary(cycle, hours, q, cfg.hydrology, outlet=outlet,
                                                 initial_state=state_info, precip=p.last_ensemble_source)
-            write_precip_scenarios(out / "precip_scenarios.json", cycle, getattr(p, "last_precip_scenarios", None))
+            write_precip_scenarios(out / "precip_scenarios.json", cycle, getattr(p, "last_precip_scenarios", None),
+                                   max_h=int(cfg.hydraulics.simulated_hours))
             write_json(out / "hydrology" / "precip_ensemble.json",
                        {"cycle": iso(cycle), **p.last_ensemble_source, **p.last_precip_stats})
             write_json(out / "hydrology" / "summary.json", summary)

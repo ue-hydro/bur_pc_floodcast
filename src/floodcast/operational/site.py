@@ -46,11 +46,11 @@ T: dict[str, tuple[str, str]] = {
     "j_flow": ("Caudal", "River flow"),
     "speed_l": ("Velocidade", "Speed"),
     "speed_pause": ("Pausa", "Pause"),
-    "speed_p": ("Os gráficos, os mapas e a animação 3D abaixo mostram as próximas 72 h em movimento, todos sincronizados no mesmo instante "
-                "(a linha vertical). Estes botões mudam a velocidade dessa animação: ❚❚ pára, ½× mais devagar, 1× normal (72 h em 30 s), "
+    "speed_p": ("Os gráficos, os mapas e a animação 3D abaixo mostram todo o período da previsão em movimento, todos sincronizados no mesmo instante "
+                "(a linha vertical). Estes botões mudam a velocidade dessa animação: ❚❚ pára, ½× mais devagar, 1× normal (toda a previsão em 30 s), "
                 "2× e 4× mais depressa. Para ir a um instante concreto, carregue num gráfico e arraste para a frente ou para trás.",
-                "The charts, maps and the 3-D animation below play the next 72 h, all synchronised on the same moment (the vertical line). "
-                "These buttons set the speed of that animation: ❚❚ pauses, ½× slower, 1× normal (72 h in 30 s), 2× and 4× faster. "
+                "The charts, maps and the 3-D animation below play the whole forecast period, all synchronised on the same moment (the vertical line). "
+                "These buttons set the speed of that animation: ❚❚ pauses, ½× slower, 1× normal (whole forecast in 30 s), 2× and 4× faster. "
                 "To go to a given moment, press on a chart and drag forwards or backwards."),
     "j_flood": ("Áreas inundadas", "Flooded areas"),
     "j_anim": ("Animação 3D", "3-D animation"),
@@ -135,16 +135,16 @@ T: dict[str, tuple[str, str]] = {
     "imp_m_h": ("Como foram determinados os locais afetados", "How the affected places were determined"),
     "imp_m_src": ("<b>Fonte:</b> edifícios, estradas/arruamentos e equipamentos do OpenStreetMap (© contribuidores OSM, ODbL), extraídos uma vez para a área do modelo. Não é o cadastro oficial: podem faltar elementos ou nomes.",
                   "<b>Source:</b> buildings, roads/streets and facilities from OpenStreetMap (© OSM contributors, ODbL), extracted once for the model area. It is not the official register: features or names may be missing."),
-    "imp_m_depth": ("<b>Água:</b> para cada célula de 20 m do modelo FLUXOS usa-se a profundidade máxima simulada nas 72 h do cenário selecionado.",
-                    "<b>Water:</b> for each 20 m cell of the FLUXOS model the maximum simulated depth over the 72 h of the selected scenario is used."),
+    "imp_m_depth": ("<b>Água:</b> para cada célula de 20 m do modelo FLUXOS usa-se a profundidade máxima simulada em todo o período da previsão do cenário selecionado.",
+                    "<b>Water:</b> for each 20 m cell of the FLUXOS model the maximum simulated depth over the whole forecast period of the selected scenario is used."),
     "imp_m_bld": ("<b>Edifícios:</b> verifica-se a água nos vértices e no centro de cada edifício; conta como «com água» se algum desses pontos tiver ≥ 0,10 m, e «com mais de 0,5 m» se tiver ≥ 0,50 m. Os edifícios não existem no terreno do modelo (a água pode ocupar a célula onde estão), por isso isto indica exposição, não água dentro de casa.",
                   "<b>Buildings:</b> water is checked at each building's corners and centre; it counts as «with water» if any of those points has ≥ 0.10 m, and «deeper than 0.5 m» if ≥ 0.50 m. Buildings are not in the model terrain (water can occupy their cell), so this means exposure, not water inside."),
     "imp_m_road": ("<b>Estradas:</b> pontos a cada 10 m ao longo do eixo de cada estrada; comprimento «inundado» com ≥ 0,10 m e «intransitável» com ≥ 0,30 m (limite da norma australiana ARR 2019 para veículos ligeiros). Uma estrada com nome ou número aparece como «cortada» se algum troço estiver intransitável. Pontes e túneis são excluídos (o terreno do modelo não os representa).",
                    "<b>Roads:</b> points every 10 m along each road's centre line; length «flooded» with ≥ 0.10 m and «impassable» with ≥ 0.30 m (Australian ARR 2019 limit for small vehicles). A named or numbered road is listed as «cut» if any stretch is impassable. Bridges and tunnels are excluded (the model terrain does not represent them)."),
     "imp_m_fac": ("<b>Equipamentos:</b> os do OSM nesta área — escolas e jardins de infância, centros de saúde, farmácias, bombeiros, polícia, câmara municipal, mercados, postos de combustível, locais de culto, subestações elétricas, ETAR e estações elevatórias — com ≥ 0,10 m em algum ponto; indica-se a perigosidade ARR máxima (H1–H6).",
                   "<b>Facilities:</b> those in OSM for this area — schools and kindergartens, clinics, pharmacies, fire and police stations, town hall, markets, fuel stations, places of worship, electrical substations, wastewater and pumping stations — with ≥ 0.10 m at any point; the maximum ARR hazard (H1–H6) is shown."),
-    "imp_m_time": ("<b>Horas:</b> o FLUXOS grava a água a cada 15 min. «Começa a ter água» = primeira gravação com ≥ 0,10 m em algum ponto do local; «Água mais alta» = instante da profundidade máxima no ponto mais fundo; «Fica seco» = primeira gravação depois da última com água em todos os pontos do local; se ainda houver água às 72 h, indica-se «ainda com água no fim da previsão». Horas de Lisboa; precisão ±15 min.",
-                   "<b>Times:</b> FLUXOS saves the water every 15 min. «Water arrives» = first save with ≥ 0.10 m at any point of the place; «Highest water» = time of the maximum depth at the deepest point; «Dry again» = first save after the last one with water at all points of the place; if there is still water at 72 h, «still wet at the end of the forecast» is shown. Lisbon time; ±15 min."),
+    "imp_m_time": ("<b>Horas:</b> o FLUXOS grava a água a cada 15 min. «Começa a ter água» = primeira gravação com ≥ 0,10 m em algum ponto do local; «Água mais alta» = instante da profundidade máxima no ponto mais fundo; «Fica seco» = primeira gravação depois da última com água em todos os pontos do local; se ainda houver água no fim da previsão, indica-se «ainda com água no fim da previsão». Horas de Lisboa; precisão ±15 min.",
+                   "<b>Times:</b> FLUXOS saves the water every 15 min. «Water arrives» = first save with ≥ 0.10 m at any point of the place; «Highest water» = time of the maximum depth at the deepest point; «Dry again» = first save after the last one with water at all points of the place; if there is still water at the end of the forecast, «still wet at the end of the forecast» is shown. Lisbon time; ±15 min."),
     "imp_m_snap": ("<b>Imagem:</b> o botão 📷 abre o mapa de satélite centrado no ponto mais fundo do local, com a profundidade máxima simulada por cima.",
                    "<b>Snapshot:</b> the 📷 button opens the satellite map centred on the deepest point of the place, with the maximum simulated depth on top."),
     "imp_m_lim": ("<b>Limitações:</b> terreno de 20 m sem leito do rio nem diques, modelo hidrológico não calibrado e incerteza da chuva prevista. Os números são indicativos e são recalculados automaticamente a cada nova previsão.",
@@ -209,7 +209,7 @@ T: dict[str, tuple[str, str]] = {
     "updated": ("Última atualização", "Last update"),
     "grp_h": ("Previsão de áreas inundadas", "Flooded area forecast"),
     "ctl_l": ("Mostrar no mapa 3.1 e na animação 3.2:", "Show on map 3.1 and animation 3.2:"),
-    "strips_h": ("Chuva, caudal e maré nas próximas 72 h", "Rain, river flow and tide over the next 72 h"),
+    "strips_h": ("Chuva, caudal e maré em todo o período da previsão", "Rain, river flow and tide over the whole forecast period"),
     "strips_p": ("— a linha vertical marca o instante mostrado no mapa e na animação.",
                  "— the vertical line marks the moment shown on the map and in the animation."),
     "tl_h": ("Atualizações da previsão", "Forecast updates"),
@@ -301,8 +301,8 @@ T: dict[str, tuple[str, str]] = {
     ),
     "state0": ("Estado inicial do modelo", "Model initial state"),
     "state0_txt": ("válido em {t} (idade {a} h)", "valid at {t} (age {a} h)"),
-    "rainmap_h": ("Precipitação prevista, grelha ECMWF IFS 0,25° (72 h)", "Forecast rainfall, ECMWF IFS 0.25° grid (72 h)"),
-    "rainmap_scn_h": ("Chuva prevista por cenário, células de 0,25° (72 h)", "Forecast rain by scenario, 0.25° cells (72 h)"),
+    "rainmap_h": ("Precipitação prevista, grelha ECMWF IFS 0,25°", "Forecast rainfall, ECMWF IFS 0.25° grid"),
+    "rainmap_scn_h": ("Chuva prevista por cenário, células de 0,25°", "Forecast rain by scenario, 0.25° cells"),
     "lg_rivers": ("Rede hidrográfica do modelo (troços do mizuRoute)", "Model river network (mizuRoute reaches)"),
     "lg_toggle": ("Camadas de referência (bacia, sub-bacias, rede hidrográfica): caixas à direita do mapa · ⌖ recentra o mapa · fundo: botão de camadas (satélite por omissão).",
                   "Reference layers (basin, sub-basins, river network): tick boxes on the right of the map · ⌖ recentres the map · background: layer button (satellite by default)."),
@@ -316,8 +316,8 @@ T: dict[str, tuple[str, str]] = {
     "anim_p": ("Simulação hidrodinâmica 2D forçada pelo hidrograma previsto à entrada de Alcácer do Sal. Desbloqueie a vista para rodar (arrastar) e aproximar (roda do rato).",
                "2-D hydrodynamic simulation driven by the forecast hydrograph entering Alcácer do Sal. Unlock the view to rotate (drag) and zoom (scroll)."),
     "anim_hyd": ("Caudal de entrada no modelo FLUXOS e chuva prevista sobre Alcácer do Sal", "FLUXOS inflow discharge and forecast rain over Alcácer do Sal"),
-    "anim_hyd2": ("Caudal previsto à entrada de Alcácer do Sal (72 h)", "Forecast flow entering Alcácer do Sal (72 h)"),
-    "anim_rain": ("Chuva prevista na bacia (cenário selecionado, 72 h)", "Forecast basin rain (selected scenario, 72 h)"),
+    "anim_hyd2": ("Caudal previsto à entrada de Alcácer do Sal", "Forecast flow entering Alcácer do Sal"),
+    "anim_rain": ("Chuva prevista na bacia (cenário selecionado)", "Forecast basin rain (selected scenario)"),
     "out_sim": ("Fora do período simulado pelo FLUXOS", "Outside the period simulated by FLUXOS"),
     "anim_simwin": ("período simulado pelo FLUXOS", "period simulated by FLUXOS"),
     "anim_q": ("Caudal de entrada (m³/s)", "Inflow (m³/s)"),
@@ -1246,12 +1246,15 @@ def _anim_rain_strip(i18n: _I18n, ens: dict | None, hours: int = 72) -> str:
             f'<span class="muted">mm/h</span></div>{"".join(parts)}</div>')
 
 
-def _tide_strip(i18n: _I18n, tide: dict | None) -> str:
+def _tide_strip(i18n: _I18n, tide: dict | None, hours: int = 72) -> str:
     """Compact sea-level strip (tide + surge at the Sado mouth) on the shared clock."""
     if not tide or not tide.get("sea_level_m"):
         return ""
-    times = tide["times_utc"]
-    vals = [None if v is None else float(v) for v in tide["sea_level_m"]]
+    t0 = _parse_ts(tide["times_utc"][0])
+    keep = [i for i, t in enumerate(tide["times_utc"])
+            if t0 is not None and _parse_ts(t) is not None and (_parse_ts(t) - t0).total_seconds() <= hours * 3600]
+    times = [tide["times_utc"][i] for i in keep]
+    vals = [None if tide["sea_level_m"][i] is None else float(tide["sea_level_m"][i]) for i in keep]
     pts_ok = [(i, v) for i, v in enumerate(vals) if v is not None]
     n = len(times)
     if n < 2 or len(pts_ok) < 2:
@@ -1351,7 +1354,8 @@ def _anim_hydrograph(i18n: _I18n, forcing: dict | None, hyd: dict | None = None,
 
 
 def _animation_block(i18n: _I18n, scenarios: list[dict], prefix: str, data_rel: str, hyd: dict | None = None,
-                     ens: dict | None = None, tide: dict | None = None, strips_out: list | None = None) -> str:
+                     ens: dict | None = None, tide: dict | None = None, strips_out: list | None = None,
+                     hours: int = 72) -> str:
     byname = {sc.get("scenario"): sc for sc in scenarios if sc.get("webgl")}
     if not byname:
         return ""
@@ -1363,7 +1367,8 @@ def _animation_block(i18n: _I18n, scenarios: list[dict], prefix: str, data_rel: 
     switch = "" if strips_out is not None else _scn_buttons(i18n, "anim-scn", available=set(views))
     data = json.dumps(views).replace("</", "<\\/")
     # rain / flow / sea-level strips on the shared clock; the caller may place them above map + animation
-    strips = f'{_anim_rain_strip(i18n, ens)}{_anim_hydrograph(i18n, first.get("_forcing"), hyd)}{_tide_strip(i18n, tide)}'
+    strips = (f'{_anim_rain_strip(i18n, ens, hours)}{_anim_hydrograph(i18n, first.get("_forcing"), hyd, hours)}'
+              f'{_tide_strip(i18n, tide, hours)}')
     if strips_out is not None:
         strips_out.append(strips)
     return (
@@ -1641,6 +1646,12 @@ def _load_cycle(op: Path, rel: str) -> dict:
     }
 
 
+def _horizon_h(data: dict) -> int:
+    """Hours the page plays: the FLUXOS window of this forecast (all models shown over the same span)."""
+    hs = [int(round(float(sc.get("simulated_hours") or 0))) for sc in data.get("scenarios") or []]
+    return max(hs) if hs and max(hs) > 0 else 72
+
+
 def _cycle_content(i18n: _I18n, latest, data: dict, prefix: str, data_rel: str, *, is_latest: bool, cycle_id: str) -> str:
     status = data["status"]
     health = data.get("health") or {}
@@ -1651,7 +1662,7 @@ def _cycle_content(i18n: _I18n, latest, data: dict, prefix: str, data_rel: str, 
     if c0 is not None:  # one common animation window for every chart, map and the 3-D viewer
         from datetime import timedelta as _td
         out.append(f'<div id="clockwin" hidden data-start="{c0.isoformat()}" '
-                   f'data-end="{(c0 + _td(hours=72)).isoformat()}"></div>')
+                   f'data-end="{(c0 + _td(hours=_horizon_h(data))).isoformat()}"></div>')
     if not is_latest:
         out.append(
             f'<div class="notice"><strong>{i18n.raw("older_cycle", c=cycle_id)}</strong>'
@@ -1679,8 +1690,9 @@ def _cycle_content(i18n: _I18n, latest, data: dict, prefix: str, data_rel: str, 
     strips: list = []
     ctl: list = []
     hyd_html = _hydraulics_block(i18n, data["scenarios"], status, prefix, data_rel, data.get("likelihood"), ctl_out=ctl)
+    H = _horizon_h(data)
     anim_html = _animation_block(i18n, data["scenarios"], prefix, data_rel, data.get("hydrology"),
-                                 data.get("precip_ens"), data.get("tide"), strips_out=strips)
+                                 data.get("precip_ens"), data.get("tide"), strips_out=strips, hours=H)
     strips_html = (f'<section class="card viz-strips" id="flood-group"><h2><span class="num">3</span>{i18n.raw("grp_h")}</h2>'
                    f'<p class="muted"><strong>{i18n.raw("strips_h")}</strong> {i18n.raw("strips_p")}</p>'
                    f'<div class="strip3">{strips[0]}</div>'
