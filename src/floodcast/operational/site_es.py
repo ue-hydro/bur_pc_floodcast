@@ -111,7 +111,7 @@ ES = {
     "flowmap_h": "Caudal previsto en los tramos del río (mediana del conjunto)",
     "flowmap_unit": "m³/s",
     "play": "Reproducir / pausar",
-    "anim_h": "Animación de la inundación (FLUXOS)",
+    "anim_h": "Animación de la simulación hidrodinámica",
     "anim_p": "Simulación hidrodinámica 2D forzada por el hidrograma previsto en el punto de interfaz. Desbloquee la vista "
               "para girar (arrastrar) y acercar (rueda del ratón).",
     "lock_on": "Vista bloqueada — haga clic para explorar",

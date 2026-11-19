@@ -256,7 +256,7 @@ T: dict[str, tuple[str, str]] = {
     "flowmap_scn_h": ("Caudal previsto nos troços do rio, por cenário", "Forecast flow along the river reaches, by scenario"),
     "flowmap_unit": ("m³/s", "m³/s"),
     "play": ("Reproduzir / pausar", "Play / pause"),
-    "anim_h": ("Animação da inundação (FLUXOS)", "Flood animation (FLUXOS)"),
+    "anim_h": ("Animação da simulação hidrodinâmica", "Hydrodynamic simulation animation"),
     "anim_p": ("Simulação hidrodinâmica 2D forçada pelo hidrograma previsto no ponto de interface. Desbloqueie a vista para rodar (arrastar) e aproximar (roda do rato).",
                "2-D hydrodynamic simulation driven by the forecast hydrograph at the interface point. Unlock the view to rotate (drag) and zoom (scroll)."),
     "anim_hyd": ("Caudal de entrada no modelo FLUXOS e chuva prevista sobre Alcácer do Sal", "FLUXOS inflow discharge and forecast rain over Alcácer do Sal"),
