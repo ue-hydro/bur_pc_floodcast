@@ -779,3 +779,11 @@ svg.chart .hoverl{stroke:var(--ink);stroke-width:1;stroke-dasharray:3 3;opacity:
 .ms-left .ms-side{margin-top:6px}
 .mapside .amap{height:clamp(320px,48vh,520px)}
 @media (max-width:760px){ .wide-chart svg.chart{min-width:0} .wide-chart{overflow-x:visible} }
+/* sections 1 and 2: chart | map, equal columns, same height (map box = chart aspect) */
+.mapside{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:22px;align-items:end}
+.mapside .amap{height:auto;aspect-ratio:640/380}
+.ms-below{margin-top:14px;padding-top:10px;border-top:1px solid var(--line)}
+.ms-below .scnlist{columns:2;column-gap:28px}
+@media (max-width:900px){.mapside{grid-template-columns:minmax(0,1fr)}.ms-below .scnlist{columns:1}}
+.mapside .ms-map .animmap{padding:0;border:0;background:transparent;margin:0}
+.mapside .ms-map .amap{width:100%}

@@ -921,9 +921,11 @@ def _anim_map(i18n: _I18n, kind: str, data_src: str | None, geo_src: str, title_
 
 
 def _wide_layout(chart: str, map_html: str, side: str) -> str:
-    """Sections 1 and 2: chart (with its side panel under it) and the animated map side by side."""
-    left = f'<div class="ms-left"><div class="wide-chart">{chart}</div><div class="ms-side">{side}</div></div>'
-    return f'<div class="mapside">{left}<div class="ms-map">{map_html}</div></div>' if map_html else left
+    """Sections 1 and 2: chart and its animated map side by side at the same size, panel underneath."""
+    if not map_html:
+        return f'<div class="wide-chart">{chart}</div><div class="ms-side">{side}</div>'
+    return (f'<div class="mapside"><div class="wide-chart">{chart}</div><div class="ms-map">{map_html}</div></div>'
+            f'<div class="ms-side ms-below">{side}</div>')
 
 
 def _split(left: str, right: str) -> str:
