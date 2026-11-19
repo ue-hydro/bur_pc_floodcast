@@ -567,15 +567,19 @@ html:not([data-scn]) .imp-central,html[data-scn="central"] .imp-central,html[dat
 
 /* flood map (3) + 3-D animation (4): shared time strips on top, then the two side by side (wide)
    or map, strips, animation stacked (narrow) */
-.viz-strips{background:var(--surface);border:1px solid var(--line);border-radius:2px;padding:14px 20px;margin:20px 0}
 .viz-strips-h{margin:0 0 6px}
 .viz-pair{display:flex;flex-direction:column}
-.viz-pair>#map-card{order:1}.viz-pair>.viz-strips{order:2}.viz-pair>#anim-card{order:3}
+.viz-pair>.viz-strips{order:0}.viz-pair>#map-card{order:1}.viz-pair>#anim-card{order:2}
+.strip3 .chart.strip{max-height:240px}
+.strip3 .animhyd{margin:6px 0 4px}
 .viz-outer{container-type:inline-size}
 /* side by side when the content column (not the window: the chat may be docked) is wide enough */
 @container (min-width:1000px){
   .viz-pair:has(>#map-card + #anim-card){display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:0 16px;align-items:start}
   .viz-pair:has(>#map-card + #anim-card)>.viz-strips{grid-column:1/-1;order:0;margin-bottom:0}
+  .strip3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:0 18px;align-items:stretch}
+  .strip3 .animhyd{display:flex;flex-direction:column;justify-content:space-between}
+  .strip3 .chart.strip{max-height:none}
   .viz-pair:has(>#map-card + #anim-card)>section.card{margin:16px 0;padding:16px 18px}
   .viz-pair:has(>#map-card + #anim-card) #map{height:480px}
   .viz-pair:has(>#map-card + #anim-card) .webglwrap{aspect-ratio:auto;height:480px}

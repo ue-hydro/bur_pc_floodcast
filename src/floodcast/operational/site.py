@@ -156,6 +156,7 @@ T: dict[str, tuple[str, str]] = {
         "The system could not produce a reliable forecast. Do not assume there is no risk: check the official sources.",
     ),
     "updated": ("Última atualização", "Last update"),
+    "grp_h": ("Previsão de áreas inundadas", "Flooded area forecast"),
     "strips_h": ("Chuva, caudal e maré nas próximas 72 h", "Rain, river flow and tide over the next 72 h"),
     "strips_p": ("— a linha vertical marca o instante mostrado no mapa e na animação.",
                  "— the vertical line marks the moment shown on the map and in the animation."),
@@ -228,7 +229,7 @@ T: dict[str, tuple[str, str]] = {
     "win_hru": ("Máx. numa sub-bacia (mm)", "Max in a sub-basin (mm)"),
     "win_start": ("Início", "Start"),
     "win_limits": ("Limiares", "Thresholds"),
-    "hydro_h": ("Caudal previsto em Alcácer do Sal", "Forecast flow at Alcácer do Sal"),
+    "hydro_h": ("Previsão do caudal no Sado em Alcácer do Sal", "Sado river flow forecast at Alcácer do Sal"),
     "hydro_p": (
         "Previsão por conjunto: a faixa mostra o intervalo entre os percentis 10 e 90 dos membros; a linha é a mediana.",
         "Ensemble forecast: the band spans the 10th to 90th percentile of members; the line is the median.",
@@ -272,6 +273,14 @@ T: dict[str, tuple[str, str]] = {
     "lock_off": ("Bloquear vista", "Lock view"),
     "anim_open": ("Abrir numa janela própria", "Open in its own window"),
     "anim_open_p": ("(fica sincronizada com esta página)", "(stays in sync with this page)"),
+    "cav_dem": ("O terreno vem de um modelo de superfície (Copernicus GLO-30); a batimetria do rio não está resolvida, por isso a inundação está provavelmente sobrestimada.",
+                "Terrain is a surface model (Copernicus GLO-30); river bathymetry is not resolved, so flooding is likely overestimated."),
+    "cav_hyd": ("O hidrograma vem de um modelo hidrológico não calibrado.", "The hydrograph comes from a hydrological model that is not yet calibrated."),
+    "cav_notide": ("Edifícios, diques, barragens e o efeito da maré não estão representados.",
+                   "No buildings, levees, dams or tidal backwater are represented."),
+    "cav_tide": ("Edifícios, diques e barragens não estão representados; a maré entra como o nível do mar previsto na foz do Sado, aplicado no limite do estuário sem calibração.",
+                 "No buildings, levees or dams are represented; the tide enters as the forecast sea level at the Sado mouth, applied at the estuary edge without calibration."),
+    "cav_exp": ("Resultado experimental de investigação; não é um mapa oficial de inundação.", "Experimental research output; not an official flood map."),
     "map_h": ("Mapa de profundidade máxima de inundação", "Maximum flood depth map"),
     "map_scn": ("Cenário", "Scenario"),
     "map_none": (
@@ -1031,7 +1040,7 @@ def _hydraulics_block(i18n: _I18n, scenarios: list[dict], status: dict, prefix: 
     if not scenarios:
         stage = (status.get("stages") or {}).get("hydraulics") or {}
         if stage.get("state") == "skipped":
-            return (f'<section class="card" id="map-card"><h2><span class="num">3</span>{i18n.raw("map_h")}</h2>'
+            return (f'<section class="card" id="map-card"><h2><span class="num">3.1</span>{i18n.raw("map_h")}</h2>'
                     f'<p class="muted">{i18n.raw("map_none")}</p></section>')
         return ""
     base = f"{prefix}{data_rel}/hydraulics/"
@@ -1072,12 +1081,8 @@ def _hydraulics_block(i18n: _I18n, scenarios: list[dict], status: dict, prefix: 
     first = byname.get("p50") or scenarios[0]
     info = i18n.raw("map_info", d=_num(first.get("max_depth_m"), 2), a=_num(first.get("flooded_area_km2"), 2),
                     q=_num(first.get("inflow_peak_m3s")), h=_num(first.get("simulated_hours")))
-    caveats, seen = [], set()
-    for sc in scenarios:
-        for c in sc.get("caveats") or []:
-            if c not in seen:
-                seen.add(c)
-                caveats.append(f"<li>{_esc(c)}</li>")
+    tide_in = any(sc.get("tide_boundary") for sc in scenarios)
+    caveats = [f"<li>{i18n.raw(k)}</li>" for k in ("cav_dem", "cav_hyd", "cav_tide" if tide_in else "cav_notide", "cav_exp")]
     fallback = (f'<div id="map-fallback"><img class="fallbackimg" src="{_esc(cfg["scenarios"][0]["image"])}" '
                 f'alt="{_esc(i18n.plain("map_h"))}" loading="lazy"></div>')
     lk_legend = (f'<div class="depthlegend lk" hidden><strong>{i18n.raw("lk_btn")}:</strong>'
@@ -1087,7 +1092,7 @@ def _hydraulics_block(i18n: _I18n, scenarios: list[dict], status: dict, prefix: 
                  f'<span class="muted">{i18n.raw("lk_note")}</span></div>') if cfg["likelihood"] else ""
     mapdata = json.dumps(cfg).replace("</", "<\\/")
     return (
-        f'<section class="card" id="map-card"><h2><span class="num">3</span>{i18n.raw("map_h")}</h2>'
+        f'<section class="card" id="map-card"><h2><span class="num">3.1</span>{i18n.raw("map_h")}</h2>'
         f'<div class="mapctl">{buttons}'
         f'<span class="muted map-info">{info}</span></div>'
         f'<div id="map" role="region" aria-label="{_esc(i18n.plain("map_h"))}"></div>{fallback}'
@@ -1099,6 +1104,9 @@ def _hydraulics_block(i18n: _I18n, scenarios: list[dict], status: dict, prefix: 
         f'{_impacts_block(i18n, scenarios)}'
         f'{_details(i18n, "<h3>" + i18n.raw("caveats") + "</h3><ul>" + "".join(caveats) + "</ul>")}</section>'
     )
+
+
+STRIP_W, STRIP_H = 440, 170   # rain / flow / sea-level strips: three side by side on wide screens
 
 
 def _anim_rain_strip(i18n: _I18n, ens: dict | None, hours: int = 72) -> str:
@@ -1118,8 +1126,8 @@ def _anim_rain_strip(i18n: _I18n, ens: dict | None, hours: int = 72) -> str:
         rain[name] = [max(0.0, cum[i + 1] - cum[i]) for i in range(n)]
     rmax = _nice_max(max(max(v) for v in rain.values()) * 1.15 or 1)
     times = [(c0 + timedelta(hours=float(h) + 1)).isoformat() for h in hrs]   # interval ends
-    w, h = 880, 96
-    x0, x1, y0, y1 = 52, w - 16, 18, h - 22
+    w, h = STRIP_W, STRIP_H
+    x0, x1, y0, y1 = 40, w - 10, 14, h - 26
     pw, ph = x1 - x0, y1 - y0
     slot = pw / n
     parts = [f'<svg class="chart wide strip rainstrip" viewBox="0 0 {w} {h}"'
@@ -1136,6 +1144,7 @@ def _anim_rain_strip(i18n: _I18n, ens: dict | None, hours: int = 72) -> str:
                        f'height="{ph * v / rmax:.1f}"/>' for i, v in enumerate(vals) if v > 0)
         parts.append(f'<g class="rbars {cls.get(name, name)}">{bars}</g>')
     parts.append(f'<line class="axis" x1="{x0}" x2="{x1}" y1="{y1}" y2="{y1}"/>')
+    parts.append(_time_labels(times, x0 + slot, pw - slot, 3).replace("{y}", str(y1 + 16)))
     parts.append("</svg>")
     return (f'<div class="animhyd rainhead"><div class="animhyd-head"><strong>{i18n.raw("anim_rain")}</strong>'
             f'<span class="muted">mm/h</span></div>{"".join(parts)}</div>')
@@ -1151,8 +1160,8 @@ def _tide_strip(i18n: _I18n, tide: dict | None) -> str:
     n = len(times)
     if n < 2 or len(pts_ok) < 2:
         return ""
-    w, h = 880, 96
-    x0, x1, y0, y1 = 52, w - 16, 18, h - 22
+    w, h = STRIP_W, STRIP_H
+    x0, x1, y0, y1 = 40, w - 10, 14, h - 26
     pw, ph = x1 - x0, y1 - y0
     lo = min(v for _, v in pts_ok); hi = max(v for _, v in pts_ok)
     lo, hi = (min(lo, -1.0), max(hi, 1.0))
@@ -1178,7 +1187,7 @@ def _tide_strip(i18n: _I18n, tide: dict | None) -> str:
             i = times.index(ht["time_utc"])
             parts.append(f'<circle class="hw" cx="{px(i):.1f}" cy="{py(float(ht["level_m"])):.1f}" r="3"/>')
     parts.append(f'<line class="axis" x1="{x0}" x2="{x1}" y1="{y1}" y2="{y1}"/>')
-    parts.append(_time_labels(times, x0, pw, 6).replace("{y}", str(y1 + 16)))
+    parts.append(_time_labels(times, x0, pw, 3).replace("{y}", str(y1 + 16)))
     parts.append("</svg>")
     return (f'<div class="animhyd tidehead"><div class="animhyd-head"><strong>{i18n.raw("tide_h")}</strong>'
             f'<span class="muted">m ({i18n.raw("tide_ref")}) · ● {i18n.raw("tide_hw")}</span></div>{"".join(parts)}</div>')
@@ -1201,8 +1210,8 @@ def _anim_hydrograph(i18n: _I18n, forcing: dict | None, hyd: dict | None = None,
     n = len(times)
     if n < 2:
         return ""
-    w, h = 880, 158
-    x0, x1, y0, y1 = 52, w - 16, 18, h - 30
+    w, h = STRIP_W, STRIP_H
+    x0, x1, y0, y1 = 40, w - 10, 14, h - 26
     pw, ph = x1 - x0, y1 - y0
     qmax = _nice_max(max(max(v) for v in series.values()) * 1.1 or 1)
 
@@ -1234,7 +1243,7 @@ def _anim_hydrograph(i18n: _I18n, forcing: dict | None, hyd: dict | None = None,
             pts = " ".join(f"{px(i):.1f},{py(v):.1f}" for i, v in enumerate(series[k]))
             parts.append(f'<polyline class="scn {k}" points="{pts}"/>')
     parts.append(f'<line class="axis" x1="{x0}" x2="{x1}" y1="{y1}" y2="{y1}"/>')
-    parts.append(_time_labels(times, x0, pw, 6).replace("{y}", str(y1 + 16)))
+    parts.append(_time_labels(times, x0, pw, 3).replace("{y}", str(y1 + 16)))
     parts.append("</svg>")
     return (
         f'<div class="animhyd"><div class="animhyd-head"><strong>{i18n.raw("anim_hyd2")}</strong>'
@@ -1262,7 +1271,7 @@ def _animation_block(i18n: _I18n, scenarios: list[dict], prefix: str, data_rel: 
     if strips_out is not None:
         strips_out.append(strips)
     return (
-        f'<section class="card" id="anim-card"><h2><span class="num">4</span>{i18n.raw("anim_h")}</h2><p class="muted">{i18n.raw("anim_p")}</p>'
+        f'<section class="card" id="anim-card"><h2><span class="num">3.2</span>{i18n.raw("anim_h")}</h2><p class="muted">{i18n.raw("anim_p")}</p>'
         f'{switch}<script type="application/json" class="anim-views">{data}</script>'
         f'{"" if strips_out is not None else strips}'
         f'<script type="application/json" class="anim-forcing">{json.dumps({"start": (first.get("_forcing") or {}).get("sim_start_utc"), "inflow": (first.get("_forcing") or {}).get("inflow", []), "rain": (first.get("_forcing") or {}).get("rain", [])}).replace("</", "<\\/")}</script>'
@@ -1537,8 +1546,9 @@ def _cycle_content(i18n: _I18n, latest, data: dict, prefix: str, data_rel: str, 
     hyd_html = _hydraulics_block(i18n, data["scenarios"], status, prefix, data_rel, data.get("likelihood"))
     anim_html = _animation_block(i18n, data["scenarios"], prefix, data_rel, data.get("hydrology"),
                                  data.get("precip_ens"), data.get("tide"), strips_out=strips)
-    strips_html = (f'<div class="viz-strips"><p class="viz-strips-h"><strong>{i18n.raw("strips_h")}</strong> '
-                   f'<span class="muted">{i18n.raw("strips_p")}</span></p>{strips[0]}</div>') if strips and anim_html else ""
+    strips_html = (f'<section class="card viz-strips" id="flood-group"><h2><span class="num">3</span>{i18n.raw("grp_h")}</h2>'
+                   f'<p class="muted"><strong>{i18n.raw("strips_h")}</strong> {i18n.raw("strips_p")}</p>'
+                   f'<div class="strip3">{strips[0]}</div></section>') if strips and anim_html else ""
     out.append(f'<div class="viz-outer"><div class="viz-pair">{strips_html}{hyd_html}{anim_html}</div></div>')
     out.append(_emergency_block(i18n))
     api = f'{prefix}api/{data_rel}/'
