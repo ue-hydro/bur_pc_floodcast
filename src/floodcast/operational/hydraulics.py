@@ -361,41 +361,61 @@ class FluxosEngine:
         every_s = int(self.config.hydraulics.snapshot_every_h * 3600)
         frames = []
         (outdir / "frames").mkdir(parents=True, exist_ok=True)
-        files = sorted((f for f in out.glob("*.txt") if f.stem.isdigit()), key=lambda f: int(f.stem))
-        if not files:
+        # Input: FLUXOS's raw snapshots (out/<t>.txt, one per print step) or, when re-processing a past
+        # run, the compressed copy of them kept with the results (fluxos_series.npz).
+        series_file = outdir / "fluxos_series.npz"
+        files = sorted((f for f in out.glob("*.txt") if f.stem.isdigit()), key=lambda f: int(f.stem)) \
+            if out is not None and out.is_dir() else []
+
+        def from_files():
+            for f in files:
+                g = np.zeros((ny, nx)); gv = np.zeros((ny, nx))
+                data = np.loadtxt(f, delimiter=",", skiprows=1, ndmin=2)
+                if data.size:
+                    ix = np.clip(((data[:, 2] - xll) / cs).astype(int), 0, nx - 1)
+                    iy = np.clip(((data[:, 3] - yll) / cs).astype(int), 0, ny - 1)
+                    np.maximum.at(g, (iy, ix), data[:, 5])
+                    if data.shape[1] > 7:
+                        np.maximum.at(gv, (iy, ix), np.hypot(data[:, 6], data[:, 7]))
+                yield int(f.stem), g, gv
+
+        def from_series():
+            z = np.load(series_file)
+            for k, t in enumerate(z["t"]):
+                yield int(t), z["h"][k].astype(float), z["v"][k].astype(float)
+
+        if files:
+            steps, n_steps = from_files(), len(files)
+        elif series_file.is_file():
+            steps, n_steps = from_series(), len(np.load(series_file)["t"])
+        else:
             raise RuntimeError("FLUXOS wrote no output files")
-        for f in files:
-            data = np.loadtxt(f, delimiter=",", skiprows=1, ndmin=2)
-            if data.size == 0:
-                rows.append((int(f.stem), 0.0, 0.0, 0.0))
-                continue
-            ix = np.clip(((data[:, 2] - xll) / cs).astype(int), 0, nx - 1)
-            iy = np.clip(((data[:, 3] - yll) / cs).astype(int), 0, ny - 1)
-            h = data[:, 5]
-            t_s = int(f.stem)
-            g = np.zeros((ny, nx))
-            np.maximum.at(g, (iy, ix), h)
-            rising = g > maxh
-            t_peak[rising & (g >= MIN_FLOODED_DEPTH_M)] = float(t_s)
+        keep_t, keep_h, keep_v = [], [], []
+        t_s = 0
+        for k, (t_s, g, gv) in enumerate(steps):
+            if files:   # keep a compact copy so the post-processing can be redone later
+                keep_t.append(t_s); keep_h.append(g.astype("float16")); keep_v.append(gv.astype("float16"))
+            wet = g >= MIN_FLOODED_DEPTH_M
+            t_peak[(g > maxh) & wet] = float(t_s)
             np.maximum(maxh, g, out=maxh)
-            last_wet[g >= MIN_FLOODED_DEPTH_M] = float(t_s)
-            v = np.hypot(data[:, 6], data[:, 7]) if data.shape[1] > 7 else np.zeros_like(h)
-            wet = h >= MIN_FLOODED_DEPTH_M
-            np.minimum.at(first_wet, (iy[wet], ix[wet]), float(t_s))
-            np.add.at(wet_frames, (iy[wet], ix[wet]), 1.0)
-            np.maximum.at(vmax, (iy, ix), v)
-            np.maximum.at(hazard, (iy[wet], ix[wet]), arr_hazard(h[wet], v[wet]))
-            if step_s is None and len(files) > 1:
-                step_s = int(files[1].stem) - int(files[0].stem)
-            if t_s % every_s == 0 or f is files[-1]:  # depth snapshot for the time slider
-                snap = np.zeros((ny, nx))
-                np.maximum.at(snap, (iy, ix), h)
+            last_wet[wet] = float(t_s)
+            first_wet[wet] = np.minimum(first_wet[wet], float(t_s))
+            wet_frames[wet] += 1.0
+            np.maximum(vmax, gv, out=vmax)
+            if wet.any():
+                hazard[wet] = np.maximum(hazard[wet], arr_hazard(g[wet], gv[wet]))
+            if step_s is None and k == 1:
+                step_s = t_s - prev_t
+            prev_t = t_s
+            if t_s % every_s == 0 or k == n_steps - 1:  # depth snapshot for the time slider
                 name = f"frames/depth_{t_s:07d}.png"
-                _depth_png(snap, outdir / name)
-                frames.append({"t_s": t_s, "image": name, "flooded_km2": round(float((snap >= MIN_FLOODED_DEPTH_M).sum() * cs * cs / 1e6), 3)})
-            wet = h >= MIN_FLOODED_DEPTH_M
-            rows.append((int(f.stem), float(wet.sum() * cs * cs / 1e6), float(h.max()),
-                         float(h.sum() * cs * cs)))
+                _depth_png(g, outdir / name)
+                frames.append({"t_s": t_s, "image": name, "flooded_km2": round(float(wet.sum() * cs * cs / 1e6), 3)})
+            rows.append((t_s, float(wet.sum() * cs * cs / 1e6), float(g.max()), float(g.sum() * cs * cs)))
+        if keep_t:
+            np.savez_compressed(series_file, t=np.array(keep_t, dtype="int64"), h=np.stack(keep_h), v=np.stack(keep_v),
+                                xll=xll, yll=yll, cs=cs)
+        t_last = float(t_s)
         outdir.mkdir(parents=True, exist_ok=True)
         _depth_png(maxh, outdir / "max_depth.png")
         np.save(outdir / "max_depth.npy", maxh.astype("float32"))  # for the likelihood map
@@ -407,7 +427,7 @@ class FluxosEngine:
         np.save(outdir / "hazard.npy", hazard)
         # per-cell timing for the impact list: when the water peaks and when it is gone again.
         # dry = first snapshot after the last wet one; NaN where still wet at the end of the window.
-        t_end = float(int(files[-1].stem))
+        t_end = t_last
         np.save(outdir / "peak_h.npy", (t_peak / 3600.0).astype("float32"))
         dry_s = np.where(np.isfinite(last_wet) & (last_wet < t_end), last_wet + step, np.nan)
         np.save(outdir / "dry_h.npy", (dry_s / 3600.0).astype("float32"))

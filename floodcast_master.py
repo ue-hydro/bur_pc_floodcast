@@ -395,6 +395,17 @@ def handle_cycle(cfg: OperationalConfig, p: CycleProcessor, cycle: datetime, *, 
     return status
 
 
+SERIES_KEEP_CYCLES = 8   # compressed FLUXOS 15-min series kept for re-processing (~25 MB per forecast)
+
+
+def prune_series(store, keep: int = SERIES_KEEP_CYCLES) -> None:
+    """Delete fluxos_series.npz of all but the newest ``keep`` forecasts (disk space)."""
+    cycles = sorted({f.parents[2] for f in (store.root / "cycles").glob("*/hydraulics/*/fluxos_series.npz")})
+    for cdir in cycles[:-keep] if keep > 0 else cycles:
+        for f in cdir.glob("hydraulics/*/fluxos_series.npz"):
+            f.unlink(missing_ok=True)
+
+
 def forecast_complete(status: dict | None) -> bool:
     """True when the cycle produced a full, up-to-date set of results: rain screening done, and the
     flow (hydrology) and flood (hydraulics) stages done whenever they were triggered; nothing failed."""
@@ -561,6 +572,10 @@ def main() -> int:
                         status = handle_cycle(cfg, p, cycle, newest=(i == len(cycles) - 1))
                     except Exception:  # one bad cycle must never kill the service
                         log.exception("cycle %s crashed", iso(cycle))
+                    try:
+                        prune_series(store)
+                    except OSError:
+                        log.warning("could not prune old FLUXOS series")
                     newest = i == len(cycles) - 1
                     if newest and forecast_complete(status):
                         log.info("forecast %s complete (rain, flow, flood): publishing online", iso(cycle))
