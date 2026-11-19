@@ -3,7 +3,7 @@
   "use strict";
   var root = document.documentElement;
   var LOCALE = { pt: "pt-PT", en: "en-GB", es: "es-ES" };
-  var FC = { subs: [], t0: null, t1: null, epoch: null, last: 0, LOOP_MS: 60000, started: false };
+  var FC = { subs: [], t0: null, t1: null, epoch: null, last: 0, LOOP_MS: 30000, speed: 1, started: false };  // 72 h in 30 s at 1x
   var SCN = { cur: "central", subs: [] };
 
   var langs = (root.getAttribute("data-langs") || "pt").split(",");
@@ -54,6 +54,19 @@
   setLang(initial);
   var btns = document.querySelectorAll(".langtoggle button");
   for (var i = 0; i < btns.length; i++) btns[i].addEventListener("click", function () { setLang(this.getAttribute("data-set")); });
+
+  // animation speed for every chart, map and the 3-D view (one shared clock); remembered per visitor
+  (function () {
+    var box = document.querySelector(".speedctl"), sel = box && box.querySelector("select");
+    if (!sel || !document.getElementById("clockwin")) return;
+    box.hidden = false;
+    try { var v = localStorage.getItem("fc-speed"); if (v !== null && sel.querySelector('option[value="' + v + '"]')) sel.value = v; } catch (e) {}
+    FC.speed = parseFloat(sel.value) || 0;
+    sel.addEventListener("change", function () {
+      FC.speed = parseFloat(sel.value) || 0;
+      try { localStorage.setItem("fc-speed", sel.value); } catch (e) {}
+    });
+  })();
 
   // light/dark theme: light by default, the visitor's choice is remembered
   var tbtn = document.querySelector(".themetoggle");
@@ -458,7 +471,7 @@
     var dt = FC.last ? Math.min(250, now - FC.last) : 0; FC.last = now;
     var span = FC.t1 - FC.t0;
     if (span > 0 && !document.hidden) {
-      FC.epoch += dt / FC.LOOP_MS * span;
+      FC.epoch += dt * FC.speed / FC.LOOP_MS * span;
       if (FC.epoch > FC.t1) FC.epoch = FC.t0;
       fcApply();
     }

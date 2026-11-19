@@ -598,3 +598,13 @@ svg.chart .hoverl{stroke:var(--ink);stroke-width:1;stroke-dasharray:3 3;opacity:
 .charttip .ct-k.bar{background:var(--bar)}.charttip .ct-k.cum{background:var(--cum)}
 .charttip .ct-k.up{background:#c62828}.charttip .ct-k.ce{background:#003a70}.charttip .ct-k.lo{background:#2e7d32}
 .charttip .ct-k.tide{background:#0f6b63}
+
+/* animation speed (header) */
+.speedctl{display:inline-flex;align-items:center;gap:4px;height:34px;padding:0 4px 0 8px;border:1px solid rgba(255,255,255,.45);border-radius:2px;color:#fff;cursor:pointer}
+.speedctl[hidden]{display:none}
+.speedctl svg{width:16px;height:16px;flex:0 0 16px}
+.speedctl select{appearance:none;-webkit-appearance:none;background:transparent;color:#fff;border:0;font:600 .85rem/1 system-ui,sans-serif;padding:4px 14px 4px 2px;cursor:pointer;
+  background-image:linear-gradient(45deg,transparent 50%,#fff 50%),linear-gradient(135deg,#fff 50%,transparent 50%);background-position:calc(100% - 7px) 55%,calc(100% - 3px) 55%;background-size:4px 4px;background-repeat:no-repeat}
+.speedctl select option{color:#1d2329;background:#fff}
+.speedctl:hover{background:rgba(255,255,255,.12)}
+@media (max-width:720px){.speedctl{order:2;height:30px}}
