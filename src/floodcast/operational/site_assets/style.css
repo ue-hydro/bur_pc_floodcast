@@ -609,3 +609,13 @@ svg.chart .hoverl{stroke:var(--ink);stroke-width:1;stroke-dasharray:3 3;opacity:
 
 .maplegend .ln-river{display:inline-block;width:18px;height:0;border-top:2px solid #1565c0;margin-right:6px;vertical-align:middle}
 .maplegend>span{margin-right:10px;white-space:nowrap}
+
+/* always-visible tick boxes for the reference layers on the rain / flow maps */
+.reftoggles{background:rgba(255,255,255,.92);color:#1d2329;border:1px solid rgba(0,0,0,.2);border-radius:2px;padding:5px 8px;
+  font:500 12px/1.5 system-ui,sans-serif;box-shadow:0 1px 4px rgba(0,0,0,.15)}
+.reftoggles label{display:flex;align-items:center;gap:6px;cursor:pointer;white-space:nowrap}
+.reftoggles input{margin:0;accent-color:#0e5a8a}
+.reftoggles i{display:inline-block;width:18px;height:0}
+.reftoggles .rt-basin{border-top:1.5px solid #263238;opacity:.7}
+.reftoggles .rt-river{border-top:2px dashed #0d47a1}
+.maplegend .ln-river{border-top-style:dashed!important}
