@@ -53,6 +53,7 @@ ES = {
     "lvl_unknown_d": "El sistema no pudo producir una previsión fiable. No suponga que no hay riesgo: consulte las fuentes oficiales.",
     "updated": "Última actualización",
     "grp_h": "Previsión de áreas inundadas",
+    "ctl_l": "Mostrar en el mapa 3.1 y en la animación 3.2:",
     "strips_h": "Lluvia, caudal y marea en las próximas 72 h",
     "strips_p": "— la línea vertical marca el instante mostrado en el mapa y en la animación.",
     "tl_h": "Actualizaciones de la previsión",

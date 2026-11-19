@@ -207,6 +207,41 @@
     setTimeout(function () { requestAnimationFrame(step); }, 3500);   // after the default 3D view is set
   }
 
+  // Layer from the page's shared bar. "depth" = the live water (template default). Arrival, hazard,
+  // duration and probability are static maps: drape them over the satellite ground texture and hide
+  // the water so the colours read clearly.
+  var LAYER_IMG = { arrival: "../arrival.png", hazard: "../hazard.png", duration: "../duration.png",
+                    likelihood: "../../likelihood.png" };
+  var baseSat = null, layerTex = {};
+  function img(src) {
+    return new Promise(function (res, rej) { var i = new Image(); i.onload = function () { res(i); }; i.onerror = rej; i.src = src; });
+  }
+  function setLayer(k) {
+    var gl = viewer.gl;
+    if (!gl) return;
+    if (baseSat === null) baseSat = viewer.satelliteTex || false;
+    if (!LAYER_IMG[k]) {   // depth: back to the normal view
+      viewer.satelliteTex = baseSat || null; viewer.useSatellite = !!baseSat; viewer.showWater = true;
+      return;
+    }
+    function apply(tex) { viewer.satelliteTex = tex; viewer.useSatellite = true; viewer.showWater = false; }
+    if (layerTex[k]) { apply(layerTex[k]); return; }
+    Promise.all([img("data/satellite.jpg" + (viewer._v || "")).catch(function () { return img("data/hillshade.png"); }),
+                 img(LAYER_IMG[k])]).then(function (r) {
+      var c = document.createElement("canvas"); c.width = r[0].naturalWidth; c.height = r[0].naturalHeight;
+      var x = c.getContext("2d");
+      x.drawImage(r[0], 0, 0, c.width, c.height);
+      x.globalAlpha = 0.85; x.imageSmoothingEnabled = false;
+      x.drawImage(r[1], 0, 0, c.width, c.height);
+      layerTex[k] = createTex(gl, gl.LINEAR, x.getImageData(0, 0, c.width, c.height), 0, 0);
+      apply(layerTex[k]);
+    }).catch(function () {});
+  }
+  window.addEventListener("message", function (ev) {
+    var d = ev.data;
+    if (d && d.type === "fluxos-layer" && (!CTRL || ev.source === CTRL)) setLayer(d.layer);
+  });
+
   function start() {
     // bluer water: mostly the clear palette with a little river sediment (template default 0.55)
     viewer.turbidity = 0.2;

@@ -323,6 +323,14 @@
     try { if (fr && fr.contentWindow) fr.contentWindow.postMessage({ type: "fluxos-lock", locked: wrap.classList.contains("locked") }, "*"); } catch (e) {}
   }
 
+  // ---- layer shown on the 3-D view follows the shared bar (depth = live water; others draped on the ground)
+  var LAYER3D = "depth";
+  function sendLayer(k) {
+    LAYER3D = k || "depth";
+    var fr = document.querySelector("#anim-card iframe");
+    try { if (fr && fr.contentWindow) fr.contentWindow.postMessage({ type: "fluxos-layer", layer: LAYER3D }, "*"); } catch (e) {}
+  }
+
   // ---- rain button on the 3-D viewer: on = rain falls as forecast (none if none forecast), off = no rain
   var RAIN = true;
   function sendRain(w) { try { w.postMessage({ type: "fluxos-rain", on: RAIN }, "*"); } catch (e) {} }
@@ -378,7 +386,7 @@
     if (frame) frame.addEventListener("load", function () {
       try { if (frame.contentWindow.location.href.indexOf("about:") === 0) return; } catch (e) {}
       frame.dataset.loaded = "1";
-      setTimeout(function () { sendSun(frame.contentWindow); sendRain(frame.contentWindow); }, 1500);
+      setTimeout(function () { sendSun(frame.contentWindow); sendRain(frame.contentWindow); sendLayer(LAYER3D); }, 1500);
     });
     function valAt(arr, key, t, step) {
       if (!arr || !arr.length) return null;
@@ -761,8 +769,12 @@
     function setImage(src, b) {
       if (src === shownSrc) return;
       var bb = [[b.south, b.west], [b.north, b.east]];
-      var next = L.imageOverlay(src, bb, { opacity: 0.85 }).addTo(map);
-      if (overlay) map.removeLayer(overlay);
+      var next = L.imageOverlay(src, bb, { opacity: 0.85 }).addTo(map), prev = overlay;
+      // remove the previous image only once the new one has loaded (no blank frame = no flicker)
+      if (prev) {
+        var done = false, drop = function () { if (!done) { done = true; if (map.hasLayer(prev)) map.removeLayer(prev); } };
+        next.once("load", drop); next.once("error", drop); setTimeout(drop, 4000);
+      }
       overlay = next; shownSrc = src;
       if (!current) map.fitBounds(bb);
       current = bb;
@@ -774,6 +786,7 @@
     }
     function show() {
       if (!scn) return;
+      sendLayer(mode === "lk" ? "likelihood" : layer);
       if (layer !== "depth" && scn.layers && scn.layers[layer]) {   // static decision layer
         setImage(scn.layers[layer], scn); anim.hidden = true; showLegend();
         if (overlay) overlay.setOpacity(0.85);
@@ -792,11 +805,12 @@
     }
     addRecenter(map, function () { if (current) map.fitBounds(current); });
     addClockBadge(map);
-    var lkBtn = card.querySelector(".lkbtn");
+    var ctl = document.getElementById("flood-ctl") || card;   // shared bar for 3.1 map + 3.2 animation
+    var lkBtn = ctl.querySelector(".lkbtn");
     function select(id) {
       if (lkBtn) lkBtn.setAttribute("aria-pressed", id === "likelihood" ? "true" : "false");
       if (id === "likelihood" && cfg.likelihood) {
-        mode = "lk"; shownSrc = null; setImage(cfg.likelihood.image, cfg.likelihood);
+        mode = "lk"; shownSrc = null; setImage(cfg.likelihood.image, cfg.likelihood); sendLayer("likelihood");
         anim.hidden = true; if (lgLk) lgLk.hidden = false; if (lgDepth) lgDepth.hidden = true;
         return;
       }
@@ -834,10 +848,10 @@
       maxBtn.setAttribute("aria-pressed", mode === "max" ? "true" : "false");
       shownSrc = null; show();
     });
-    Array.prototype.forEach.call(card.querySelectorAll(".lyr .seg"), function (b) {
+    Array.prototype.forEach.call(ctl.querySelectorAll(".lyr .seg"), function (b) {
       b.addEventListener("click", function () {
         layer = b.getAttribute("data-layer"); shownSrc = null;
-        Array.prototype.forEach.call(card.querySelectorAll(".lyr .seg"), function (x) { x.setAttribute("aria-pressed", x === b ? "true" : "false"); });
+        Array.prototype.forEach.call(ctl.querySelectorAll(".lyr .seg"), function (x) { x.setAttribute("aria-pressed", x === b ? "true" : "false"); });
         if (mode === "lk") mode = "time";
         if (lkBtn) lkBtn.setAttribute("aria-pressed", "false");
         show();

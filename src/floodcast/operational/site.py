@@ -208,6 +208,7 @@ T: dict[str, tuple[str, str]] = {
     ),
     "updated": ("Última atualização", "Last update"),
     "grp_h": ("Previsão de áreas inundadas", "Flooded area forecast"),
+    "ctl_l": ("Mostrar no mapa 3.1 e na animação 3.2:", "Show on map 3.1 and animation 3.2:"),
     "strips_h": ("Chuva, caudal e maré nas próximas 72 h", "Rain, river flow and tide over the next 72 h"),
     "strips_p": ("— a linha vertical marca o instante mostrado no mapa e na animação.",
                  "— the vertical line marks the moment shown on the map and in the animation."),
@@ -1129,7 +1130,7 @@ def _impacts_section(i18n: _I18n, scenarios: list[dict], prefix: str, data_rel: 
 
 
 def _hydraulics_block(i18n: _I18n, scenarios: list[dict], status: dict, prefix: str, data_rel: str,
-                      likelihood: dict | None = None) -> str:
+                      likelihood: dict | None = None, ctl_out: list | None = None) -> str:
     if not scenarios:
         stage = (status.get("stages") or {}).get("hydraulics") or {}
         if stage.get("state") == "skipped":
@@ -1171,6 +1172,8 @@ def _hydraulics_block(i18n: _I18n, scenarios: list[dict], status: dict, prefix: 
         buttons += ('<div class="segs lyr" role="group">' + "".join(
             f'<button type="button" class="seg" data-layer="{k}" aria-pressed="{"true" if k == "depth" else "false"}">{i18n.raw("ly_" + k)}</button>'
             for k in ("depth", "arrival", "hazard", "duration")) + "</div>")
+    if ctl_out is not None:   # the caller shows these once for 3.1 and 3.2 together
+        ctl_out.append(buttons)
     first = byname.get("p50") or scenarios[0]
     info = i18n.raw("map_info", d=_num(first.get("max_depth_m"), 2), a=_num(first.get("flooded_area_km2"), 2),
                     q=_num(first.get("inflow_peak_m3s")), h=_num(first.get("simulated_hours")))
@@ -1186,7 +1189,7 @@ def _hydraulics_block(i18n: _I18n, scenarios: list[dict], status: dict, prefix: 
     mapdata = json.dumps(cfg).replace("</", "<\\/")
     return (
         f'<section class="card" id="map-card"><h2><span class="num">3.1</span>{i18n.raw("map_h")}</h2>'
-        f'<div class="mapctl">{buttons}'
+        f'<div class="mapctl">{"" if ctl_out is not None else buttons}'
         f'<span class="muted map-info">{info}</span></div>'
         f'<div id="map" role="region" aria-label="{_esc(i18n.plain("map_h"))}"></div>{fallback}'
         f'<div class="animctl mapanim"><input type="range" class="slider" min="0" max="0" value="0" aria-label="time">'
@@ -1357,7 +1360,7 @@ def _animation_block(i18n: _I18n, scenarios: list[dict], prefix: str, data_rel: 
     views = {names.get(k, k): {"src": f'{prefix}{data_rel}/hydraulics/{k}/{sc["webgl"]}',
                                "forcing": sc.get("_forcing")} for k, sc in byname.items()}
     src = f'{prefix}{data_rel}/hydraulics/{first["scenario"]}/{first["webgl"]}#lang={i18n.langs[0]}'
-    switch = _scn_buttons(i18n, "anim-scn", available=set(views))
+    switch = "" if strips_out is not None else _scn_buttons(i18n, "anim-scn", available=set(views))
     data = json.dumps(views).replace("</", "<\\/")
     # rain / flow / sea-level strips on the shared clock; the caller may place them above map + animation
     strips = f'{_anim_rain_strip(i18n, ens)}{_anim_hydrograph(i18n, first.get("_forcing"), hyd)}{_tide_strip(i18n, tide)}'
@@ -1674,12 +1677,15 @@ def _cycle_content(i18n: _I18n, latest, data: dict, prefix: str, data_rel: str, 
                                 base + "hydrology/reach_flow.json" if data.get("flow_file") else None, geo))
     # flood map (3) and 3-D animation (4) side by side on wide screens (same clock and scenario)
     strips: list = []
-    hyd_html = _hydraulics_block(i18n, data["scenarios"], status, prefix, data_rel, data.get("likelihood"))
+    ctl: list = []
+    hyd_html = _hydraulics_block(i18n, data["scenarios"], status, prefix, data_rel, data.get("likelihood"), ctl_out=ctl)
     anim_html = _animation_block(i18n, data["scenarios"], prefix, data_rel, data.get("hydrology"),
                                  data.get("precip_ens"), data.get("tide"), strips_out=strips)
     strips_html = (f'<section class="card viz-strips" id="flood-group"><h2><span class="num">3</span>{i18n.raw("grp_h")}</h2>'
                    f'<p class="muted"><strong>{i18n.raw("strips_h")}</strong> {i18n.raw("strips_p")}</p>'
-                   f'<div class="strip3">{strips[0]}</div></section>') if strips and anim_html else ""
+                   f'<div class="strip3">{strips[0]}</div>'
+                   + (f'<div class="flood-ctl" id="flood-ctl"><span class="fc-l">{i18n.raw("ctl_l")}</span>{ctl[0]}</div>' if ctl else "")
+                   + '</section>') if strips and anim_html else ""
     out.append(f'<div class="viz-outer"><div class="viz-pair">{strips_html}{hyd_html}{anim_html}</div></div>')
     out.append(_impacts_section(i18n, data["scenarios"], prefix, data_rel))
     out.append(_emergency_block(i18n))
