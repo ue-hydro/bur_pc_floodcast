@@ -93,12 +93,14 @@ class HydraulicsSettings(_Model):
     # Warm-up (h) at the forecast's initial flow before the hydrograph starts, so the main river is
     # already full through the whole domain (no "dry river" filling wave). Output of the warm-up is
     # discarded. The pinned FLUXOS build does not support RESTART, so this is done in-run.
-    warmup_hours: float = Field(default=6.0, ge=0, le=48)
+    warmup_hours: float = Field(default=24.0, ge=0, le=48)   # river in equilibrium after ~18 h (Alcácer test)
     # Initial condition of the forecast run. "steady": first run FLUXOS with the forecast's starting
     # flow (and starting sea level) held constant until the water stops changing, then restart every
     # scenario from that state, so the river is full and in balance at the forecast start.
     # "warmup": the older fixed warm-up of warmup_hours inside the same run.
-    initial_condition: Literal["steady", "warmup"] = "steady"
+    # NOTE: "steady" needs FLUXOS RESTART, which the validated build profile (scripts/patch_fluxos.py)
+    # rejects; keep "warmup" (long in-run warm-up at the starting flow) until that is allowed.
+    initial_condition: Literal["steady", "warmup"] = "warmup"
     steady_tolerance_m: float = Field(default=0.005, gt=0)   # max depth change per print step
     steady_min_hours: float = Field(default=3.0, ge=0)
     steady_max_hours: float = Field(default=48.0, gt=1, le=96)

@@ -49,7 +49,8 @@ routing_method = "3"   # Eulerian kinematic wave
 outlet_seg_id = 2029
 
 [fluxos]
-dem = "fluxos/dem.asc"
+dem = "fluxos/dem_channel.asc"   # Sado channel carved + 10 m datum offset (burn_channel.py)
+datum_offset_m = 10.0              # added to sea levels; FLUXOS needs elevations > 0
 modset_template = "fluxos/modset.template.json"
 crs = "EPSG:32629"
 cellsize_m = 20
@@ -57,8 +58,8 @@ xllcorner = 539560.0
 yllcorner = 4244360.0
 ncols = 300
 nrows = 300
-inflow_xy = [544610.0, 4246610.0]
-inflow_wgs84 = [-8.48935, 38.36656]
+inflow_xy = [545050.0, 4244410.0]   # river entering the window (south edge)
+inflow_wgs84 = [-8.48445, 38.34671]
 window_wgs84_bbox = [-8.54728, 38.34652, -8.47823, 38.40030]
 # Downstream (estuary) edge for the tide / water-level boundary: the low ground (< 1.5 m) where the
 # Sado leaves the window towards Setubal, i.e. the north-west corner. 1-based cell index along the

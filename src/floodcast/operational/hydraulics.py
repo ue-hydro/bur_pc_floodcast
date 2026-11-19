@@ -208,6 +208,7 @@ class FluxosEngine:
             raise ValueError("domain.toml has no [fluxos] section")
         self.info = json.loads((domain.root / "fluxos" / "dem_info.json").read_text())
         self.in_container = config.models.runtime == "docker"
+        self._datum = float(fl.get("datum_offset_m", 0.0))   # terrain raised by this (FLUXOS needs z > 0)
         self._steady_lock = threading.Lock()
         self._steady_cache: dict = {}
 
@@ -283,7 +284,7 @@ class FluxosEngine:
         if hs.initial_condition == "steady":   # river full and in balance with the starting flow
             level0 = None
             if hs.tide_boundary and tide:
-                ser0 = tide_series(tide, sim_start, 1.0, hs.tide_lag_h, hs.tide_offset_m)
+                ser0 = tide_series(tide, sim_start, 1.0, hs.tide_lag_h, hs.tide_offset_m + self._datum)
                 level0 = float(ser0[1][0]) if ser0 else None
             restart = self.steady_state(workdir.parent, float(q_win[0]), level0)
             warm_h = restart[1] / 3600.0
@@ -314,7 +315,7 @@ class FluxosEngine:
         edges = self.domain.fluxos.get("tide_edges")
         if hs.tide_boundary and edges:
             run_start = sim_start - timedelta(hours=warm_h)
-            ser = tide_series(tide, run_start, warm_h + float(t_h[-1]), hs.tide_lag_h, hs.tide_offset_m) if tide else None
+            ser = tide_series(tide, run_start, warm_h + float(t_h[-1]), hs.tide_lag_h, hs.tide_offset_m + self._datum) if tide else None
             if ser is None:
                 log.warning("tide boundary off for %s: no sea-level forecast covering the run", scenario)
             else:
