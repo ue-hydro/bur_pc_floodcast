@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import logging
 import shutil
+import threading
 from datetime import datetime, timedelta
 from pathlib import Path
 
@@ -207,6 +208,60 @@ class FluxosEngine:
             raise ValueError("domain.toml has no [fluxos] section")
         self.info = json.loads((domain.root / "fluxos" / "dem_info.json").read_text())
         self.in_container = config.models.runtime == "docker"
+        self._steady_lock = threading.Lock()
+        self._steady_cache: dict = {}
+
+    def _modset_base(self, workdir: Path, sim_start_txt: str, comment: str) -> dict:
+        modset = json.loads((self.domain.root / self.domain.fluxos["modset_template"]).read_text())
+        modset["COMMENT"] = comment
+        modset["DEM_FILE"] = self._p(workdir, "dem.asc")
+        modset["SIM_DATETIME_START"] = sim_start_txt
+        modset["INFLOW_FILE"]["FILENAME"] = self._p(workdir, "inflow.fluxos")
+        modset["INFLOW_FILE"]["DISCHARGE_LOCATION"]["X_COORDINATE"] = float(self.info["inflow_x"])
+        modset["INFLOW_FILE"]["DISCHARGE_LOCATION"]["Y_COORDINATE"] = float(self.info["inflow_y"])
+        modset["OUTPUT"]["OUTPUT_FOLDER"] = self._p(workdir, "out")
+        if self.config.hydraulics.manning_n is not None:
+            modset["MANNING_N"] = float(self.config.hydraulics.manning_n)
+        return modset
+
+    def steady_state(self, base: Path, q0: float, level0: float | None) -> tuple[Path, float]:
+        """FLUXOS run at constant inflow ``q0`` (and constant sea level ``level0`` at the estuary edge)
+        until the depth changes less than steady_tolerance_m per print step. Returns the last
+        snapshot (the initial state for the forecast runs) and its time in seconds. Cached per
+        (q0, level0), so scenarios that start from the same flow share one steady run."""
+        hs = self.config.hydraulics
+        key = (round(float(q0), 1), None if level0 is None else round(float(level0), 2))
+        with self._steady_lock:
+            if key in self._steady_cache:
+                return self._steady_cache[key]
+            wd = base / f"steady_q{key[0]:g}"
+            if wd.exists():
+                shutil.rmtree(wd)
+            (wd / "out").mkdir(parents=True)
+            shutil.copyfile(self.domain.root / self.domain.fluxos["dem"], wd / "dem.asc")
+            t_max = hs.steady_max_hours * 3600.0
+            write_inflow(wd / "inflow.fluxos", np.array([0.0, t_max]), np.array([q0, q0]))
+            modset = self._modset_base(wd, "2000-01-01 00:00:00", f"floodcast steady state q0={q0:.1f}")
+            modset["STEADY_STATE"] = {"STATUS": True, "TOLERANCE": float(hs.steady_tolerance_m),
+                                      "MIN_TIME": float(hs.steady_min_hours * 3600.0)}
+            edges = self.domain.fluxos.get("tide_edges")
+            if hs.tide_boundary and edges and level0 is not None:
+                (wd / "tide_level.csv").write_text(f"t_seconds,level_m\n0,{level0:.3f}\n{int(t_max)},{level0:.3f}\n")
+                modset.setdefault("BOUNDARY_CONDITIONS", {})["WATER_LEVEL"] = {
+                    "STATUS": True, "FILENAME": self._p(wd, "tide_level.csv"), "EDGE": [dict(e) for e in edges],
+                    "VELOCITY": "zero_gradient", "COMMENT": "constant sea level for the steady initial state"}
+            (wd / "modset.json").write_text(json.dumps(modset, indent=2))
+            self.runner.run("fluxos", [self._p(wd, "modset.json")], [Mount(wd, "/run", "rw")],
+                            workdir=self._p(wd, ""), log_path=wd / "fluxos.log",
+                            timeout_s=hs.timeout_s, env={"OMP_NUM_THREADS": "2"})
+            snaps = sorted((f for f in (wd / "out").glob("*.txt") if f.stem.isdigit()), key=lambda f: int(f.stem))
+            if not snaps:
+                raise RuntimeError("steady-state FLUXOS run wrote no output")
+            reached = "STEADY STATE reached" in (wd / "fluxos.log").read_text(errors="replace")
+            log.info("FLUXOS initial state: %s after %.1f h at %.0f m3/s", "steady" if reached else "NOT steady (cap)",
+                     int(snaps[-1].stem) / 3600.0, q0)
+            self._steady_cache[key] = (snaps[-1], float(int(snaps[-1].stem)))
+            return self._steady_cache[key]
 
     def _p(self, host: Path, name: str) -> str:
         return f"/run/{name}" if self.in_container else str(host / name)
@@ -224,10 +279,20 @@ class FluxosEngine:
         q_win = q_win + hs.base_flow_m3s
         sim_start = cycle + timedelta(hours=start_h)
         warm_h = float(hs.warmup_hours)
+        restart = None
+        if hs.initial_condition == "steady":   # river full and in balance with the starting flow
+            level0 = None
+            if hs.tide_boundary and tide:
+                ser0 = tide_series(tide, sim_start, 1.0, hs.tide_lag_h, hs.tide_offset_m)
+                level0 = float(ser0[1][0]) if ser0 else None
+            restart = self.steady_state(workdir.parent, float(q_win[0]), level0)
+            warm_h = restart[1] / 3600.0
         if workdir.exists():
             shutil.rmtree(workdir)
         (workdir / "out").mkdir(parents=True)
         shutil.copyfile(self.domain.root / self.domain.fluxos["dem"], workdir / "dem.asc")
+        if restart is not None:   # FLUXOS RESTART continues from the last snapshot found in out/
+            shutil.copyfile(restart[0], workdir / "out" / f"{int(restart[1])}.txt")
         if warm_h > 0:  # constant initial flow first: fills the river through the domain
             write_inflow(workdir / "inflow.fluxos", np.concatenate([[0.0], (t_h + warm_h) * 3600.0]),
                          np.concatenate([[q_win[0]], q_win]))
@@ -241,6 +306,8 @@ class FluxosEngine:
         modset["INFLOW_FILE"]["DISCHARGE_LOCATION"]["X_COORDINATE"] = float(self.info["inflow_x"])
         modset["INFLOW_FILE"]["DISCHARGE_LOCATION"]["Y_COORDINATE"] = float(self.info["inflow_y"])
         modset["OUTPUT"]["OUTPUT_FOLDER"] = self._p(workdir, "out")
+        if restart is not None:
+            modset["RESTART"] = True
         if hs.manning_n is not None:
             modset["MANNING_N"] = float(hs.manning_n)
         tide_info = None
@@ -271,6 +338,7 @@ class FluxosEngine:
         _drop_warmup(workdir / "out", int(round(warm_h * 3600)))
         summary = self._postprocess(workdir / "out", outdir, scenario)
         summary["warmup_hours"] = warm_h
+        summary["initial_condition"] = hs.initial_condition
         summary["tide_boundary"] = tide_info
         summary["manning_n"] = hs.manning_n
         try:  # exposure of buildings, roads and key facilities (OpenStreetMap)

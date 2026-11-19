@@ -323,7 +323,9 @@ def handle_cycle(cfg: OperationalConfig, p: CycleProcessor, cycle: datetime, *, 
                         try:
                             from floodcast.operational import tide as _tide
 
-                            back = int(cfg.hydraulics.warmup_hours + cfg.hydraulics.tide_lag_h) + 6
+                            hs_ = cfg.hydraulics
+                            pre = hs_.steady_max_hours if hs_.initial_condition == "steady" else hs_.warmup_hours
+                            back = int(pre + hs_.tide_lag_h) + 6
                             tide_bc = _tide.fetch(cycle - timedelta(hours=back),
                                                   back + cfg.hydraulics.simulated_hours + 24, cache / "tide_bc.json")
                         except Exception as exc:
@@ -466,13 +468,13 @@ def idle_status(store, wait_s: float, processed: int) -> None:
     nxt = (datetime.now() + timedelta(seconds=wait_s)).strftime("%H:%M")
     shown = latest.get("cycle", "none yet").replace("T", " ").replace(":00:00Z", " UTC")
     if processed == 0:
-        from floodcast.operational.site import ECMWF_PUBLISH_DELAY_H, CYCLE_STEP_H
+        from floodcast.operational.site import CYCLE_STEP_H, ecmwf_publish_delay_h
 
         exp = ""
         try:
             c = datetime.fromisoformat(latest["cycle"].replace("Z", "+00:00")) + timedelta(hours=CYCLE_STEP_H)
             exp = (f" | next run {c:%H} UTC expected ~"
-                   f"{(c + timedelta(hours=ECMWF_PUBLISH_DELAY_H)).astimezone():%H:%M}")
+                   f"{(c + timedelta(hours=ecmwf_publish_delay_h(c.hour))).astimezone():%H:%M}")
         except (KeyError, ValueError):
             pass
         log.info("waiting: no new ECMWF forecast yet | on the site: %s (level %s)%s | next check %s",

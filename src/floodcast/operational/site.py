@@ -303,8 +303,8 @@ T: dict[str, tuple[str, str]] = {
     "rainmap_h": ("Precipitação prevista, grelha ECMWF IFS 0,25° (72 h)", "Forecast rainfall, ECMWF IFS 0.25° grid (72 h)"),
     "rainmap_scn_h": ("Chuva prevista por cenário, células de 0,25° (72 h)", "Forecast rain by scenario, 0.25° cells (72 h)"),
     "lg_rivers": ("Rede hidrográfica do modelo (troços do mizuRoute)", "Model river network (mizuRoute reaches)"),
-    "lg_toggle": ("Camadas de referência (bacia, sub-bacias, rede hidrográfica): caixas no canto inferior esquerdo do mapa · ⌖ recentra o mapa · fundo: botão de camadas (satélite por omissão).",
-                  "Reference layers (basin, sub-basins, river network): tick boxes at the bottom left of the map · ⌖ recentres the map · background: layer button (satellite by default)."),
+    "lg_toggle": ("Camadas de referência (bacia, sub-bacias, rede hidrográfica): caixas à direita do mapa · ⌖ recentra o mapa · fundo: botão de camadas (satélite por omissão).",
+                  "Reference layers (basin, sub-basins, river network): tick boxes on the right of the map · ⌖ recentres the map · background: layer button (satellite by default)."),
     "lg_basins": ("Limites das sub-bacias do modelo hidrológico (SUMMA–mizuRoute)", "Sub-basin boundaries of the hydrological model (SUMMA–mizuRoute)"),
     "rainmap_unit": ("mm por intervalo de 3 h", "mm per 3-hour interval"),
     "flowmap_h": ("Caudal previsto nos troços do rio (mediana do conjunto)", "Forecast flow along the river reaches (ensemble median)"),
@@ -793,7 +793,13 @@ def _banner(i18n: _I18n, latest: dict | None, status: dict | None, *, show_h1=Tr
 
 # ECMWF open data appears ~6-7 h after the run time (00/06/12/18 UTC); the whole chain then takes
 # ~1.5 h on the laptop (rain sources, 3 hydrology runs, 3 FLUXOS runs). Estimates shown on the page.
-ECMWF_PUBLISH_DELAY_H = 7.0
+ECMWF_PUBLISH_DELAY_H = 7.0      # short 06/18 UTC runs
+
+
+def ecmwf_publish_delay_h(run_hour: int) -> float:
+    """Typical delay of ECMWF open data after the run time: the long 00/12 UTC runs (15 days)
+    appear ~8 h later, the short 06/18 UTC runs ~7 h later."""
+    return 8.0 if int(run_hour) % 12 == 0 else ECMWF_PUBLISH_DELAY_H
 CHAIN_TYPICAL_H = 1.5
 CYCLE_STEP_H = 6
 
@@ -812,7 +818,7 @@ def _forecast_timing(i18n: _I18n, data: dict) -> str:
     others = max(0, len(srcs) - 1)
     done = _parse_ts(status.get("finished_at"))
     nxt = c0 + _td(hours=CYCLE_STEP_H)
-    pub = nxt + _td(hours=ECMWF_PUBLISH_DELAY_H)
+    pub = nxt + _td(hours=ecmwf_publish_delay_h(nxt.hour))
     res = pub + _td(hours=CHAIN_TYPICAL_H)
     last = i18n.raw("fc_last", t=_Html(_time_tag(c0.isoformat())), s=others, n=ens.get("members_total") or "?")
     nxt_html = i18n.raw("fc_next", t=_Html(_time_tag(nxt.isoformat())), p=_Html(_time_tag(pub.isoformat())),
@@ -1399,10 +1405,6 @@ def _decision_block(i18n: _I18n, data: dict) -> str:
         lines.append(f"<li><strong>{i18n.raw(key)}:</strong> {txt} "
                      f'<a class="detbtn" href="#impacts" data-scn="{scn}">{i18n.raw("dec_more")}</a></li>')
     why = ""
-    if len(texts) > 1 and len(set(texts)) == 1:   # every scenario gives the same result: say it once, and why
-        lines = [f"<li><strong>{i18n.raw('dec_same')}:</strong> {texts[0]} "
-                 f'<a class="detbtn" href="#impacts" data-scn="central">{i18n.raw("dec_more")}</a></li>']
-        why = _same_reason(i18n, data)
     tide_bc = any(sc.get("tide_boundary") for sc in data.get("scenarios") or [])
     tide = data.get("tide") or {}
     hw = ", ".join(_fmt_ts(h["time_utc"]) for h in (tide.get("high_tides") or [])[:4])

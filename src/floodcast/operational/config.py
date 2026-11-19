@@ -94,6 +94,14 @@ class HydraulicsSettings(_Model):
     # already full through the whole domain (no "dry river" filling wave). Output of the warm-up is
     # discarded. The pinned FLUXOS build does not support RESTART, so this is done in-run.
     warmup_hours: float = Field(default=6.0, ge=0, le=48)
+    # Initial condition of the forecast run. "steady": first run FLUXOS with the forecast's starting
+    # flow (and starting sea level) held constant until the water stops changing, then restart every
+    # scenario from that state, so the river is full and in balance at the forecast start.
+    # "warmup": the older fixed warm-up of warmup_hours inside the same run.
+    initial_condition: Literal["steady", "warmup"] = "steady"
+    steady_tolerance_m: float = Field(default=0.005, gt=0)   # max depth change per print step
+    steady_min_hours: float = Field(default=3.0, ge=0)
+    steady_max_hours: float = Field(default=48.0, gt=1, le=96)
     # FLUXOS scenarios run at the same time (lower / central / upper).
     parallel_scenarios: int = Field(default=3, ge=1, le=8)
     simulated_hours: int = Field(default=72, ge=6, le=240)
