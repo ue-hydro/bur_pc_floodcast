@@ -638,3 +638,18 @@ svg.chart .hoverl{stroke:var(--ink);stroke-width:1;stroke-dasharray:3 3;opacity:
 .snaprow td{padding:0 0 10px;border-bottom:1px solid var(--line)}
 .snapmap{height:300px;border:1px solid var(--line)}
 .detbtn{margin-left:6px;font-size:.85rem;font-weight:600;white-space:nowrap}
+
+/* chat: minimised bar at the bottom (all screens), clearly open to any question */
+.chat-fab{right:20px;bottom:16px;border-radius:12px;padding:10px 16px 10px 14px;gap:10px;text-align:left;max-width:min(430px,calc(100vw - 24px))}
+.chat-fab .c-ico-svg{width:22px;height:22px;flex:0 0 22px}
+.chat-fab .c-fab-t{display:flex;flex-direction:column;line-height:1.25}
+.chat-fab .c-fab-t b{font-size:.98rem}
+.chat-fab .c-fab-t small{font-weight:500;font-size:.78rem;opacity:.9}
+.chat-fab .c-fab-up{margin-left:6px;font-size:.75rem;opacity:.85}
+.chat-fab.pulse::after{border-radius:14px}
+@media (max-width:520px){.chat-fab .c-fab-t{display:flex}.chat-fab .c-fab-t small{display:none}.chat-fab{right:12px;bottom:12px;padding:10px 12px}}
+
+/* beta badge + contact */
+.beta{display:inline-block;margin-left:6px;padding:1px 6px;border-radius:3px;background:#f6b73c;color:#1d2329;font:800 .62rem/1.5 system-ui,sans-serif;letter-spacing:.06em;vertical-align:3px}
+.f-contact{margin:0 0 6px;line-height:1.5}.f-contact a{color:#fff}
+.f-contact-note{font-size:.8rem;opacity:.85;margin:0}

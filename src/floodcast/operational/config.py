@@ -137,7 +137,8 @@ class PublishSettings(_Model):
     post_command: str = ""
     post_command_timeout_s: int = Field(default=300, ge=10)
     # Keep this many cycles of history on disk (older cycle folders are pruned, JSON kept).
-    keep_cycles: int = Field(default=40, ge=2)
+    # forecasts kept on disk (older ones deleted); 0 = keep everything (manual clean-up)
+    keep_cycles: int = Field(default=0, ge=0)
     # Optional Q&A chat (deploy/chat-worker): URL of the chat endpoint, e.g.
     # "https://floodcast-chat.<account>.workers.dev/chat" or "http://localhost:8787/chat".
     # Empty = no chat box on the site.

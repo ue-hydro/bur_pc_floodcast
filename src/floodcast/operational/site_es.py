@@ -32,6 +32,9 @@ ES = {
     "step3_d": "FLUXOS 2D, solo si el caudal lo justifica",
     "details": "Detalles técnicos",
     "official_btn": "Avisos oficiales (ANEPC)",
+    "foot_contact": "Contacto",
+    "foot_contact_org": "Universidad de Évora · MED / CREATE",
+    "foot_contact_note": "Para dudas, comentarios o errores en este prototipo (versión beta). En emergencias llame al 112; avisos oficiales: ANEPC, IPMA y APA.",
     "foot_about": "Prototipo de investigación del proyecto BUR_PC (INTERREG-POCTEP), desarrollado en la Universidad de Évora "
                   "(MED y CREATE). No sustituye a los avisos oficiales.",
     "foot_links": "Navegación",

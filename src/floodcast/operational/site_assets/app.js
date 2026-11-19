@@ -209,19 +209,19 @@
   function initChat(endpoint) {
     var T = {
       pt: { teaser: "Tem dúvidas sobre a previsão? Pergunte aqui ao assistente.", sub: "Assistente IA · responde com base nesta previsão",
-            open: "Perguntas sobre a previsão", title: "Pergunte sobre esta previsão", ph: "Escreva a sua pergunta…", send: "Enviar",
+            open: "Pergunte o que quiser sobre esta previsão", openSub: "Assistente IA · aberto a todos · em PT, ES ou EN", title: "Pergunte sobre esta previsão", ph: "Escreva a sua pergunta…", send: "Enviar",
             note: "Respostas geradas por IA (Claude) a partir desta previsão experimental; podem conter erros. Informação indicativa, não substitui as comunicações oficiais. Em emergência ligue 112.",
             hello: "Olá! Posso explicar a previsão atual para o rio Sado em Alcácer do Sal. O que quer saber?",
             wait: "A pensar…", fail: "Sem resposta de momento. Em emergência ligue 112.",
             sugg: ["Há risco de cheia nos próximos dias?", "Quando é o pico do caudal?", "Quanto vai chover?", "Como funciona este sistema?"] },
       en: { teaser: "Questions about the forecast? Ask the assistant here.", sub: "AI assistant · answers from this forecast",
-            open: "Ask about the forecast", title: "Ask about this forecast", ph: "Type your question…", send: "Send",
+            open: "Ask anything about this forecast", openSub: "AI assistant · open to everyone · in PT, ES or EN", title: "Ask about this forecast", ph: "Type your question…", send: "Send",
             note: "Answers are AI-generated (Claude) from this experimental forecast and may be wrong. Guidance only; it does not replace official communications. In an emergency call 112.",
             hello: "Hi! I can explain the current forecast for the Sado river at Alcácer do Sal. What would you like to know?",
             wait: "Thinking…", fail: "No answer right now. In an emergency call 112.",
             sugg: ["Is there a flood risk in the coming days?", "When will the flow peak?", "How much rain is expected?", "How does this system work?"] },
       es: { teaser: "¿Dudas sobre la previsión? Pregunte aquí al asistente.", sub: "Asistente IA · responde a partir de esta previsión",
-            open: "Preguntas sobre la previsión", title: "Pregunte sobre esta previsión", ph: "Escriba su pregunta…", send: "Enviar",
+            open: "Pregunte lo que quiera sobre esta previsión", openSub: "Asistente IA · abierto a todos · en PT, ES o EN", title: "Pregunte sobre esta previsión", ph: "Escriba su pregunta…", send: "Enviar",
             note: "Respuestas generadas por IA (Claude) a partir de esta previsión experimental; pueden contener errores. Información orientativa, no sustituye a las comunicaciones oficiales. En emergencias llame al 112.",
             hello: "¡Hola! Puedo explicar la previsión actual del río Sado en Alcácer do Sal. ¿Qué quiere saber?",
             wait: "Pensando…", fail: "Sin respuesta en este momento. En emergencias llame al 112.",
@@ -251,7 +251,8 @@
     var log = panel.querySelector(".c-log"), form = panel.querySelector(".c-form"), ta = form.querySelector("textarea"), sugg = panel.querySelector(".c-sugg");
     function texts() {
       var t = T[L()];
-      btn.innerHTML = '<svg class="c-ico-svg" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M4 4h16a2 2 0 012 2v9a2 2 0 01-2 2H9l-5 4v-4H4a2 2 0 01-2-2V6a2 2 0 012-2z"/></svg><span class="c-fab-t">' + t.open + "</span>";
+      btn.innerHTML = '<svg class="c-ico-svg" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M4 4h16a2 2 0 012 2v9a2 2 0 01-2 2H9l-5 4v-4H4a2 2 0 01-2-2V6a2 2 0 012-2z"/></svg><span class="c-fab-t"><b>' + t.open + '</b><small>' + t.openSub + "</small></span>" +
+        '<span class="c-fab-up" aria-hidden="true">▲</span>';
       panel.querySelector(".c-title").textContent = t.title; ta.placeholder = t.ph;
       form.querySelector(".c-send").textContent = t.send; panel.querySelector(".c-note").textContent = t.note;
       if (greetEl && !history.length) greetEl.textContent = t.hello;
@@ -297,25 +298,11 @@
     ta.addEventListener("keydown", function (e) { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); ask(ta.value); } });
     new MutationObserver(texts).observe(root, { attributes: true, attributeFilter: ["data-lang"] });
     texts();
-    // Wide screens: the chat is a permanent panel docked on the right (always expanded).
-    // Narrow screens: floating button that opens/closes it.
-    var wide = window.matchMedia("(min-width: 1200px)");
-    function dock() {
-      var on = wide.matches;
-      document.body.classList.toggle("chat-docked", on);
-      panel.classList.toggle("docked", on);
-      if (on) { open(true); panel.classList.add("intro"); setTimeout(function () { panel.classList.remove("intro"); }, 2600); }
-      else {
-        open(false);
-        var dismissed = false; try { dismissed = sessionStorage.getItem("fc-teaser") === "1"; } catch (e) {}
-        if (!dismissed) {
-          btn.classList.add("pulse");
-          setTimeout(function () { if (panel.hidden && !wide.matches) teaser.hidden = false; }, 3500);
-        }
-      }
-    }
-    if (wide.addEventListener) wide.addEventListener("change", dock); else wide.addListener(dock);
-    dock();
+    // Minimised bar at the bottom on every screen; it opens into a panel above it. A one-time
+    // hint appears after a few seconds the first time a visitor comes (dismissible).
+    open(false);
+    var dismissed = false; try { dismissed = sessionStorage.getItem("fc-teaser") === "1"; } catch (e) {}
+    if (!dismissed) { btn.classList.add("pulse"); setTimeout(function () { btn.classList.remove("pulse"); }, 12000); }
   }
 
   // ---- 3-D view lock: locked by default so scrolling the page never zooms the model

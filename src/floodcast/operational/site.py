@@ -165,6 +165,10 @@ T: dict[str, tuple[str, str]] = {
     "step3_d": ("FLUXOS 2D, só se o caudal o justificar", "FLUXOS 2-D, only if the flow warrants it"),
     "details": ("Detalhes técnicos", "Technical details"),
     "official_btn": ("Avisos oficiais (ANEPC)", "Official warnings (ANEPC)"),
+    "foot_contact": ("Contacto", "Contact"),
+    "foot_contact_org": ("Universidade de Évora · MED / CREATE", "University of Évora · MED / CREATE"),
+    "foot_contact_note": ("Para dúvidas, comentários ou erros neste protótipo (versão beta). Em emergência ligue 112; avisos oficiais: ANEPC, IPMA e APA.",
+                          "For questions, feedback or errors in this prototype (beta version). In an emergency call 112; official warnings: ANEPC, IPMA and APA."),
     "foot_about": ("Protótipo de investigação do projeto BUR_PC (INTERREG-POCTEP) desenvolvido na Universidade de Évora (MED e CREATE). Não substitui os avisos oficiais.",
                    "Research prototype of the BUR_PC project (INTERREG-POCTEP), developed at the University of Évora (MED and CREATE). It does not replace official warnings."),
     "foot_links": ("Navegação", "Navigation"),
@@ -1697,6 +1701,8 @@ def _footer(i18n: _I18n, prefix: str = "") -> str:
         f'<li><a href="{prefix}about.html">{i18n.raw("nav_about")}</a></li>'
         f'<li><a href="{prefix}api/latest.json">{i18n.raw("api")}</a></li>'
         f'<li><a href="https://github.com/ue-hydro/bur_pc_floodcast">{_GH} bur_pc_floodcast</a></li></ul></div>'
+        f'<div><p class="f-h">{i18n.raw("foot_contact")}</p><p class="f-contact">Diogo Costa<br>{i18n.raw("foot_contact_org")}<br>'
+        f'<a href="mailto:diogo.costa@uevora.pt">diogo.costa@uevora.pt</a></p><p class="f-contact-note">{i18n.raw("foot_contact_note")}</p></div>'
         f'<div><p class="f-h">{i18n.raw("foot_partners")}</p><div class="f-logos">'
         f'{_burpc_logo(prefix)}'
         f'<a href="https://www.uevora.pt" rel="noopener"><img src="{prefix}assets/logos/uevora_white.png" alt="Universidade de Évora"></a>'

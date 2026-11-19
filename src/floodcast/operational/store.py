@@ -103,7 +103,7 @@ class OperationalStore:
 
     def prune(self, keep: int) -> None:
         """Drop bulky per-cycle folders beyond ``keep``; history.json keeps the summary."""
-        if not self.cycles.is_dir():
+        if keep <= 0 or not self.cycles.is_dir():   # 0 = keep every forecast
             return
         dirs = sorted((d for d in self.cycles.iterdir() if d.is_dir()), reverse=True)
         for old in dirs[keep:]:

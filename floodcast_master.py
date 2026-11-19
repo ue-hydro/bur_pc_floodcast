@@ -395,13 +395,15 @@ def handle_cycle(cfg: OperationalConfig, p: CycleProcessor, cycle: datetime, *, 
     return status
 
 
-SERIES_KEEP_CYCLES = 8   # compressed FLUXOS 15-min series kept for re-processing (~25 MB per forecast)
+SERIES_KEEP_CYCLES = 0   # 0 = keep the compressed FLUXOS series of every forecast (manual clean-up)
 
 
 def prune_series(store, keep: int = SERIES_KEEP_CYCLES) -> None:
-    """Delete fluxos_series.npz of all but the newest ``keep`` forecasts (disk space)."""
+    """Delete fluxos_series.npz of all but the newest ``keep`` forecasts; keep <= 0 keeps all."""
+    if keep <= 0:
+        return
     cycles = sorted({f.parents[2] for f in (store.root / "cycles").glob("*/hydraulics/*/fluxos_series.npz")})
-    for cdir in cycles[:-keep] if keep > 0 else cycles:
+    for cdir in cycles[:-keep]:
         for f in cdir.glob("hydraulics/*/fluxos_series.npz"):
             f.unlink(missing_ok=True)
 
