@@ -1380,8 +1380,7 @@ def _animation_block(i18n: _I18n, scenarios: list[dict], prefix: str, data_rel: 
         f'<path d="M8 18l-1 3M12 18l-1 3M16 18l-1 3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>'
         f'<span>{i18n.raw("rain_lbl")}</span><span class="sw" aria-hidden="true"><i></i></span></button></div>'
         f'</div>'
-        f'<p><button type="button" class="popout" data-src="{_esc(src)}">{i18n.raw("anim_open")} ↗</button>'
-        f' <span class="muted">{i18n.raw("anim_open_p")}</span></p></section>'
+        f'</section>'
     )
 
 
