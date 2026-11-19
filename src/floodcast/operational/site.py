@@ -1203,7 +1203,7 @@ def _hydraulics_block(i18n: _I18n, scenarios: list[dict], status: dict, prefix: 
     )
 
 
-STRIP_W, STRIP_H = 440, 170   # rain / flow / sea-level strips: three side by side on wide screens
+STRIP_W, STRIP_H = 1200, 128   # rain / flow / sea-level strips: full page width, stacked, short
 
 
 def _anim_rain_strip(i18n: _I18n, ens: dict | None, hours: int = 72) -> str:
@@ -1224,7 +1224,7 @@ def _anim_rain_strip(i18n: _I18n, ens: dict | None, hours: int = 72) -> str:
     rmax = _nice_max(max(max(v) for v in rain.values()) * 1.15 or 1)
     times = [(c0 + timedelta(hours=float(h) + 1)).isoformat() for h in hrs]   # interval ends
     w, h = STRIP_W, STRIP_H
-    x0, x1, y0, y1 = 40, w - 10, 14, h - 26
+    x0, x1, y0, y1 = 46, w - 12, 12, h - 24
     pw, ph = x1 - x0, y1 - y0
     slot = pw / n
     parts = [f'<svg class="chart wide strip rainstrip" viewBox="0 0 {w} {h}"'
@@ -1241,7 +1241,7 @@ def _anim_rain_strip(i18n: _I18n, ens: dict | None, hours: int = 72) -> str:
                        f'height="{ph * v / rmax:.1f}"/>' for i, v in enumerate(vals) if v > 0)
         parts.append(f'<g class="rbars {cls.get(name, name)}">{bars}</g>')
     parts.append(f'<line class="axis" x1="{x0}" x2="{x1}" y1="{y1}" y2="{y1}"/>')
-    parts.append(_time_labels(times, x0 + slot, pw - slot, 3).replace("{y}", str(y1 + 16)))
+    parts.append(_time_labels(times, x0 + slot, pw - slot, 8).replace("{y}", str(y1 + 16)))
     parts.append("</svg>")
     return (f'<div class="animhyd rainhead"><div class="animhyd-head"><strong>{i18n.raw("anim_rain")}</strong>'
             f'<span class="muted">mm/h</span></div>{"".join(parts)}</div>')
@@ -1261,7 +1261,7 @@ def _tide_strip(i18n: _I18n, tide: dict | None, hours: int = 72) -> str:
     if n < 2 or len(pts_ok) < 2:
         return ""
     w, h = STRIP_W, STRIP_H
-    x0, x1, y0, y1 = 40, w - 10, 14, h - 26
+    x0, x1, y0, y1 = 46, w - 12, 12, h - 24
     pw, ph = x1 - x0, y1 - y0
     lo = min(v for _, v in pts_ok); hi = max(v for _, v in pts_ok)
     lo, hi = (min(lo, -1.0), max(hi, 1.0))
@@ -1287,7 +1287,7 @@ def _tide_strip(i18n: _I18n, tide: dict | None, hours: int = 72) -> str:
             i = times.index(ht["time_utc"])
             parts.append(f'<circle class="hw" cx="{px(i):.1f}" cy="{py(float(ht["level_m"])):.1f}" r="3"/>')
     parts.append(f'<line class="axis" x1="{x0}" x2="{x1}" y1="{y1}" y2="{y1}"/>')
-    parts.append(_time_labels(times, x0, pw, 3).replace("{y}", str(y1 + 16)))
+    parts.append(_time_labels(times, x0, pw, 8).replace("{y}", str(y1 + 16)))
     parts.append("</svg>")
     return (f'<div class="animhyd tidehead"><div class="animhyd-head"><strong>{i18n.raw("tide_h")}</strong>'
             f'<span class="muted">m ({i18n.raw("tide_ref")}) · ● {i18n.raw("tide_hw")}</span></div>{"".join(parts)}</div>')
@@ -1311,7 +1311,7 @@ def _anim_hydrograph(i18n: _I18n, forcing: dict | None, hyd: dict | None = None,
     if n < 2:
         return ""
     w, h = STRIP_W, STRIP_H
-    x0, x1, y0, y1 = 40, w - 10, 14, h - 26
+    x0, x1, y0, y1 = 46, w - 12, 12, h - 24
     pw, ph = x1 - x0, y1 - y0
     qmax = _nice_max(max(max(v) for v in series.values()) * 1.1 or 1)
 
@@ -1343,7 +1343,7 @@ def _anim_hydrograph(i18n: _I18n, forcing: dict | None, hyd: dict | None = None,
             pts = " ".join(f"{px(i):.1f},{py(v):.1f}" for i, v in enumerate(series[k]))
             parts.append(f'<polyline class="scn {k}" points="{pts}"/>')
     parts.append(f'<line class="axis" x1="{x0}" x2="{x1}" y1="{y1}" y2="{y1}"/>')
-    parts.append(_time_labels(times, x0, pw, 3).replace("{y}", str(y1 + 16)))
+    parts.append(_time_labels(times, x0, pw, 8).replace("{y}", str(y1 + 16)))
     parts.append("</svg>")
     return (
         f'<div class="animhyd"><div class="animhyd-head"><strong>{i18n.raw("anim_hyd2")}</strong>'
@@ -1707,9 +1707,9 @@ def _cycle_content(i18n: _I18n, latest, data: dict, prefix: str, data_rel: str, 
         out.append(
             f'<div class="viz-outer"><section class="card flood3" id="flood-group">'
             f'<h2><span class="num">3</span>{i18n.raw("grp_h")}</h2>{bar}'
-            f'<div class="viz-pair">{as_panel(hyd_html, "map-card")}{anim_panel}</div>'
             f'<div class="strips-wrap"><p class="muted strips-h"><strong>{i18n.raw("strips_h")}</strong> {i18n.raw("strips_p")}</p>'
-            f'<div class="strip3">{strips[0]}</div></div></section></div>')
+            f'<div class="strip3">{strips[0]}</div></div>'
+            f'<div class="viz-pair">{as_panel(hyd_html, "map-card")}{anim_panel}</div></section></div>')
     else:
         out.append(f'<div class="viz-outer">{hyd_html}{anim_html}</div>')
     out.append(_impacts_section(i18n, data["scenarios"], prefix, data_rel))

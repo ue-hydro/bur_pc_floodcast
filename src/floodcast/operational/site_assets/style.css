@@ -752,3 +752,10 @@ svg.chart .hoverl{stroke:var(--ink);stroke-width:1;stroke-dasharray:3 3;opacity:
 .flood3 #map-card details.tech{margin-top:4px}
 .flood3 .webglwrap{min-height:0}
 .flood3 .map-info2{display:none}
+
+/* strips: full width, stacked, above the views */
+.flood3 .strips-wrap{margin:0 0 12px;padding:0;border-top:0}
+.flood3 .strip3{display:block}
+.flood3 .strip3 .animhyd{display:block;margin:2px 0 6px}
+.flood3 .strip3 .chart.strip{max-height:none;width:100%;height:auto}
+@container (min-width:900px){ .flood3 .strip3{display:block} .flood3 .strip3 .chart.strip{max-height:none} }
