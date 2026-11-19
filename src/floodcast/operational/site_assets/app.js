@@ -323,6 +323,19 @@
     try { if (fr && fr.contentWindow) fr.contentWindow.postMessage({ type: "fluxos-lock", locked: wrap.classList.contains("locked") }, "*"); } catch (e) {}
   }
 
+  // ---- rain button on the 3-D viewer: on = rain falls as forecast (none if none forecast), off = no rain
+  var RAIN = true;
+  function sendRain(w) { try { w.postMessage({ type: "fluxos-rain", on: RAIN }, "*"); } catch (e) {} }
+  Array.prototype.forEach.call(document.querySelectorAll(".raintoggle"), function (b) {
+    b.addEventListener("click", function () {
+      RAIN = !RAIN;
+      b.setAttribute("aria-pressed", RAIN ? "true" : "false");
+      var fr = document.querySelector("#anim-card iframe");
+      if (fr && fr.contentWindow) sendRain(fr.contentWindow);
+      if (popWin && !popWin.closed) sendRain(popWin);
+    });
+  });
+
   // ---- sun button on the 3-D viewer: on = sun follows the simulation time, off = full daylight
   var SUN = false;   // default: full daylight; on = real local light at the forecast time
   function sendSun(w) { try { w.postMessage({ type: "fluxos-sun", follow: SUN }, "*"); } catch (e) {} }
@@ -365,7 +378,7 @@
     if (frame) frame.addEventListener("load", function () {
       try { if (frame.contentWindow.location.href.indexOf("about:") === 0) return; } catch (e) {}
       frame.dataset.loaded = "1";
-      setTimeout(function () { sendSun(frame.contentWindow); }, 1500);
+      setTimeout(function () { sendSun(frame.contentWindow); sendRain(frame.contentWindow); }, 1500);
     });
     function valAt(arr, key, t, step) {
       if (!arr || !arr.length) return null;
@@ -563,9 +576,9 @@
     };
     c.addTo(map);
   }
-  function refLayers(map, geoSrc, show) {
+  function refLayers(map, geoSrc, show, onBasin) {
     var L = window.L, base = geoSrc.replace(/[^\/]*$/, ""), keys = ["basin", "basins", "rivers"];
-    var box = L.control({ position: "bottomleft" });
+    var box = L.control({ position: "topright" });   // under the basemap button, right side
     box.onAdd = function () {
       var div = L.DomUtil.create("div", "reftoggles");
       div.innerHTML = keys.map(function (k) {
@@ -582,10 +595,17 @@
           var cb = box.getContainer().querySelector('input[data-ref="' + k + '"]');
           if (!g) { cb.parentNode.style.display = "none"; return; }
           var lyr = L.geoJSON(g, { style: REF_STYLE[k], interactive: false });
+          if (k === "basin" && onBasin) onBasin(lyr.getBounds());   // the whole basin sets the map view
           if (cb.checked) lyr.addTo(map);
           cb.addEventListener("change", function () { if (cb.checked) lyr.addTo(map); else map.removeLayer(lyr); });
         }).catch(function () {});
     });
+    return box;
+  }
+  // fit a map to its area leaving room on the right for the tick-box panel (nothing hides the basin)
+  function fitClear(map, bounds, box) {
+    var w = box && box.getContainer() ? box.getContainer().offsetWidth : 0;
+    map.fitBounds(bounds, { paddingTopLeft: [8, 8], paddingBottomRight: [(w || 160) + 18, 8], animate: false });
   }
 
 
@@ -640,9 +660,12 @@
         }
       }).addTo(map);
       map.fitBounds(layer.getBounds(), { padding: [6, 6] });
-      refLayers(map, el.getAttribute("data-geo"), { basin: true, basins: false, rivers: false });
-      addRecenter(map, function () { map.fitBounds(layer.getBounds(), { padding: [6, 6] }); });
-      if (window.ResizeObserver) new ResizeObserver(function () { map.invalidateSize(); }).observe(el);
+      var home1 = layer.getBounds(), refBox = null;
+      refBox = refLayers(map, el.getAttribute("data-geo"), { basin: true, basins: false, rivers: false },
+                         function (b) { home1 = b; fitClear(map, home1, refBox); });
+      fitClear(map, home1, refBox);
+      addRecenter(map, function () { fitClear(map, home1, refBox); });
+      if (window.ResizeObserver) new ResizeObserver(function () { map.invalidateSize(); fitClear(map, home1, refBox); }).observe(el);
       slider.max = String(hours.length - 1);
       function draw() {
         layer.setStyle(styleOf);
@@ -677,11 +700,13 @@
       (function (yy, xx, rr) { rr.bindTooltip(function () { var v = MM[t][yy][xx]; return v == null ? "–" : v.toFixed(1) + " mm"; }, { sticky: true }); })(y, x, r);
       cells.push([y, x, r]);
     }
-    map.fitBounds(L.geoJSON(geo).getBounds(), { padding: [6, 6] });
-    refLayers(map, el.getAttribute("data-geo"), { basin: true, basins: false, rivers: false });
-    var home0 = L.geoJSON(geo).getBounds();
-    addRecenter(map, function () { map.fitBounds(home0, { padding: [6, 6] }); });
-    if (window.ResizeObserver) new ResizeObserver(function () { map.invalidateSize(); }).observe(el);
+    var home0 = L.geoJSON(geo).getBounds(), refBox = null;
+    map.fitBounds(home0, { padding: [6, 6] });
+    refBox = refLayers(map, el.getAttribute("data-geo"), { basin: true, basins: false, rivers: false },
+                       function (b) { home0 = b; fitClear(map, home0, refBox); });
+    fitClear(map, home0, refBox);
+    addRecenter(map, function () { fitClear(map, home0, refBox); });
+    if (window.ResizeObserver) new ResizeObserver(function () { map.invalidateSize(); fitClear(map, home0, refBox); }).observe(el);
     var t = 0;
     slider.max = String(T - 1);
     function draw() {

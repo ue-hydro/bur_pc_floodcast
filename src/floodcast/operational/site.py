@@ -323,6 +323,9 @@ T: dict[str, tuple[str, str]] = {
     "anim_r": ("Chuva (mm/h)", "Rain (mm/h)"),
     "anim_now": ("Instante da animação", "Animation time"),
     "lock_on": ("Vista bloqueada — clique para explorar", "View locked — click to explore"),
+    "rain_lbl": ("Chuva prevista", "Forecast rain"),
+    "rain_tip": ("Mostra a chuva na animação 3D quando e com a intensidade prevista (sem chuva prevista, não chove)",
+                 "Shows rain in the 3-D animation when and as hard as forecast (no forecast rain, no rain)"),
     "sun_lbl": ("Condições de luz locais", "Local light conditions"),
     "lock_off": ("Bloquear vista", "Lock view"),
     "anim_open": ("Abrir numa janela própria", "Open in its own window"),
@@ -1363,15 +1366,19 @@ def _animation_block(i18n: _I18n, scenarios: list[dict], prefix: str, data_rel: 
         f'{switch}<script type="application/json" class="anim-views">{data}</script>'
         f'{"" if strips_out is not None else strips}'
         f'<script type="application/json" class="anim-forcing">{json.dumps({"start": (first.get("_forcing") or {}).get("sim_start_utc"), "inflow": (first.get("_forcing") or {}).get("inflow", []), "rain": (first.get("_forcing") or {}).get("rain", [])}).replace("</", "<\\/")}</script>'
-        f'<div class="webglwrap locked"><div class="outsim" hidden>{i18n.raw("out_sim")}</div><iframe src="{_esc(src)}" title="{_esc(i18n.plain("anim_h"))}" loading="lazy" '
+        f'<div class="webglwrap"><div class="outsim" hidden>{i18n.raw("out_sim")}</div><iframe src="{_esc(src)}" title="{_esc(i18n.plain("anim_h"))}" loading="lazy" '
         f'allowfullscreen></iframe>'
-        f'<div class="viewctl"><button type="button" class="viewlock" aria-pressed="true">'
+        f'<div class="viewctl"><button type="button" class="viewlock" aria-pressed="false">'
         f'<svg class="lk-closed" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M17 9h-1V7a4 4 0 10-8 0v2H7a2 2 0 00-2 2v8a2 2 0 002 2h10a2 2 0 002-2v-8a2 2 0 00-2-2zm-7-2a2 2 0 114 0v2h-4V7z"/></svg>'
         f'<svg class="lk-open" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M17 9h-7V7a2 2 0 013.9-.6l1.9-.6A4 4 0 008 7v2H7a2 2 0 00-2 2v8a2 2 0 002 2h10a2 2 0 002-2v-8a2 2 0 00-2-2z"/></svg>'
         f'<span class="lk-t-locked">{i18n.raw("lock_on")}</span><span class="lk-t-open">{i18n.raw("lock_off")}</span></button>'
         f'<button type="button" class="suntoggle" aria-pressed="false">'
         f'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4.5" fill="currentColor"/><g stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 2v2.5M12 19.5V22M2 12h2.5M19.5 12H22M4.9 4.9l1.8 1.8M17.3 17.3l1.8 1.8M4.9 19.1l1.8-1.8M17.3 6.7l1.8-1.8"/></g></svg>'
-        f'<span>{i18n.raw("sun_lbl")}</span><span class="sw" aria-hidden="true"><i></i></span></button></div>'
+        f'<span>{i18n.raw("sun_lbl")}</span><span class="sw" aria-hidden="true"><i></i></span></button>'
+        f'<button type="button" class="raintoggle" aria-pressed="true" title="{_esc(i18n.plain("rain_tip"))}">'
+        f'<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M7 15a5 5 0 01-.5-9.97A6 6 0 0118 6a4.5 4.5 0 01-.5 9H7z"/>'
+        f'<path d="M8 18l-1 3M12 18l-1 3M16 18l-1 3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>'
+        f'<span>{i18n.raw("rain_lbl")}</span><span class="sw" aria-hidden="true"><i></i></span></button></div>'
         f'</div>'
         f'<p><button type="button" class="popout" data-src="{_esc(src)}">{i18n.raw("anim_open")} ↗</button>'
         f' <span class="muted">{i18n.raw("anim_open_p")}</span></p></section>'

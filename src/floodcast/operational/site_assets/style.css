@@ -675,3 +675,18 @@ svg.chart .hoverl{stroke:var(--ink);stroke-width:1;stroke-dasharray:3 3;opacity:
 .chat-fab{z-index:1200}.chat-panel{z-index:1201}.chat-teaser{z-index:1202}.charttip{z-index:1300}
 
 .decwhy{margin:8px 0 6px;padding:8px 12px;background:var(--bg);border-left:3px solid var(--accent);font-size:.9rem;line-height:1.45}
+
+.viewctl .raintoggle{display:inline-flex;align-items:center;gap:6px}
+.viewctl .raintoggle svg{width:16px;height:16px}
+
+/* rain button: same look as the sun button */
+.raintoggle{display:inline-flex;align-items:center;gap:8px;padding:8px 12px;border:1px solid rgba(255,255,255,.35);border-radius:2px;background:rgba(0,58,112,.92);color:#fff;font:inherit;font-weight:600;font-size:.85rem;cursor:pointer}
+.raintoggle svg{width:16px;height:16px;color:#7cc0ec}
+.raintoggle[aria-pressed="false"]{background:rgba(29,35,41,.85)}
+.raintoggle[aria-pressed="false"] svg{color:#fff}
+.raintoggle .sw{display:inline-block;width:30px;height:16px;border-radius:8px;background:rgba(255,255,255,.35);position:relative;flex:none}
+.raintoggle .sw i{position:absolute;top:2px;left:2px;width:12px;height:12px;border-radius:50%;background:#fff;transition:left .15s}
+.raintoggle[aria-pressed="true"] .sw{background:#7cc0ec}
+.raintoggle[aria-pressed="true"] .sw i{left:16px}
+.raintoggle[aria-pressed="false"] svg{color:#7cc0ec}
+.raintoggle[aria-pressed="false"]{background:rgba(0,58,112,.92)}

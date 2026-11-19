@@ -125,6 +125,8 @@ ES = {
               "para girar (arrastrar) y acercar (rueda del ratón).",
     "lock_on": "Vista bloqueada — haga clic para explorar",
     "lock_off": "Bloquear vista",
+    "rain_lbl": "Lluvia prevista",
+    "rain_tip": "Muestra la lluvia en la animación 3D cuándo y con la intensidad prevista (sin lluvia prevista, no llueve)",
     "sun_lbl": "Condiciones de luz locales",
     "anim_hyd": "Caudal de entrada al modelo FLUXOS y lluvia prevista sobre Alcácer do Sal",
     "anim_q": "Caudal de entrada (m³/s)",

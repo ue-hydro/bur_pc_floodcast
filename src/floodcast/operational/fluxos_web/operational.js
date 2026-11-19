@@ -16,7 +16,7 @@
   var lang = (location.hash.match(/lang=(pt|en|es)/) || [0, "pt"])[1];  // the site passes #lang=pt|en|es
   // View lock (page button "Vista bloqueada"): while locked, mouse/touch/keys on the 3-D canvas do not
   // move the camera (the page scrolls instead), but the viewer's own controls panel keeps working.
-  var LOCKED = window.parent !== window;   // embedded: locked until the page says otherwise
+  var LOCKED = false;   // unlocked by default; the page's lock button can lock the camera
   ["mousedown", "wheel", "touchstart", "touchmove", "dblclick", "contextmenu"].forEach(function (ev) {
     window.addEventListener(ev, function (e) {
       if (LOCKED && e.target && e.target.tagName === "CANVAS") e.stopImmediatePropagation();
@@ -71,6 +71,11 @@
     if (flyPanel) hide(flyPanel.closest("div[id], section, aside") || flyPanel.parentElement);
     var v3d = document.getElementById("cam-3d");
     if (v3d) v3d.click();
+    // closer initial view (about 60 % of the template's 3-D preset distance), same centre and angle
+    // (applied after the 3-D preset's camera transition has finished)
+    var zoomed = false;
+    function zoomIn() { if (zoomed) return; try { viewer.camera.distance *= 0.6; zoomed = true; } catch (e) {} }
+    setTimeout(zoomIn, 1500);
     var title = document.getElementById("controls-title");
     if (title) title.textContent = txt("Controlos", "Controls", "Controles");
     var tabLabel = tab && tab.querySelector("span");
@@ -114,20 +119,18 @@
     viewer.sunFollowSim = false; viewer.sunTime = 0.5;
     if (lbl) lbl.textContent = txt("dia claro", "full daylight", "pleno día");
     listenSun(link);
+    hide(row);   // the page's "local light conditions" button controls this; no row in the panel
   }
 
+  // rain shown only as forecast (forcing.json); the page's "Forecast rain" button switches it on/off
   function rainToggle() {
-    var anchor = rowOf("ck-sun-follow");
-    if (!anchor) return;
-    var row = document.createElement("div");
-    row.className = "ctrl-row";
-    row.innerHTML = '<label>' + txt("Chuva prevista", "Forecast rain", "Lluvia prevista") + '</label>' +
-      '<input type="checkbox" id="ck-rain-fc" checked style="flex:0 0 auto; margin:0 8px 0 0">' +
-      '<span class="val" id="v-rain-fc" style="flex:1; text-align:left; color:#8899bb">–</span>';
-    anchor.parentNode.insertBefore(row, anchor.nextSibling);
-    var ck = row.querySelector("input");
-    ck.addEventListener("change", function () { rainOn = ck.checked; if (!rainOn) viewer.rainAmount = 0; });
-    if (!forcing || !forcing.rain || !forcing.rain.length) { ck.checked = false; ck.disabled = true; rainOn = false; }
+    if (!forcing || !forcing.rain || !forcing.rain.length) rainOn = false;
+    window.addEventListener("message", function (ev) {
+      var d = ev.data;
+      if (!d || d.type !== "fluxos-rain" || (CTRL && ev.source !== CTRL)) return;
+      rainOn = !!d.on && !!(forcing && forcing.rain && forcing.rain.length);
+      if (!rainOn) viewer.rainAmount = 0;
+    });
   }
 
   function tick(now) {
@@ -136,8 +139,6 @@
       var mm = rainAt(t);
       // any measurable rain is visible; 8 mm/h ~ heavy downpour
       viewer.rainAmount = mm >= 0.1 ? Math.min(1, Math.max(0.25, Math.sqrt(mm / 8))) : 0;
-      var v = document.getElementById("v-rain-fc");
-      if (v) v.textContent = mm.toFixed(1) + " mm/h";
     }
     if (CTRL && now - lastPost > 100) {
       lastPost = now;
