@@ -203,6 +203,7 @@ ES = {
     "scn_col": "Escenario",
     "scn_peak_txt": "Escenario central: punta a las {t}. La banda abarca los escenarios inferior y superior.",
     "hydro_p_scn": "Caudal simulado con tres escenarios de lluvia — inferior (P10), central (P50) y superior (P90) de la lluvia acumulada de todas las previsiones disponibles.",
+    "src_tbl_h": "Estado de cada fuente de previsión de lluvia",
     "src_h": "Previsiones de lluvia utilizadas",
     "src_p": "{n} previsiones de varios centros meteorológicos, ordenadas por la lluvia acumulada en la cuenca. Los tres escenarios son previsiones reales:",
     "lk_btn": "Probabilidad", "lk_vl": "Muy probable", "lk_l": "Probable", "lk_p": "Posible",

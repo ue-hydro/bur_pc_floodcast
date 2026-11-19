@@ -74,6 +74,7 @@ T: dict[str, tuple[str, str]] = {
                      "Central scenario: peak at {t}. The band spans the lower and upper scenarios."),
     "hydro_p_scn": ("Caudal simulado com três cenários de chuva — inferior (P10), central (P50) e superior (P90) da chuva acumulada de todas as previsões disponíveis.",
                     "Flow simulated with three rainfall scenarios — lower (P10), central (P50) and upper (P90) of the cumulative rain of all available forecasts."),
+    "src_tbl_h": ("Estado de cada fonte de previsão de chuva", "Status of each rainfall forecast source"),
     "src_h": ("Previsões de chuva utilizadas", "Rainfall forecasts used"),
     "src_p": ("{n} previsões de vários centros meteorológicos, ordenadas pela chuva acumulada na bacia. Os três cenários são previsões reais:",
               "{n} forecasts from several weather centres, ranked by cumulative basin rain. The three scenarios are real forecasts:"),
@@ -903,7 +904,7 @@ def _split(left: str, right: str) -> str:
     return f'<div class="split"><div>{left}</div>{right}</div>' if right else left
 
 
-def _sources_block(i18n: _I18n, ens: dict | None) -> str:
+def _sources_block(i18n: _I18n, ens: dict | None, details_out: list | None = None) -> str:
     """Which precipitation products were used, which failed, and the three chosen scenarios."""
     if not ens or not ens.get("sources"):
         return ""
@@ -914,9 +915,10 @@ def _sources_block(i18n: _I18n, ens: dict | None) -> str:
         f"<li><strong>{i18n.raw('scn_' + k)}:</strong> {_esc(v.get('source'))} · {_esc(v.get('member'))} — "
         f"{_num(v.get('total_mm'), 1)} mm / {ens.get('window_h', 72)} h</li>"
         for k, v in (ens.get("scenarios") or {}).items())
+    if details_out is not None:   # the per-source table goes into the section's single "technical details"
+        details_out.append(f'<h3>{i18n.raw("src_tbl_h")}</h3><div class="tablewrap"><table><tbody>{rows}</tbody></table></div>')
     return (f'<h3>{i18n.raw("src_h")}</h3><p class="muted">{i18n.raw("src_p", n=ens.get("members_total", "–"))}</p>'
-            f'<ul class="scnlist">{chosen}</ul>'
-            + _details(i18n, f'<div class="tablewrap"><table><tbody>{rows}</tbody></table></div>'))
+            f'<ul class="scnlist">{chosen}</ul>')
 
 
 def _screening_block(i18n: _I18n, screening: dict | None, rain_src: str | None = None, geo: str = "",
@@ -925,7 +927,8 @@ def _screening_block(i18n: _I18n, screening: dict | None, rain_src: str | None =
         return ""
     scn_src = (rain_src.replace("precip_grid.json", "precip_scenarios.json")
                if rain_src and ens and ens.get("_scn_file") else None)
-    chart = _split(_precip_chart(i18n, screening, ens) + _sources_block(i18n, ens),
+    src_details: list = []
+    chart = _split(_precip_chart(i18n, screening, ens) + _sources_block(i18n, ens, src_details),
                    _anim_map(i18n, "rain", scn_src or rain_src, geo + "hrus.geojson",
                              "rainmap_scn_h" if scn_src else "rainmap_h", "rainmap_unit", scenarios=bool(ens)))
     thresholds = screening.get("thresholds") or {}
@@ -952,7 +955,7 @@ def _screening_block(i18n: _I18n, screening: dict | None, rain_src: str | None =
     )
     return (
         f'<section class="card" id="precip"><h2><span class="num">1</span>{i18n.raw("precip_h")}</h2><p class="muted">{i18n.raw("precip_p")}</p>'
-        f"{chart}{_details(i18n, table + _reasons(i18n, screening.get('decision')))}</section>"
+        f"{chart}{_details(i18n, ''.join(src_details) + table + _reasons(i18n, screening.get('decision')))}</section>"
     )
 
 
