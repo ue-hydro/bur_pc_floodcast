@@ -1,0 +1,79 @@
+{
+ "model": "mizuRoute lakes, endorheic (no outflow) - see module docstring",
+ "release_k_per_day": 0.01,
+ "power": 1.5,
+ "capacity_method": "area x 10 m (ESTIMATE; replace with SNIRH)",
+ "source": "OpenStreetMap reservoirs and dams, 2026-11-19",
+ "lakes": [
+  {
+   "segId": 2011,
+   "dams": [
+    {
+     "name": "Alvito",
+     "area_km2": 13.21,
+     "capacity_hm3_estimate": 132.1
+    },
+    {
+     "name": "Odivelas",
+     "area_km2": 7.89,
+     "capacity_hm3_estimate": 78.9
+    }
+   ],
+   "capacity_m3": 211000000.0
+  },
+  {
+   "segId": 2016,
+   "dams": [
+    {
+     "name": "Roxo",
+     "area_km2": 12.54,
+     "capacity_hm3_estimate": 125.4
+    }
+   ],
+   "capacity_m3": 125400000.0
+  },
+  {
+   "segId": 2015,
+   "dams": [
+    {
+     "name": "Monte da Rocha",
+     "area_km2": 10.58,
+     "capacity_hm3_estimate": 105.8
+    }
+   ],
+   "capacity_m3": 105800000.0
+  },
+  {
+   "segId": 2012,
+   "dams": [
+    {
+     "name": "Pego do Altar",
+     "area_km2": 8.43,
+     "capacity_hm3_estimate": 84.3
+    }
+   ],
+   "capacity_m3": 84300000.0
+  },
+  {
+   "segId": 2013,
+   "dams": [
+    {
+     "name": "Vale do Gaio",
+     "area_km2": 5.51,
+     "capacity_hm3_estimate": 55.1
+    }
+   ],
+   "capacity_m3": 55100000.0
+  }
+ ],
+ "skipped": [
+  {
+   "name": "Campilhas",
+   "reason": "dam 5.6 km from the nearest modelled reach"
+  },
+  {
+   "name": "Pisão",
+   "reason": "dam 14.3 km from the nearest modelled reach"
+  }
+ ]
+}

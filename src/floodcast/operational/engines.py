@@ -127,9 +127,13 @@ class SummaMizuEngine:
         )
         (settings / "fileManager.txt").write_text(text)
         toml_template = (self.domain.summa_dir / "mizuroute_config.template.toml").read_text()
-        (settings / "mizuroute_config.toml").write_text(
-            toml_template.replace("@@MIZUROUTE_PATH@@", self._p(run_dir, "mizuroute"))
-        )
+        toml_text = toml_template.replace("@@MIZUROUTE_PATH@@", self._p(run_dir, "mizuroute"))
+        lakes = self.domain.mizuroute_dir / "topology_lakes.nc"
+        if getattr(self.config.hydrology, "reservoirs", False) and lakes.is_file():
+            # reservoirs as mizuRoute lakes: lake topology + is_lake_sim in the [mizuRoute] section
+            shutil.copyfile(lakes, run_dir / "mizuroute" / "topology.nc")
+            toml_text = toml_text.replace("[mizuRoute]\n", "[mizuRoute]\nis_lake_sim = true\n", 1)
+        (settings / "mizuroute_config.toml").write_text(toml_text)
 
     def run_summa(self, run_dir: Path, forcing_files: list[Path], start: datetime, end: datetime,
                   init: Path, *, restart: bool) -> tuple[Path, Path | None]:

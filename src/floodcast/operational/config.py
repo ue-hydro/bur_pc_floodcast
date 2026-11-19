@@ -77,6 +77,8 @@ class HydrologySettings(_Model):
     # Replay this many days of stored forcing before every forecast: the coupled build has no
     # mizuRoute restart, so river channels start empty and need ~5 days to fill.
     preroll_days: int = Field(default=5, ge=1, le=14)
+    # Reservoirs as mizuRoute lakes (domain mizuroute/topology_lakes.nc from build_reservoirs.py).
+    reservoirs: bool = False
     max_state_age_h: int = Field(default=36, ge=6)
     summa_timeout_s: int = Field(default=1800, ge=60)
     parallel_members: int = Field(default=4, ge=1, le=64)
