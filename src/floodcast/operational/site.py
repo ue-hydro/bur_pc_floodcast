@@ -77,6 +77,7 @@ T: dict[str, tuple[str, str]] = {
     "hydro_p_scn": ("Caudal simulado com três cenários de chuva — inferior (P10), central (P50) e superior (P90) da chuva acumulada de todas as previsões disponíveis.",
                     "Flow simulated with three rainfall scenarios — lower (P10), central (P50) and upper (P90) of the cumulative rain of all available forecasts."),
     "src_tbl_h": ("Estado de cada fonte de previsão de chuva", "Status of each rainfall forecast source"),
+    "peak_more": ("Pico previsto e caudal de ponta por cenário", "Forecast peak and peak flow by scenario"),
     "src_h": ("Previsões de chuva utilizadas", "Rainfall forecasts used"),
     "src_p": ("{n} previsões de vários centros meteorológicos, ordenadas pela chuva acumulada na bacia. Os três cenários são previsões reais:",
               "{n} forecasts from several weather centres, ranked by cumulative basin rain. The three scenarios are real forecasts:"),
@@ -926,12 +927,12 @@ def _anim_map(i18n: _I18n, kind: str, data_src: str | None, geo_src: str, title_
     )
 
 
-def _wide_layout(chart: str, map_html: str, side: str) -> str:
-    """Sections 1 and 2: chart and its animated map side by side at the same size, panel underneath."""
-    if not map_html:
-        return f'<div class="wide-chart">{chart}</div><div class="ms-side">{side}</div>'
-    return (f'<div class="mapside"><div class="wide-chart">{chart}</div><div class="ms-map">{map_html}</div></div>'
-            f'<div class="ms-side ms-below">{side}</div>')
+def _wide_layout(chart: str, map_html: str, side: str, side_title: str = "") -> str:
+    """Sections 1 and 2 (shown side by side): chart on top, its animated map below, then the
+    forecast list / peaks table collapsed."""
+    folded = (f'<details class="tech s12-more"><summary>{side_title}</summary>{side}</details>'
+              if side and side_title else side)
+    return f'<div class="wide-chart">{chart}</div>{map_html or ""}{folded}'
 
 
 def _split(left: str, right: str) -> str:
@@ -965,7 +966,7 @@ def _screening_block(i18n: _I18n, screening: dict | None, rain_src: str | None =
     chart = _wide_layout(_precip_chart(i18n, screening, ens),
                          _anim_map(i18n, "rain", scn_src or rain_src, geo + "hrus.geojson",
                                    "rainmap_scn_h" if scn_src else "rainmap_h", "rainmap_unit", scenarios=bool(ens)),
-                         _sources_block(i18n, ens, src_details))
+                         _sources_block(i18n, ens, src_details), i18n.raw("src_h"))
     thresholds = screening.get("thresholds") or {}
     rows = []
     for win in screening.get("windows") or []:
@@ -1028,7 +1029,7 @@ def _hydrology_block(i18n: _I18n, summary: dict | None, flow_src: str | None = N
         return (
             f'<section class="card" id="hydrology"><h2><span class="num">2</span>{i18n.raw("hydro_h")}</h2>'
             f'<p class="muted">{i18n.raw("hydro_p_scn")}</p>'
-            f'{_wide_layout(hydro_chart, flow_map, "<h3>" + i18n.raw("peak") + "</h3><p>" + peak_txt + "</p>" + table)}'
+            f'{_wide_layout(hydro_chart, flow_map, "<h3>" + i18n.raw("peak") + "</h3><p>" + peak_txt + "</p>" + table, i18n.raw("peak_more"))}'
             f'{_details(i18n, state_html + _reasons(i18n, summary.get("decision")))}</section>'
         )
     for level in ("watch", "warning", "alert"):
@@ -1055,7 +1056,7 @@ def _hydrology_block(i18n: _I18n, summary: dict | None, flow_src: str | None = N
         )
     return (
         f'<section class="card" id="hydrology"><h2><span class="num">2</span>{i18n.raw("hydro_h")}</h2><p class="muted">{i18n.raw("hydro_p")}</p>'
-        f'{_wide_layout(hydro_chart, flow_map, "<h3>" + i18n.raw("peak") + "</h3><p>" + peak_txt + "</p>" + table)}'
+        f'{_wide_layout(hydro_chart, flow_map, "<h3>" + i18n.raw("peak") + "</h3><p>" + peak_txt + "</p>" + table, i18n.raw("peak_more"))}'
         f'{_details(i18n, state_html + _reasons(i18n, summary.get("decision")))}</section>'
     )
 
@@ -1697,11 +1698,11 @@ def _cycle_content(i18n: _I18n, latest, data: dict, prefix: str, data_rel: str, 
     out.append(_speed_block(i18n))
     base = f"{prefix}{data_rel}/"
     geo = f"{prefix}geometry/"
-    out.append(_screening_block(i18n, data["screening"],
-                                base + "precip_grid.json" if data.get("rain_file") else None, geo,
-                                data.get("precip_ens")))
-    out.append(_hydrology_block(i18n, data["hydrology"],
-                                base + "hydrology/reach_flow.json" if data.get("flow_file") else None, geo))
+    s1 = _screening_block(i18n, data["screening"], base + "precip_grid.json" if data.get("rain_file") else None,
+                          geo, data.get("precip_ens"))
+    s2 = _hydrology_block(i18n, data["hydrology"],
+                          base + "hydrology/reach_flow.json" if data.get("flow_file") else None, geo)
+    out.append(f'<div class="s12">{s1}{s2}</div>')   # rain (1) and flow (2) side by side on wide screens
     # flood map (3) and 3-D animation (4) side by side on wide screens (same clock and scenario)
     strips: list = []
     ctl: list = []
