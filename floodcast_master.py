@@ -392,11 +392,26 @@ def publish_site(cfg: OperationalConfig, store) -> None:
         import subprocess
 
         try:
-            subprocess.run(cfg.publish.post_command, shell=True, cwd=cfg.publish.output_dir,
-                           check=True, timeout=cfg.publish.post_command_timeout_s,
-                           stdout=subprocess.DEVNULL, stderr=subprocess.PIPE)
+            res = subprocess.run(cfg.publish.post_command, shell=True, cwd=cfg.publish.output_dir,
+                                 check=True, timeout=cfg.publish.post_command_timeout_s,
+                                 capture_output=True, text=True)
+            for line in res.stdout.splitlines():   # "publish: GitHub: pushed ..." lines -> terminal
+                if "publish:" in line and "no change" not in line:
+                    log.info(line.split("publish:", 1)[1].strip())
         except (subprocess.SubprocessError, OSError) as exc:
             log.error("publish.post_command failed: %s", type(exc).__name__)
+
+
+def idle_status(store, wait_s: float, processed: int) -> None:
+    """One terminal line per pass so the log shows the loop is alive and what it is waiting for."""
+    from floodcast.operational.store import read_json
+
+    latest = read_json(store.root / "latest.json", {}) or {}
+    nxt = (datetime.now() + timedelta(seconds=wait_s)).strftime("%H:%M")
+    shown = latest.get("cycle", "none yet").replace("T", " ").replace(":00:00Z", " UTC")
+    if processed == 0:
+        log.info("waiting: no new ECMWF forecast yet | on the site: %s (level %s) | next check %s",
+                 shown, latest.get("level", "?"), nxt)
 
 
 def git_update_available(repo: Path) -> bool:
@@ -461,6 +476,9 @@ def main() -> int:
 
     PROG = Progress(store.root, cfg.publish.output_dir)
     setup_logging(cfg, domain.domain_id)
+    for noisy in ("ecmwf.opendata", "ecmwf.opendata.utils", "urllib3", "filelock"):
+        logging.getLogger(noisy).setLevel(logging.ERROR)   # keep the terminal readable
+    log.info("floodcast loop started (checks every %d min; progress shown below)", cfg.poll_interval_minutes)
     for sig in (signal.SIGINT, signal.SIGTERM):
         signal.signal(sig, lambda *_: globals().update(STOP=True))
 
@@ -484,6 +502,7 @@ def main() -> int:
             log.exception("initial site build failed")
         while not STOP:
             started = now_utc()
+            cycles = []
             try:
                 cycles = [parse_cycle(args.cycle)] if args.cycle else new_cycles(cfg, store)
                 for i, cycle in enumerate(cycles):
@@ -511,6 +530,7 @@ def main() -> int:
                 RESTART["now"] = True
                 break
             wait = max(30.0, cfg.poll_interval_minutes * 60 - (now_utc() - started).total_seconds())
+            idle_status(store, wait, processed=len(cycles))
             end = time.monotonic() + wait
             while not STOP and time.monotonic() < end:
                 time.sleep(1)

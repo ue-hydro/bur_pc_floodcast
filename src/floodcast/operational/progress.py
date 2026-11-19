@@ -7,6 +7,7 @@ are remembered (``durations.json``) to estimate when updated results will be ava
 
 from __future__ import annotations
 
+import logging
 import threading
 import time
 from datetime import datetime, timedelta
@@ -15,6 +16,24 @@ from pathlib import Path
 from .store import iso, now_utc, read_json, write_json
 
 STAGES = ("precip", "hydrology", "hydraulics")
+NAMES = {"precip": "1/3 Rain forecasts (all free sources)", "hydrology": "2/3 Hydrology (SUMMA-mizuRoute, 3 scenarios)",
+         "hydraulics": "3/3 Flood maps (FLUXOS, 3 scenarios)"}
+log = logging.getLogger("floodcast.progress")
+
+
+def _local(iso_s: str | None) -> str:
+    """'15:42' in the laptop's local time from an ISO UTC stamp (for the terminal)."""
+    if not iso_s:
+        return "?"
+    try:
+        return datetime.fromisoformat(iso_s.replace("Z", "+00:00")).astimezone().strftime("%H:%M")
+    except ValueError:
+        return "?"
+
+
+def _bar(pct: int, width: int = 20) -> str:
+    n = round(width * pct / 100)
+    return "[" + "#" * n + "." * (width - n) + f"] {pct:3d}%"
 DEFAULT_MIN = {"precip": 12.0, "hydrology": 5.0, "hydraulics": 50.0}
 
 
@@ -24,6 +43,7 @@ class Progress:
         self.durations_path = root / "durations.json"
         self.lock = threading.Lock()
         self.doc: dict = {"state": "idle", "stages": {}}
+        self._logged: dict = {}   # stage -> (pct, time) of the last terminal line
 
     # ------------------------------------------------------------------ helpers
     def _typical_min(self, stage: str) -> float:
@@ -62,6 +82,8 @@ class Progress:
             self.doc = {"state": "running", "cycle": iso(cycle), "started_utc": iso(now_utc()),
                         "stages": {n: {"state": "pending", "pct": 0} for n in STAGES}}
             self._write()
+        log.info("=" * 60)
+        log.info("NEW FORECAST %s UTC: starting the chain", cycle.strftime("%Y-%m-%d %H"))
 
     def start(self, stage: str) -> None:
         with self.lock:
@@ -69,6 +91,9 @@ class Progress:
             st.update(state="running", pct=0, started_utc=iso(now_utc()), t0=time.time())
             st["eta_utc"] = iso(now_utc() + timedelta(minutes=self._typical_min(stage)))
             self._write()
+            self._logged[stage] = (0, time.time())
+        log.info("> %s started (usually ~%.0f min, expected done %s)", NAMES.get(stage, stage),
+                 self._typical_min(stage), _local(st["eta_utc"]))
 
     def update(self, stage: str, frac: float, detail: str = "") -> None:
         with self.lock:
@@ -83,6 +108,11 @@ class Progress:
             if frac > 0.03 and elapsed > 5:  # extrapolate from the observed pace
                 st["eta_utc"] = iso(now_utc() + timedelta(seconds=elapsed * (1 - frac) / frac))
             self._write()
+            last_pct, last_t = self._logged.get(stage, (-100, 0.0))
+            if st["pct"] >= last_pct + 10 or (st["pct"] != last_pct and time.time() - last_t > 120):
+                self._logged[stage] = (st["pct"], time.time())
+                log.info("  %s %s  %s  (done ~%s)", NAMES.get(stage, stage).split(" (")[0], _bar(st["pct"]),
+                         st.get("detail", ""), _local(st.get("eta_utc")))
 
     def finish(self, stage: str, state: str = "done") -> None:
         with self.lock:
@@ -93,11 +123,14 @@ class Progress:
                       finished_utc=iso(now_utc()))
             st.pop("eta_utc", None)
             self._write()
+        mins = (time.time() - st.get("t0", time.time())) / 60 if "t0" in st else None
+        log.info("< %s %s%s", NAMES.get(stage, stage), state.upper(), f" in {mins:.1f} min" if mins else "")
 
     def skip(self, stage: str) -> None:
         with self.lock:
             self.doc["stages"].setdefault(stage, {}).update(state="skipped", expected=False)
             self._write()
+        log.info("- %s skipped (below threshold, not needed)", NAMES.get(stage, stage))
 
     def end(self, next_expected: datetime | None = None) -> None:
         with self.lock:
@@ -109,6 +142,8 @@ class Progress:
             if next_expected:
                 self.doc["next_update_expected_utc"] = iso(next_expected)
             self._write()
+        log.info("chain finished%s", f"; next forecast expected ~{_local(iso(next_expected))}" if next_expected else "")
+        log.info("=" * 60)
 
 
 class FluxosWatcher(threading.Thread):
