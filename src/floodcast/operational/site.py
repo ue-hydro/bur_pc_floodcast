@@ -1197,6 +1197,7 @@ def _hydraulics_block(i18n: _I18n, scenarios: list[dict], status: dict, prefix: 
         f'<button type="button" class="maxbtn" aria-pressed="false">{i18n.raw("t_max_btn")}</button></div>'
         f'<script type="application/json" id="map-data">{mapdata}</script>'
         f'<div class="depthlegend dp">{_legend_html(i18n)}</div>{lk_legend}'
+        f'<p class="muted map-info2">{info}</p>'
         f'{_layer_legends(i18n) if any(e.get("layers") for e in cfg["scenarios"]) else ""}'
         f'{_details(i18n, "<h3>" + i18n.raw("caveats") + "</h3><ul>" + "".join(caveats) + "</ul>")}</section>'
     )
@@ -1693,12 +1694,24 @@ def _cycle_content(i18n: _I18n, latest, data: dict, prefix: str, data_rel: str, 
     H = _horizon_h(data)
     anim_html = _animation_block(i18n, data["scenarios"], prefix, data_rel, data.get("hydrology"),
                                  data.get("precip_ens"), data.get("tide"), strips_out=strips, hours=H)
-    strips_html = (f'<section class="card viz-strips" id="flood-group"><h2><span class="num">3</span>{i18n.raw("grp_h")}</h2>'
-                   f'<p class="muted"><strong>{i18n.raw("strips_h")}</strong> {i18n.raw("strips_p")}</p>'
-                   f'<div class="strip3">{strips[0]}</div>'
-                   + (f'<div class="flood-ctl" id="flood-ctl"><span class="fc-l">{i18n.raw("ctl_l")}</span>{ctl[0]}</div>' if ctl else "")
-                   + '</section>') if strips and anim_html else ""
-    out.append(f'<div class="viz-outer"><div class="viz-pair">{strips_html}{hyd_html}{anim_html}</div></div>')
+    def as_panel(html: str, sid: str) -> str:
+        """section.card -> inner panel of section 3 (h2 -> h3), keeping ids for the scripts."""
+        html = html.replace(f'<section class="card" id="{sid}"><h2>', f'<div class="panel" id="{sid}"><h3>', 1)
+        html = html.replace("</h2>", "</h3>", 1)
+        i = html.rfind("</section>")
+        return html[:i] + "</div>" + html[i + len("</section>"):] if i >= 0 else html
+    if anim_html and hyd_html and strips:
+        anim_panel = as_panel(anim_html, "anim-card").replace(f'<p class="muted">{i18n.raw("anim_p")}</p>', "", 1)
+        bar = (f'<div class="flood-ctl" id="flood-ctl"><span class="fc-l">{i18n.raw("ctl_l")}</span>{ctl[0]}</div>'
+               if ctl else "")
+        out.append(
+            f'<div class="viz-outer"><section class="card flood3" id="flood-group">'
+            f'<h2><span class="num">3</span>{i18n.raw("grp_h")}</h2>{bar}'
+            f'<div class="viz-pair">{as_panel(hyd_html, "map-card")}{anim_panel}</div>'
+            f'<div class="strips-wrap"><p class="muted strips-h"><strong>{i18n.raw("strips_h")}</strong> {i18n.raw("strips_p")}</p>'
+            f'<div class="strip3">{strips[0]}</div></div></section></div>')
+    else:
+        out.append(f'<div class="viz-outer">{hyd_html}{anim_html}</div>')
     out.append(_impacts_section(i18n, data["scenarios"], prefix, data_rel))
     out.append(_emergency_block(i18n))
     api = f'{prefix}api/{data_rel}/'
