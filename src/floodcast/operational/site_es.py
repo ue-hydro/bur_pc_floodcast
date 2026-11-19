@@ -125,6 +125,7 @@ ES = {
               "para girar (arrastrar) y acercar (rueda del ratón).",
     "lock_on": "Vista bloqueada — haga clic para explorar",
     "lock_off": "Bloquear vista",
+    "wg_hint": "🖱 Arrastre para girar · rueda del ratón para acercar · Mayús + arrastrar para desplazar · clic para detener la rotación",
     "rain_lbl": "Lluvia prevista",
     "rain_tip": "Muestra la lluvia en la animación 3D cuándo y con la intensidad prevista (sin lluvia prevista, no llueve)",
     "sun_lbl": "Condiciones de luz locales",

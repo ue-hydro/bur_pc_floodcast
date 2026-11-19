@@ -323,6 +323,8 @@ T: dict[str, tuple[str, str]] = {
     "anim_r": ("Chuva (mm/h)", "Rain (mm/h)"),
     "anim_now": ("Instante da animação", "Animation time"),
     "lock_on": ("Vista bloqueada — clique para explorar", "View locked — click to explore"),
+    "wg_hint": ("🖱 Arraste para rodar · roda do rato para aproximar · Shift + arrastar para deslocar · clique para parar a rotação",
+                "🖱 Drag to rotate · scroll to zoom · Shift + drag to pan · click to stop the rotation"),
     "rain_lbl": ("Chuva prevista", "Forecast rain"),
     "rain_tip": ("Mostra a chuva na animação 3D quando e com a intensidade prevista (sem chuva prevista, não chove)",
                  "Shows rain in the 3-D animation when and as hard as forecast (no forecast rain, no rain)"),
@@ -1366,7 +1368,7 @@ def _animation_block(i18n: _I18n, scenarios: list[dict], prefix: str, data_rel: 
         f'{switch}<script type="application/json" class="anim-views">{data}</script>'
         f'{"" if strips_out is not None else strips}'
         f'<script type="application/json" class="anim-forcing">{json.dumps({"start": (first.get("_forcing") or {}).get("sim_start_utc"), "inflow": (first.get("_forcing") or {}).get("inflow", []), "rain": (first.get("_forcing") or {}).get("rain", [])}).replace("</", "<\\/")}</script>'
-        f'<div class="webglwrap"><div class="clockbadge wg"></div><div class="outsim" hidden>{i18n.raw("out_sim")}</div><iframe src="{_esc(src)}" title="{_esc(i18n.plain("anim_h"))}" loading="lazy" '
+        f'<div class="webglwrap"><div class="clockbadge wg"></div><div class="wg-hint">{i18n.raw("wg_hint")}</div><div class="outsim" hidden>{i18n.raw("out_sim")}</div><iframe src="{_esc(src)}" title="{_esc(i18n.plain("anim_h"))}" loading="lazy" '
         f'allowfullscreen></iframe>'
         f'<div class="viewctl"><button type="button" class="viewlock" aria-pressed="false">'
         f'<svg class="lk-closed" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M17 9h-1V7a4 4 0 10-8 0v2H7a2 2 0 00-2 2v8a2 2 0 002 2h10a2 2 0 002-2v-8a2 2 0 00-2-2zm-7-2a2 2 0 114 0v2h-4V7z"/></svg>'

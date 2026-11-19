@@ -191,6 +191,22 @@
     var vt = document.getElementById("v-time"); if (vt) vt.style.minWidth = "11em";
   }
 
+  // slow automatic rotation around the area; any click / touch / wheel on the 3-D view stops it
+  function autoRotate() {
+    var on = true, last = 0;
+    function stop(e) { if (e.target && e.target.tagName === "CANVAS") on = false; }
+    ["mousedown", "touchstart", "wheel"].forEach(function (ev) { window.addEventListener(ev, stop, { capture: true, passive: true }); });
+    window.addEventListener("message", function (ev) {
+      var d = ev.data; if (d && d.type === "fluxos-rotate") on = !!d.on;
+    });
+    function step(now) {
+      var dt = last ? Math.min(100, now - last) : 0; last = now;
+      if (on && !LOCKED) { try { viewer.camera._anim = null; viewer.camera.theta += dt * 0.00006; } catch (e) {} }   // ~1 turn / 105 s
+      requestAnimationFrame(step);
+    }
+    setTimeout(function () { requestAnimationFrame(step); }, 3500);   // after the default 3D view is set
+  }
+
   function start() {
     // bluer water: mostly the clear palette with a little river sediment (template default 0.55)
     viewer.turbidity = 0.2;
@@ -200,6 +216,7 @@
     if (CTRL) followPageClock();
     sunClock();
     rainToggle();
+    autoRotate();
     requestAnimationFrame(tick);
   }
 
