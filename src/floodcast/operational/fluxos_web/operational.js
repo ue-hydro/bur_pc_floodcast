@@ -219,19 +219,22 @@
   // the water so the colours read clearly.
   var LAYER_IMG = { arrival: "../arrival.png", hazard: "../hazard.png", duration: "../duration.png",
                     likelihood: "../../likelihood.png" };
-  var baseSat = null, layerTex = {};
+  var baseSat = null, baseUse = null, draped = false, layerTex = {};
   function img(src) {
     return new Promise(function (res, rej) { var i = new Image(); i.onload = function () { res(i); }; i.onerror = rej; i.src = src; });
   }
   function setLayer(k) {
     var gl = viewer.gl;
     if (!gl) return;
-    if (baseSat === null) baseSat = viewer.satelliteTex || false;
-    if (!LAYER_IMG[k]) {   // depth: back to the normal view
-      viewer.satelliteTex = baseSat || null; viewer.useSatellite = !!baseSat; viewer.showWater = true;
+    if (!LAYER_IMG[k]) {   // depth: back to the normal view - only if we draped something before
+      if (draped) { viewer.satelliteTex = baseSat; viewer.useSatellite = baseUse; draped = false; }
+      viewer.showWater = true;
       return;
     }
-    function apply(tex) { viewer.satelliteTex = tex; viewer.useSatellite = true; viewer.showWater = false; }
+    function apply(tex) {
+      if (!draped) { baseSat = viewer.satelliteTex; baseUse = viewer.useSatellite; draped = true; }   // remember the real ground
+      viewer.satelliteTex = tex; viewer.useSatellite = true; viewer.showWater = false;
+    }
     if (layerTex[k]) { apply(layerTex[k]); return; }
     Promise.all([img("data/satellite.jpg" + (viewer._v || "")).catch(function () { return img("data/hillshade.png"); }),
                  img(LAYER_IMG[k])]).then(function (r) {

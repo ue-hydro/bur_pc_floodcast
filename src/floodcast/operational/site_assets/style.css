@@ -724,3 +724,6 @@ svg.chart .hoverl{stroke:var(--ink);stroke-width:1;stroke-dasharray:3 3;opacity:
 .webglwrap .wg-hint{bottom:54px;max-width:calc(100% - 30px)}
 .outsim{bottom:14px}
 @media (max-width:640px){.webglwrap .viewctl{max-width:calc(100% - 20px);top:52px}}
+
+/* time label: fixed width + same-width digits, so it does not resize (flicker) as the text changes */
+.clockbadge{font-variant-numeric:tabular-nums;min-width:12.6em;text-align:center;box-sizing:border-box}
