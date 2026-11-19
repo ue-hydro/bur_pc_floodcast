@@ -622,3 +622,19 @@ svg.chart .hoverl{stroke:var(--ink);stroke-width:1;stroke-dasharray:3 3;opacity:
 .reftoggles .rt-basin{border-top:1.5px solid #263238;opacity:.7}
 .reftoggles .rt-river{border-top:2px dashed #0d47a1}
 .maplegend .ln-river{border-top-style:dashed!important}
+
+/* section 4: impacts table + snapshot mini-maps */
+#impacts .scnsw{margin:4px 0 12px}
+.imptable{overflow-x:auto;margin-top:12px}
+.imptable table{width:100%;border-collapse:collapse;font-size:.88rem}
+.imptable th{text-align:left;font-weight:600;color:var(--mute);border-bottom:2px solid var(--line);padding:6px 8px;white-space:nowrap}
+.imptable td{border-bottom:1px solid var(--line);padding:6px 8px;vertical-align:top}
+.imptable td.num{white-space:nowrap;font-variant-numeric:tabular-nums}
+.imptable td.c{text-align:center}
+.imptable time.short{white-space:nowrap}
+.imptable .hz{display:inline-block;margin-left:4px;padding:0 5px;border-radius:2px;background:var(--alert-bg,#fde2e1);color:var(--alert-ink,#7f1d1d);font-size:.78rem;font-weight:700}
+.snapbtn{border:1px solid var(--line);background:var(--surface);border-radius:2px;padding:3px 7px;cursor:pointer;font-size:1rem}
+.snapbtn[aria-pressed="true"]{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 12%,transparent)}
+.snaprow td{padding:0 0 10px;border-bottom:1px solid var(--line)}
+.snapmap{height:300px;border:1px solid var(--line)}
+.detbtn{margin-left:6px;font-size:.85rem;font-weight:600;white-space:nowrap}

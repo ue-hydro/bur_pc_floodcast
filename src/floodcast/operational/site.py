@@ -101,8 +101,8 @@ T: dict[str, tuple[str, str]] = {
     "dec_note": ("Indicativo: modelo não calibrado; a maré ainda não entra no modelo hidrodinâmico. Siga sempre a Proteção Civil.",
                  "Indicative: uncalibrated model; the tide is not yet in the hydrodynamic model. Always follow Civil Protection."),
     "imp_h": ("Impactos previstos (cenário selecionado)", "Expected impacts (selected scenario)"),
-    "imp_p": ("Edifícios, estradas e equipamentos do OpenStreetMap na zona simulada. Indicativo: modelo não calibrado.",
-              "Buildings, roads and facilities from OpenStreetMap in the simulated area. Indicative: uncalibrated model."),
+    "imp_p": ("Edifícios, estradas e equipamentos do OpenStreetMap atingidos pela água simulada, com as horas previstas de chegada, pico e secagem. Indicativo: modelo não calibrado.",
+              "Buildings, roads and facilities from OpenStreetMap reached by the simulated water, with the expected arrival, peak and drying times. Indicative: model not calibrated."),
     "imp_bld": ("edifícios com água", "buildings with water"),
     "imp_bld_deep": ("com mais de 0,5 m", "deeper than 0.5 m"),
     "imp_road": ("de estrada inundada", "of road flooded"),
@@ -110,6 +110,38 @@ T: dict[str, tuple[str, str]] = {
     "imp_cut": ("Estradas e arruamentos cortados", "Roads and streets cut"),
     "imp_fac": ("Equipamentos afetados", "Facilities affected"),
     "imp_from": ("a partir de", "from"),
+    "j_imp": ("Impactos", "Impacts"),
+    "dec_more": ("Ver detalhes ↓", "Full details ↓"),
+    "imp_k_road": ("estrada / arruamento", "road / street"),
+    "imp_k_bld": ("edifício", "building"),
+    "imp_c_place": ("Local", "Place"),
+    "imp_c_depth": ("Profundidade máx.", "Max. depth"),
+    "imp_c_wet": ("Começa a ter água", "Water arrives"),
+    "imp_c_peak": ("Água mais alta", "Highest water"),
+    "imp_c_dry": ("Fica seco", "Dry again"),
+    "imp_c_snap": ("Imagem", "Snapshot"),
+    "imp_snap": ("Ver a inundação simulada neste local", "Show the simulated flood at this place"),
+    "imp_stillwet": ("ainda com água no fim da previsão", "still wet at the end of the forecast"),
+    "imp_none": ("Nenhum local identificado com nome neste cenário.", "No named place identified in this scenario."),
+    "imp_notiming": ("As horas de chegada, pico e secagem por local aparecem a partir da próxima previsão (esta simulação foi feita antes de serem calculadas).",
+                     "Arrival, peak and drying times per place appear from the next forecast (this simulation ran before they were computed)."),
+    "imp_m_h": ("Como foram determinados os locais afetados", "How the affected places were determined"),
+    "imp_m_src": ("<b>Fonte:</b> edifícios, estradas/arruamentos e equipamentos do OpenStreetMap (© contribuidores OSM, ODbL), extraídos uma vez para a área do modelo. Não é o cadastro oficial: podem faltar elementos ou nomes.",
+                  "<b>Source:</b> buildings, roads/streets and facilities from OpenStreetMap (© OSM contributors, ODbL), extracted once for the model area. It is not the official register: features or names may be missing."),
+    "imp_m_depth": ("<b>Água:</b> para cada célula de 20 m do modelo FLUXOS usa-se a profundidade máxima simulada nas 72 h do cenário selecionado.",
+                    "<b>Water:</b> for each 20 m cell of the FLUXOS model the maximum simulated depth over the 72 h of the selected scenario is used."),
+    "imp_m_bld": ("<b>Edifícios:</b> verifica-se a água nos vértices e no centro de cada edifício; conta como «com água» se algum desses pontos tiver ≥ 0,10 m, e «com mais de 0,5 m» se tiver ≥ 0,50 m. Os edifícios não existem no terreno do modelo (a água pode ocupar a célula onde estão), por isso isto indica exposição, não água dentro de casa.",
+                  "<b>Buildings:</b> water is checked at each building's corners and centre; it counts as «with water» if any of those points has ≥ 0.10 m, and «deeper than 0.5 m» if ≥ 0.50 m. Buildings are not in the model terrain (water can occupy their cell), so this means exposure, not water inside."),
+    "imp_m_road": ("<b>Estradas:</b> pontos a cada 10 m ao longo do eixo de cada estrada; comprimento «inundado» com ≥ 0,10 m e «intransitável» com ≥ 0,30 m (limite da norma australiana ARR 2019 para veículos ligeiros). Uma estrada com nome ou número aparece como «cortada» se algum troço estiver intransitável. Pontes e túneis são excluídos (o terreno do modelo não os representa).",
+                   "<b>Roads:</b> points every 10 m along each road's centre line; length «flooded» with ≥ 0.10 m and «impassable» with ≥ 0.30 m (Australian ARR 2019 limit for small vehicles). A named or numbered road is listed as «cut» if any stretch is impassable. Bridges and tunnels are excluded (the model terrain does not represent them)."),
+    "imp_m_fac": ("<b>Equipamentos:</b> os do OSM nesta área — escolas e jardins de infância, centros de saúde, farmácias, bombeiros, polícia, câmara municipal, mercados, postos de combustível, locais de culto, subestações elétricas, ETAR e estações elevatórias — com ≥ 0,10 m em algum ponto; indica-se a perigosidade ARR máxima (H1–H6).",
+                  "<b>Facilities:</b> those in OSM for this area — schools and kindergartens, clinics, pharmacies, fire and police stations, town hall, markets, fuel stations, places of worship, electrical substations, wastewater and pumping stations — with ≥ 0.10 m at any point; the maximum ARR hazard (H1–H6) is shown."),
+    "imp_m_time": ("<b>Horas:</b> o FLUXOS grava a água a cada 15 min. «Começa a ter água» = primeira gravação com ≥ 0,10 m em algum ponto do local; «Água mais alta» = instante da profundidade máxima no ponto mais fundo; «Fica seco» = primeira gravação depois da última com água em todos os pontos do local; se ainda houver água às 72 h, indica-se «ainda com água no fim da previsão». Horas de Lisboa; precisão ±15 min.",
+                   "<b>Times:</b> FLUXOS saves the water every 15 min. «Water arrives» = first save with ≥ 0.10 m at any point of the place; «Highest water» = time of the maximum depth at the deepest point; «Dry again» = first save after the last one with water at all points of the place; if there is still water at 72 h, «still wet at the end of the forecast» is shown. Lisbon time; ±15 min."),
+    "imp_m_snap": ("<b>Imagem:</b> o botão 📷 abre o mapa de satélite centrado no ponto mais fundo do local, com a profundidade máxima simulada por cima.",
+                   "<b>Snapshot:</b> the 📷 button opens the satellite map centred on the deepest point of the place, with the maximum simulated depth on top."),
+    "imp_m_lim": ("<b>Limitações:</b> terreno de 20 m sem leito do rio nem diques, modelo hidrológico não calibrado e incerteza da chuva prevista. Os números são indicativos e são recalculados automaticamente a cada nova previsão.",
+                  "<b>Limitations:</b> 20 m terrain without river bed or levees, uncalibrated hydrological model and uncertain rainfall forecast. Figures are indicative and recomputed automatically at every new forecast."),
     "ly_depth": ("Profundidade", "Depth"),
     "ly_arrival": ("Chegada da água", "Water arrival"),
     "ly_hazard": ("Perigosidade", "Hazard"),
@@ -1017,35 +1049,61 @@ def _layer_legends(i18n: _I18n) -> str:
     )
 
 
-def _impacts_block(i18n: _I18n, scenarios: list[dict]) -> str:
-    """Exposure summary per scenario (shown for the scenario selected with the page-wide switch)."""
+def _short_t(iso) -> str:
+    """Compact time (the page shows it as e.g. 'qui 19/11 14:00' in Lisbon time)."""
+    ts = _parse_ts(iso)
+    return f'<time class="short" datetime="{ts.strftime("%Y-%m-%dT%H:%M:%SZ")}">{ts.strftime("%d/%m %H:%M")} UTC</time>' if ts else "–"
+
+
+def _impacts_section(i18n: _I18n, scenarios: list[dict], prefix: str, data_rel: str) -> str:
+    """Section 4: exposure per scenario (the page-wide scenario switch picks which one shows), every
+    affected place with its depth and timing and a snapshot of the simulated flood around it."""
     byname = {sc.get("scenario"): sc for sc in scenarios if sc.get("impacts")}
     if not byname:
         return ""
     names = {"p10": "lower", "p50": "central", "p90": "upper"}
-    blocks = []
+    blocks, timed = [], False
     for pid, sc in byname.items():
         im = sc["impacts"]
-        roads = "".join(
-            f"<li><strong>{_esc(r['road'])}</strong> — {_num(r['max_depth_m'], 1)} m"
-            + (f" · {i18n.raw('imp_from')} {_fmt_ts(r['first_utc'])}" if r.get("first_utc") else "") + "</li>"
-            for r in im.get("roads_cut", []))
-        facs = "".join(
-            f"<li><strong>{_esc(f['name'])}</strong> ({_esc(f['type'])}) — {_num(f['max_depth_m'], 1)} m"
-            + (f" · {f['hazard']}" if f.get("hazard") else "")
-            + (f" · {i18n.raw('imp_from')} {_fmt_ts(f['first_utc'])}" if f.get("first_utc") else "") + "</li>"
-            for f in im.get("facilities", []))
+        timed = timed or bool(im.get("has_timing"))
+        b = sc.get("bounds_wgs84") or {}
+        img = f"{prefix}{data_rel}/hydraulics/{pid}/{sc.get('image', 'max_depth.png')}"
+        bounds = json.dumps([[b.get("south"), b.get("west")], [b.get("north"), b.get("east")]]) if b else ""
+        items = ([("road", r["road"], i18n.plain(f"imp_k_road"), r) for r in im.get("roads_cut", [])]
+                 + [("fac", f.get("name") or f.get("type"), f.get("type") or "", f) for f in im.get("facilities", [])]
+                 + [("bld", n["name"], i18n.plain("imp_k_bld"), n) for n in im.get("named_buildings", [])])
+        items.sort(key=lambda it: (it[3].get("wet_from_utc") or it[3].get("first_utc") or "9", -float(it[3].get("max_depth_m") or 0)))
+        rows = []
+        for kind, name, typ, it in items:
+            wet = it.get("wet_from_utc") or it.get("first_utc")
+            dry = (i18n.raw("imp_stillwet") if it.get("still_wet") else _short_t(it.get("dry_utc"))) if "still_wet" in it else "–"
+            snap = (f'<button type="button" class="snapbtn" data-lat="{it["lat"]}" data-lon="{it["lon"]}" '
+                    f'data-img="{_esc(img)}" data-bounds="{_esc(bounds)}" data-name="{_esc(name)}" '
+                    f'aria-label="{_esc(i18n.plain("imp_snap"))}" title="{_esc(i18n.plain("imp_snap"))}">📷</button>'
+                    if it.get("lat") is not None and bounds else "")
+            hz = f' <span class="hz">{_esc(it["hazard"])}</span>' if it.get("hazard") else ""
+            rows.append(f'<tr class="k-{kind}"><td><strong>{_esc(name)}</strong><br><span class="muted">{_esc(typ)}</span></td>'
+                        f'<td class="num">{_num(it.get("max_depth_m"), 2)} m{hz}</td>'
+                        f'<td>{_short_t(wet) if wet else "–"}</td><td>{_short_t(it.get("peak_utc")) if it.get("peak_utc") else "–"}</td>'
+                        f'<td>{dry}</td><td class="c">{snap}</td></tr>')
+        table = (f'<div class="imptable"><table><thead><tr><th>{i18n.raw("imp_c_place")}</th><th>{i18n.raw("imp_c_depth")}</th>'
+                 f'<th>{i18n.raw("imp_c_wet")}</th><th>{i18n.raw("imp_c_peak")}</th><th>{i18n.raw("imp_c_dry")}</th>'
+                 f'<th>{i18n.raw("imp_c_snap")}</th></tr></thead><tbody>{"".join(rows)}</tbody></table></div>') if rows else \
+                f'<p class="muted">{i18n.raw("imp_none")}</p>'
         blocks.append(
             f'<div class="imp imp-{names.get(pid, pid)}">'
             f'<div class="impfig"><span><b>{im.get("buildings_flooded", 0)}</b> {i18n.raw("imp_bld")}</span>'
             f'<span><b>{im.get("buildings_deep", 0)}</b> {i18n.raw("imp_bld_deep")}</span>'
             f'<span><b>{_num(im.get("roads_flooded_km"), 1)} km</b> {i18n.raw("imp_road")}</span>'
             f'<span><b>{_num(im.get("roads_impassable_km"), 1)} km</b> {i18n.raw("imp_road_imp")}</span></div>'
-            + (f'<h4>{i18n.raw("imp_cut")}</h4><ul>{roads}</ul>' if roads else "")
-            + (f'<h4>{i18n.raw("imp_fac")}</h4><ul>{facs}</ul>' if facs else "")
-            + "</div>")
-    return (f'<div class="impacts"><h3>{i18n.raw("imp_h")}</h3><p class="muted">{i18n.raw("imp_p")}</p>'
-            + "".join(blocks) + "</div>")
+            f'{table}</div>')
+    note = "" if timed else f'<p class="notice">{i18n.raw("imp_notiming")}</p>'
+    method = "<ul>" + "".join(f"<li>{i18n.raw(k)}</li>" for k in
+                              ("imp_m_src", "imp_m_depth", "imp_m_bld", "imp_m_road", "imp_m_fac", "imp_m_time", "imp_m_snap", "imp_m_lim")) + "</ul>"
+    return (f'<section class="card" id="impacts"><h2><span class="num">4</span>{i18n.raw("imp_h")}</h2>'
+            f'<p class="muted">{i18n.raw("imp_p")}</p>{_scn_buttons(i18n, "imp-scn", available={names[k] for k in byname if k in names})}'
+            f'{note}{"".join(blocks)}'
+            f'{_details(i18n, "<h3>" + i18n.raw("imp_m_h") + "</h3>" + method)}</section>')
 
 
 def _hydraulics_block(i18n: _I18n, scenarios: list[dict], status: dict, prefix: str, data_rel: str,
@@ -1115,7 +1173,6 @@ def _hydraulics_block(i18n: _I18n, scenarios: list[dict], status: dict, prefix: 
         f'<script type="application/json" id="map-data">{mapdata}</script>'
         f'<div class="depthlegend dp">{_legend_html(i18n)}</div>{lk_legend}'
         f'{_layer_legends(i18n) if any(e.get("layers") for e in cfg["scenarios"]) else ""}'
-        f'{_impacts_block(i18n, scenarios)}'
         f'{_details(i18n, "<h3>" + i18n.raw("caveats") + "</h3><ul>" + "".join(caveats) + "</ul>")}</section>'
     )
 
@@ -1326,7 +1383,9 @@ def _decision_block(i18n: _I18n, data: dict) -> str:
             txt += " " + i18n.raw("dec_roads", roads=roads)
         if first:
             txt += " " + i18n.raw("dec_from", t=first)
-        lines.append(f"<li><strong>{i18n.raw(key)}:</strong> {txt}</li>")
+        scn = {"p50": "central", "p90": "upper", "p10": "lower"}[pid]
+        lines.append(f"<li><strong>{i18n.raw(key)}:</strong> {txt} "
+                     f'<a class="detbtn" href="#impacts" data-scn="{scn}">{i18n.raw("dec_more")}</a></li>')
     tide_bc = any(sc.get("tide_boundary") for sc in data.get("scenarios") or [])
     tide = data.get("tide") or {}
     hw = ", ".join(_fmt_ts(h["time_utc"]) for h in (tide.get("high_tides") or [])[:4])
@@ -1466,6 +1525,8 @@ def _jumpbar(i18n: _I18n, data: dict) -> str:
     if data.get("scenarios"):   # section 3 groups the flood map (3.1) and the 3-D animation (3.2)
         has_anim = any(sc.get("webgl") for sc in data["scenarios"])
         links.append(("flood-group" if has_anim else "map-card", "j_flood"))
+        if any(sc.get("impacts") for sc in data["scenarios"]):
+            links.append(("impacts", "j_imp"))
     links += [("official", "j_official"), ("opendata", "j_data")]
     items = "".join(f'<a href="#{a}" data-target="{a}">{i18n.raw(k)}</a>' for a, k in links)
     return f'<nav class="jumpbar" aria-label="{_esc(i18n.plain("jump"))}"><div class="wrap">{items}</div></nav>'
@@ -1574,6 +1635,7 @@ def _cycle_content(i18n: _I18n, latest, data: dict, prefix: str, data_rel: str, 
                    f'<p class="muted"><strong>{i18n.raw("strips_h")}</strong> {i18n.raw("strips_p")}</p>'
                    f'<div class="strip3">{strips[0]}</div></section>') if strips and anim_html else ""
     out.append(f'<div class="viz-outer"><div class="viz-pair">{strips_html}{hyd_html}{anim_html}</div></div>')
+    out.append(_impacts_section(i18n, data["scenarios"], prefix, data_rel))
     out.append(_emergency_block(i18n))
     api = f'{prefix}api/{data_rel}/'
     out.append(

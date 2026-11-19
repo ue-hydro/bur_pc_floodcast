@@ -35,7 +35,14 @@
     } catch (e) { return ""; }
   }
   function localTimes(l) {
-    var t = document.querySelectorAll("time[datetime]");
+    var sh = document.querySelectorAll("time.short[datetime]");
+    for (var q = 0; q < sh.length; q++) {
+      try {
+        sh[q].textContent = new Date(sh[q].getAttribute("datetime")).toLocaleString(LOCALE[l] || "pt-PT",
+          { timeZone: "Europe/Lisbon", weekday: "short", day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
+      } catch (e) {}
+    }
+    var t = document.querySelectorAll("time[datetime]:not(.short)");
     for (var i = 0; i < t.length; i++) {
       var s = t[i].querySelector(".local");
       if (!s) { s = document.createElement("span"); s.className = "local"; t[i].appendChild(s); }
@@ -904,4 +911,29 @@
     Array.prototype.forEach.call(document.querySelectorAll("svg.chart[data-cursor]"), attach);
     window.addEventListener("scroll", function () { tip.hidden = true; }, { passive: true });
   })();
+
+  // ---- section 4: "full details" links pick the scenario; 📷 opens a mini-map of the place ------
+  Array.prototype.forEach.call(document.querySelectorAll(".detbtn[data-scn]"), function (a) {
+    a.addEventListener("click", function () { setScenario(a.getAttribute("data-scn")); });
+  });
+  Array.prototype.forEach.call(document.querySelectorAll(".snapbtn"), function (b) {
+    b.addEventListener("click", function () {
+      var tr = b.closest("tr"), nxt = tr.nextElementSibling;
+      if (nxt && nxt.classList.contains("snaprow")) { nxt.remove(); b.setAttribute("aria-pressed", "false"); return; }
+      var L = window.L; if (!L) return;
+      var row = document.createElement("tr"); row.className = "snaprow";
+      var td = document.createElement("td"); td.colSpan = tr.children.length;
+      var el = document.createElement("div"); el.className = "snapmap";
+      td.appendChild(el); row.appendChild(td); tr.parentNode.insertBefore(row, tr.nextSibling);
+      b.setAttribute("aria-pressed", "true");
+      var lat = +b.getAttribute("data-lat"), lon = +b.getAttribute("data-lon");
+      var map = L.map(el, { scrollWheelZoom: false, zoomControl: true, attributionControl: true }).setView([lat, lon], 17);
+      L.tileLayer(BASEMAPS["Satélite / Satellite"] ? BASEMAPS["Satélite / Satellite"][0] : "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+                  BASEMAPS["Satélite / Satellite"] ? BASEMAPS["Satélite / Satellite"][1] : { maxZoom: 19, attribution: "Tiles © Esri" }).addTo(map);
+      try { L.imageOverlay(b.getAttribute("data-img"), JSON.parse(b.getAttribute("data-bounds")), { opacity: 0.75 }).addTo(map); } catch (e) {}
+      L.circleMarker([lat, lon], { radius: 7, color: "#fff", weight: 2, fillColor: "#c62828", fillOpacity: 1 }).addTo(map)
+        .bindTooltip(b.getAttribute("data-name"), { permanent: true, direction: "top", offset: [0, -8] });
+      setTimeout(function () { map.invalidateSize(); }, 50);
+    });
+  });
 })();

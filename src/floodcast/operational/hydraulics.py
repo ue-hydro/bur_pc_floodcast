@@ -351,6 +351,8 @@ class FluxosEngine:
         xll, yll = float(info["xllcorner"]), float(info["yllcorner"])
         maxh = np.zeros((ny, nx))
         first_wet = np.full((ny, nx), np.inf)    # seconds from window start
+        t_peak = np.full((ny, nx), np.nan)        # time of the maximum depth (s)
+        last_wet = np.full((ny, nx), np.nan)      # last snapshot time with water >= threshold (s)
         wet_frames = np.zeros((ny, nx))
         hazard = np.zeros((ny, nx), dtype=np.int8)  # ARR-2019 H1..H6 (0 = dry)
         vmax = np.zeros((ny, nx))
@@ -370,8 +372,13 @@ class FluxosEngine:
             ix = np.clip(((data[:, 2] - xll) / cs).astype(int), 0, nx - 1)
             iy = np.clip(((data[:, 3] - yll) / cs).astype(int), 0, ny - 1)
             h = data[:, 5]
-            np.maximum.at(maxh, (iy, ix), h)
             t_s = int(f.stem)
+            g = np.zeros((ny, nx))
+            np.maximum.at(g, (iy, ix), h)
+            rising = g > maxh
+            t_peak[rising & (g >= MIN_FLOODED_DEPTH_M)] = float(t_s)
+            np.maximum(maxh, g, out=maxh)
+            last_wet[g >= MIN_FLOODED_DEPTH_M] = float(t_s)
             v = np.hypot(data[:, 6], data[:, 7]) if data.shape[1] > 7 else np.zeros_like(h)
             wet = h >= MIN_FLOODED_DEPTH_M
             np.minimum.at(first_wet, (iy[wet], ix[wet]), float(t_s))
@@ -398,6 +405,12 @@ class FluxosEngine:
         np.save(outdir / "arrival_h.npy", arrival_h.astype("float32"))
         np.save(outdir / "duration_h.npy", duration_h.astype("float32"))
         np.save(outdir / "hazard.npy", hazard)
+        # per-cell timing for the impact list: when the water peaks and when it is gone again.
+        # dry = first snapshot after the last wet one; NaN where still wet at the end of the window.
+        t_end = float(int(files[-1].stem))
+        np.save(outdir / "peak_h.npy", (t_peak / 3600.0).astype("float32"))
+        dry_s = np.where(np.isfinite(last_wet) & (last_wet < t_end), last_wet + step, np.nan)
+        np.save(outdir / "dry_h.npy", (dry_s / 3600.0).astype("float32"))
         _class_png(arrival_h, ARRIVAL_CLASSES, outdir / "arrival.png")
         _class_png(duration_h, DURATION_CLASSES, outdir / "duration.png", positive=True)
         _class_png(hazard.astype(float), HAZARD_CLASSES, outdir / "hazard.png", positive=True)
@@ -415,6 +428,8 @@ class FluxosEngine:
             "layers": {"arrival": "arrival.png", "hazard": "hazard.png", "duration": "duration.png"},
             "hazard_area_km2": haz_area,
             "max_velocity_ms": round(float(vmax.max()), 2),
+            "window_hours": round(t_end / 3600.0, 2),
+            "snapshot_step_s": int(step),
             "first_flooding_h": (round(float(np.nanmin(arrival_h)), 2) if np.isfinite(arrival_h).any() else None),
             "bounds_wgs84": {"west": west, "south": south, "east": east, "north": north},
             "crs": self.domain.fluxos.get("crs", "EPSG:32629"),
