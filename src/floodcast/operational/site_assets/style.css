@@ -660,10 +660,11 @@ svg.chart .hoverl{stroke:var(--ink);stroke-width:1;stroke-dasharray:3 3;opacity:
 .leaflet-bar.recenter:hover{background:#f4f4f4}
 
 /* research-prototype disclaimer: red, larger, slowly pulsing (≈1 Hz, safe; off with reduced motion) */
-.disc{background:#b71c1c;color:#fff;font-size:1rem;font-weight:600;animation:discpulse 2s ease-in-out infinite}
-.disc .wrap{padding-top:9px;padding-bottom:9px}
-.disc a,.disc b{color:#fff;text-decoration:underline}
-.disc .d-icon{color:#ffeb3b;font-size:1.15rem}
-@keyframes discpulse{0%,100%{background:#b71c1c}50%{background:#e53935}}
+.disc{background:#c62828;color:#fff;font-size:1.05rem;font-weight:700;animation:discflash 2s steps(1,end) infinite}
+.disc .wrap{padding-top:10px;padding-bottom:10px}
+.disc a,.disc b{color:inherit;text-decoration:underline}
+.disc .d-icon{color:inherit;font-size:1.25rem}
+/* clear on/off flash, 1 change per second (well below the 3 flashes/s photosensitivity limit) */
+@keyframes discflash{0%{background:#c62828;color:#fff}50%{background:#ffebee;color:#b71c1c}}
 @media (prefers-reduced-motion:reduce){.disc{animation:none}}
 @media (max-width:720px){.disc{font-size:.9rem}}
