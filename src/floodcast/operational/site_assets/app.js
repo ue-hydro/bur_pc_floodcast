@@ -301,7 +301,7 @@
   });
 
   // ---- sun button on the 3-D viewer: on = sun follows the simulation time, off = full daylight
-  var SUN = true;
+  var SUN = false;   // default: full daylight; on = real local light at the forecast time
   function sendSun(w) { try { w.postMessage({ type: "fluxos-sun", follow: SUN }, "*"); } catch (e) {} }
   Array.prototype.forEach.call(document.querySelectorAll(".suntoggle"), function (b) {
     b.addEventListener("click", function () {
@@ -320,7 +320,7 @@
       var w = Math.min(1600, screen.availWidth - 40), h = Math.min(1000, screen.availHeight - 60);
       var url = b.getAttribute("data-src").split("#")[0] + "#lang=" + root.getAttribute("data-lang");
       popWin = window.open(url, "floodcast-fluxos-3d", "popup=yes,width=" + w + ",height=" + h);
-      if (popWin) popWin.focus();
+      if (popWin) { popWin.focus(); setTimeout(function () { sendSun(popWin); }, 6000); }
     });
   });
 
@@ -479,6 +479,34 @@
     line.style.display = x == null ? "none" : "";
     if (x != null) { line.setAttribute("x1", x); line.setAttribute("x2", x); }
   }
+  // ---- basemaps: same choice on every map, remembered for the visit -------------------------
+  var BASEMAPS = {
+    "OpenStreetMap": ["https://tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19, attribution: "&copy; OpenStreetMap contributors" }],
+    "Satélite / Satellite": ["https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+      { maxZoom: 19, attribution: "Tiles &copy; Esri — Source: Esri, Maxar, Earthstar Geographics, GIS User Community" }],
+    "Claro / Light": ["https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png",
+      { maxZoom: 19, subdomains: "abcd", attribution: "&copy; OpenStreetMap contributors &copy; CARTO" }],
+    "Topográfico / Topographic": ["https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png",
+      { maxZoom: 17, attribution: "&copy; OpenStreetMap contributors, SRTM | &copy; OpenTopoMap (CC-BY-SA)" }]
+  };
+  var BASE_MAPS = [];
+  function addBasemaps(map) {
+    var L = window.L, layers = {}, chosen = "OpenStreetMap";
+    try { chosen = sessionStorage.getItem("fc-basemap") || chosen; } catch (e) {}
+    Object.keys(BASEMAPS).forEach(function (k) { layers[k] = L.tileLayer(BASEMAPS[k][0], BASEMAPS[k][1]); });
+    (layers[chosen] || layers.OpenStreetMap).addTo(map);
+    L.control.layers(layers, null, { position: "topright", collapsed: true }).addTo(map);
+    map.on("baselayerchange", function (ev) {   // the same basemap on every map of the page
+      try { sessionStorage.setItem("fc-basemap", ev.name); } catch (e) {}
+      BASE_MAPS.forEach(function (o) {
+        if (o.map === map) return;
+        Object.keys(o.layers).forEach(function (k) { if (o.map.hasLayer(o.layers[k])) o.map.removeLayer(o.layers[k]); });
+        o.layers[ev.name].addTo(o.map);
+      });
+    });
+    BASE_MAPS.push({ map: map, layers: layers });
+  }
+
   // ONE scenario for the whole page: every Lower / Median / Upper switch is linked, and every map,
   // chart and the 3-D viewer follows the chosen scenario.
   function scnSwitch(box, onPick) { SCN.subs.push(onPick); if (SCN.cur !== "central") onPick(SCN.cur); }
@@ -510,7 +538,7 @@
       allVals.forEach(function (vv) { vv.forEach(function (row) { row.forEach(function (v) { if (v > vmax) vmax = v; }); }); });
       vmax = kind === "rain" ? Math.max(vmax, 2) : Math.max(vmax, 1);
       var map = L.map(el, { scrollWheelZoom: false, zoomSnap: 0.25 });
-      L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 18, attribution: "&copy; OpenStreetMap contributors" }).addTo(map);
+      addBasemaps(map);
       var t = 0;
       function colourOf(v) { return kind === "rain" ? ramp(RAMP, v / vmax) : ramp(FLOWRAMP, Math.log1p(v) / Math.log1p(vmax)); }
       function styleOf(f) {
@@ -556,7 +584,7 @@
     });
     vmax = Math.max(vmax, 2);
     var map = L.map(el, { scrollWheelZoom: false, zoomSnap: 0.25 });
-    L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 18, attribution: "&copy; OpenStreetMap contributors" }).addTo(map);
+    addBasemaps(map);
     var cells = [];
     for (var y = 0; y < d.lats.length; y++) for (var x = 0; x < d.lons.length; x++) {
       var la = d.lats[y], lo = d.lons[x];
@@ -593,7 +621,7 @@
     var L = window.L; if (!L) return;
     var card = document.getElementById("map-card");
     var map = L.map("map", { scrollWheelZoom: false });
-    L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19, attribution: "&copy; OpenStreetMap contributors" }).addTo(map);
+    addBasemaps(map);
     var overlay = null, current = null, scn = null, frame = -1, mode = "time", shownSrc = null;
     var slider = card.querySelector(".mapanim .slider"), label = card.querySelector(".mapanim .tlabel"),
         maxBtn = card.querySelector(".mapanim .maxbtn"), anim = card.querySelector(".mapanim"),
@@ -608,8 +636,19 @@
       if (!current) map.fitBounds(bb);
       current = bb;
     }
+    var layer = "depth", lgLy = card.querySelectorAll(".depthlegend.ly");
+    function showLegend() {
+      if (lgDepth) lgDepth.hidden = layer !== "depth" || mode === "lk";
+      Array.prototype.forEach.call(lgLy, function (el) { el.hidden = !el.classList.contains("ly-" + layer) || mode === "lk"; });
+    }
     function show() {
       if (!scn) return;
+      if (layer !== "depth" && scn.layers && scn.layers[layer]) {   // static decision layer
+        setImage(scn.layers[layer], scn); anim.hidden = true; showLegend();
+        if (overlay) overlay.setOpacity(0.85);
+        return;
+      }
+      anim.hidden = !scn.frames.length; showLegend();
       if (mode === "max" || !scn.frames.length) {
         setImage(scn.image, scn);
         label.textContent = (maxWord[root.getAttribute("data-lang")] || maxWord.pt) + (scn.area != null ? " · " + scn.area + " km²" : "");
@@ -643,7 +682,7 @@
       all.sort(function (x, y) { return x - y; });
       var outWord = { pt: "fora do período simulado pelo FLUXOS", en: "outside the period simulated by FLUXOS", es: "fuera del periodo simulado por FLUXOS" };
       fcRegister(all[0], all[all.length - 1], function (e) {
-        if (mode !== "time" || !scn || !scn.frames.length) return;
+        if (mode !== "time" || layer !== "depth" || !scn || !scn.frames.length) return;
         var ep = scn.frames.map(function (f) { return Date.parse(f.t); });
         var outside = e < ep[0] - 900e3 || e > ep[ep.length - 1] + 900e3;
         if (overlay) overlay.setOpacity(outside ? 0.15 : 0.85);
@@ -661,6 +700,15 @@
       mode = mode === "max" ? "time" : "max";
       maxBtn.setAttribute("aria-pressed", mode === "max" ? "true" : "false");
       shownSrc = null; show();
+    });
+    Array.prototype.forEach.call(card.querySelectorAll(".lyr .seg"), function (b) {
+      b.addEventListener("click", function () {
+        layer = b.getAttribute("data-layer"); shownSrc = null;
+        Array.prototype.forEach.call(card.querySelectorAll(".lyr .seg"), function (x) { x.setAttribute("aria-pressed", x === b ? "true" : "false"); });
+        if (mode === "lk") mode = "time";
+        if (lkBtn) lkBtn.setAttribute("aria-pressed", "false");
+        show();
+      });
     });
     var P = { lower: "p10", central: "p50", upper: "p90" };
     scnSwitch(card, function (k) { shownSrc = null; select(P[k] || "p50"); });

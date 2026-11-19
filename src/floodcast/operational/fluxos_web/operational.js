@@ -91,7 +91,10 @@
         else { viewer.sunFollowSim = false; viewer.sunTime = 0.5; if (lbl) lbl.textContent = txt("dia claro", "full daylight", "pleno día"); }
       });
     }
-    if (base != null) link(); else { viewer.sunFollowSim = false; viewer.sunTime = 0.5; }
+    // default: full daylight; the page's "local light conditions" switch turns the real sun on
+    if (ck) ck.checked = false;
+    viewer.sunFollowSim = false; viewer.sunTime = 0.5;
+    if (lbl) lbl.textContent = txt("dia claro", "full daylight", "pleno día");
     listenSun(link);
   }
 

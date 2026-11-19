@@ -228,6 +228,14 @@ def handle_cycle(cfg: OperationalConfig, p: CycleProcessor, cycle: datetime, *, 
             control["tp"], weights, p._areas_m2(), cfg.screening, cycle=cycle,
             product="ECMWF IFS HRES (control) 0.25°", min_lead_h=min(72, fc.screening_max_lead_h))
         write_json(out / "screening.json", screen)
+        try:  # sea level at the Sado mouth (tide + surge); optional
+            from floodcast.operational import tide as _tide
+
+            td = _tide.fetch(cycle, 72, cache / "tide.json")
+            if td:
+                write_json(out / "tide.json", td)
+        except Exception as exc:
+            log.warning("tide forecast unavailable: %s", exc)
         if prog:
             prog.update("precip", 0.2, "ECMWF IFS")
         try:  # rain on the native IFS grid for the animated map (first 72 h)
@@ -395,9 +403,26 @@ def main() -> int:
     ap.add_argument("config", type=Path)
     ap.add_argument("--once", action="store_true", help="one pass, then exit")
     ap.add_argument("--cycle", help="process this cycle (e.g. 2026111812) instead of polling")
+    ap.add_argument("--hindcast", metavar="CYCLE",
+                    help="re-run a PAST cycle (e.g. 2025121800) from scratch in run/hindcasts/<CYCLE>: warm the model "
+                         "state from archived IFS (AWS mirror) up to that time, then run the full chain")
+    ap.add_argument("--spinup-days", type=int, default=30, help="hindcast state warm-up length (days)")
     args = ap.parse_args()
 
     cfg = OperationalConfig.from_file(args.config)
+    if args.hindcast:
+        # isolated data + site for the hindcast; the operational state is never touched
+        root = Path(cfg.data_root).parent / "hindcasts" / args.hindcast
+        cfg = cfg.model_copy(update={
+            "data_root": root / "data",
+            "publish": cfg.publish.model_copy(update={"output_dir": root / "site", "post_command": ""}),
+        })
+        from floodcast.operational.system import spinup
+
+        setup_logging(cfg, "hindcast")
+        log.info("hindcast %s: warming the state for %d days from archived IFS", args.hindcast, args.spinup_days)
+        spinup(cfg, end=parse_cycle(args.hindcast), days=args.spinup_days, source="aws")
+        args.cycle = args.hindcast
     domain, store, p = build_processor(cfg)
     global PROG
     from floodcast.operational.progress import Progress

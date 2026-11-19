@@ -97,6 +97,9 @@ class HydraulicsSettings(_Model):
     # FLUXOS scenarios run at the same time (lower / central / upper).
     parallel_scenarios: int = Field(default=3, ge=1, le=8)
     simulated_hours: int = Field(default=72, ge=6, le=240)
+    # "forecast_start": simulate from the forecast start to +simulated_hours (same 72 h window as the
+    # site, so arrival times are lead times); "peak": a window placed around each scenario's peak.
+    window: Literal["forecast_start", "peak"] = "forecast_start"
     timeout_s: int = Field(default=7200, ge=60)
     base_flow_m3s: float = Field(default=0.0, ge=0)
 

@@ -68,6 +68,43 @@ def _drop_warmup(out: Path, warm_s: int) -> None:
             f.rename(out / f"{t - warm_s}.txt")
 
 
+# ARR-2019 combined hazard classes (Australian Rainfall & Runoff, Book 6 Ch.7; Smith et al. 2014):
+# limits on depth D (m), velocity V (m/s) and D·V (m²/s). H1 generally safe … H6 unsafe, all
+# buildings vulnerable to failure.
+_ARR_LIMITS = ((1, 0.3, 2.0, 0.3), (2, 0.5, 2.0, 0.6), (3, 1.2, 2.0, 0.6), (4, 2.0, 2.0, 1.0), (5, 4.0, 4.0, 4.0))
+
+
+def arr_hazard(d: np.ndarray, v: np.ndarray) -> np.ndarray:
+    d, v = np.asarray(d, float), np.asarray(v, float)
+    cls = np.full(d.shape, 6, dtype=np.int8)
+    dv = d * v
+    for k, dmax, vmax_, dvmax in reversed(_ARR_LIMITS):
+        cls = np.where((d <= dmax) & (v <= vmax_) & (dv <= dvmax), k, cls)
+    return cls.astype(np.int8)
+
+
+# (low, high, rgb) classes for the decision layers; must match site legends.
+ARRIVAL_CLASSES = ((0, 6, (0xB1, 0x00, 0x26)), (6, 12, (0xE3, 0x1A, 0x1C)), (12, 24, (0xFD, 0x8D, 0x3C)),
+                   (24, 48, (0xFE, 0xD9, 0x76)), (48, None, (0xFF, 0xFF, 0xB2)))
+DURATION_CLASSES = ((0, 3, (0xD0, 0xE1, 0xF2)), (3, 6, (0x9E, 0xCA, 0xE1)), (6, 12, (0x42, 0x92, 0xC6)),
+                    (12, 24, (0x21, 0x66, 0xAC)), (24, None, (0x05, 0x30, 0x61)))
+HAZARD_CLASSES = ((1, 2, (0x1A, 0x98, 0x50)), (2, 3, (0xA6, 0xD9, 0x6A)), (3, 4, (0xFE, 0xE0, 0x8B)),
+                  (4, 5, (0xFD, 0xAE, 0x61)), (5, 6, (0xF4, 0x6D, 0x43)), (6, None, (0xA5, 0x00, 0x26)))
+
+
+def _class_png(grid: np.ndarray, classes, path: Path, positive: bool = False) -> None:
+    from PIL import Image
+
+    rgba = np.zeros((*grid.shape, 4), dtype=np.uint8)
+    g = np.nan_to_num(grid, nan=-1.0)
+    for low, high, rgb in classes:
+        m = (g >= low) & ((g < high) if high is not None else True)
+        if positive:
+            m &= g > 0
+        rgba[m] = (*rgb, 200)
+    Image.fromarray(np.flipud(rgba), "RGBA").save(path)
+
+
 def _depth_png(depth: np.ndarray, path: Path) -> None:
     """Depth grid (row 0 = south) -> classed RGBA PNG, north up."""
     from PIL import Image
@@ -145,7 +182,11 @@ class FluxosEngine:
         hs = self.config.hydraulics
         if member is None:
             member = policies.select_scenario(q, scenario)
-        t_h, q_win, start_h = inflow_window(hours, q[member], hs.simulated_hours)
+        if hs.window == "forecast_start":
+            mask = (hours >= 0) & (hours <= hs.simulated_hours)
+            t_h, q_win, start_h = hours[mask] - hours[mask][0], q[member][mask], float(hours[mask][0])
+        else:
+            t_h, q_win, start_h = inflow_window(hours, q[member], hs.simulated_hours)
         q_win = q_win + hs.base_flow_m3s
         sim_start = cycle + timedelta(hours=start_h)
         warm_h = float(hs.warmup_hours)
@@ -175,6 +216,13 @@ class FluxosEngine:
         _drop_warmup(workdir / "out", int(round(warm_h * 3600)))
         summary = self._postprocess(workdir / "out", outdir, scenario)
         summary["warmup_hours"] = warm_h
+        try:  # exposure of buildings, roads and key facilities (OpenStreetMap)
+            from . import impacts
+
+            summary["impacts"] = impacts.compute(outdir, self.domain.root, self.info,
+                                                 self.domain.fluxos.get("crs", "EPSG:32629"), sim_start)
+        except Exception as exc:
+            log.warning("impact summary not produced: %s", exc)
         for fr in summary.get("frames", []):
             fr["time_utc"] = iso(sim_start + timedelta(seconds=fr["t_s"]))
         summary["webgl"] = (self._export_webgl(workdir, outdir / "webgl", summary["max_depth_m"])
@@ -245,7 +293,12 @@ class FluxosEngine:
         nx, ny = int(info["ncols"]), int(info["nrows"])
         xll, yll = float(info["xllcorner"]), float(info["yllcorner"])
         maxh = np.zeros((ny, nx))
+        first_wet = np.full((ny, nx), np.inf)    # seconds from window start
+        wet_frames = np.zeros((ny, nx))
+        hazard = np.zeros((ny, nx), dtype=np.int8)  # ARR-2019 H1..H6 (0 = dry)
+        vmax = np.zeros((ny, nx))
         rows = []
+        step_s = None
         every_s = int(self.config.hydraulics.snapshot_every_h * 3600)
         frames = []
         (outdir / "frames").mkdir(parents=True, exist_ok=True)
@@ -262,6 +315,14 @@ class FluxosEngine:
             h = data[:, 5]
             np.maximum.at(maxh, (iy, ix), h)
             t_s = int(f.stem)
+            v = np.hypot(data[:, 6], data[:, 7]) if data.shape[1] > 7 else np.zeros_like(h)
+            wet = h >= MIN_FLOODED_DEPTH_M
+            np.minimum.at(first_wet, (iy[wet], ix[wet]), float(t_s))
+            np.add.at(wet_frames, (iy[wet], ix[wet]), 1.0)
+            np.maximum.at(vmax, (iy, ix), v)
+            np.maximum.at(hazard, (iy[wet], ix[wet]), arr_hazard(h[wet], v[wet]))
+            if step_s is None and len(files) > 1:
+                step_s = int(files[1].stem) - int(files[0].stem)
             if t_s % every_s == 0 or f is files[-1]:  # depth snapshot for the time slider
                 snap = np.zeros((ny, nx))
                 np.maximum.at(snap, (iy, ix), h)
@@ -274,6 +335,15 @@ class FluxosEngine:
         outdir.mkdir(parents=True, exist_ok=True)
         _depth_png(maxh, outdir / "max_depth.png")
         np.save(outdir / "max_depth.npy", maxh.astype("float32"))  # for the likelihood map
+        step = float(step_s or 900)
+        duration_h = wet_frames * step / 3600.0
+        arrival_h = np.where(np.isfinite(first_wet), first_wet / 3600.0, np.nan)
+        np.save(outdir / "arrival_h.npy", arrival_h.astype("float32"))
+        np.save(outdir / "duration_h.npy", duration_h.astype("float32"))
+        np.save(outdir / "hazard.npy", hazard)
+        _class_png(arrival_h, ARRIVAL_CLASSES, outdir / "arrival.png")
+        _class_png(duration_h, DURATION_CLASSES, outdir / "duration.png", positive=True)
+        _class_png(hazard.astype(float), HAZARD_CLASSES, outdir / "hazard.png", positive=True)
         with (outdir / "depth_timeseries.csv").open("w") as fh:
             fh.write("time_s,wet_area_km2,max_depth_m,volume_m3\n")
             for t, area, mx, vol in rows:
@@ -282,8 +352,13 @@ class FluxosEngine:
         west, south = tf.transform(xll, yll)
         east, north = tf.transform(xll + nx * cs, yll + ny * cs)
         flooded = maxh >= MIN_FLOODED_DEPTH_M
+        haz_area = {f"H{k}": round(float((hazard == k).sum() * cs * cs / 1e6), 3) for k in range(1, 7)}
         return {
             "frames": frames,
+            "layers": {"arrival": "arrival.png", "hazard": "hazard.png", "duration": "duration.png"},
+            "hazard_area_km2": haz_area,
+            "max_velocity_ms": round(float(vmax.max()), 2),
+            "first_flooding_h": (round(float(np.nanmin(arrival_h)), 2) if np.isfinite(arrival_h).any() else None),
             "bounds_wgs84": {"west": west, "south": south, "east": east, "north": north},
             "crs": self.domain.fluxos.get("crs", "EPSG:32629"),
             "max_depth_m": round(float(maxh.max()), 2),

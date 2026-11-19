@@ -75,6 +75,39 @@ T: dict[str, tuple[str, str]] = {
     "lk_p": ("Possível", "Possible"),
     "lk_note": ("Muito provável: inundado mesmo no cenário inferior · Provável: no central · Possível: só no superior.",
                 "Very likely: flooded even in the lower scenario · Likely: in the central · Possible: only in the upper."),
+    "tide_h": ("Nível do mar na foz do Sado (maré + sobrelevação)", "Sea level at the Sado mouth (tide + surge)"),
+    "tide_ref": ("relativo ao nível médio", "relative to mean sea level"),
+    "tide_hw": ("preia-mar", "high tide"),
+    "dec_h": ("Resumo para decisão", "Decision summary"),
+    "dec_central": ("Cenário central", "Central scenario"),
+    "dec_upper": ("Pior cenário plausível", "Plausible worst case"),
+    "dec_lower": ("Cenário inferior", "Lower scenario"),
+    "dec_line": ("{b} edifícios com água e {r} km de estrada intransitável.", "{b} buildings with water and {r} km of road impassable."),
+    "dec_roads": ("Cortes: {roads}.", "Cut: {roads}."),
+    "dec_from": ("Primeira inundação: {t}.", "First flooding: {t}."),
+    "dec_tide": ("Preia-mar na foz do Sado: {t}. Na preia-mar, o estuário dificulta o escoamento do rio em Alcácer.",
+                 "High tide at the Sado mouth: {t}. At high tide the estuary slows the river's drainage at Alcácer."),
+    "dec_note": ("Indicativo: modelo não calibrado; a maré ainda não entra no modelo hidrodinâmico. Siga sempre a Proteção Civil.",
+                 "Indicative: uncalibrated model; the tide is not yet in the hydrodynamic model. Always follow Civil Protection."),
+    "imp_h": ("Impactos previstos (cenário selecionado)", "Expected impacts (selected scenario)"),
+    "imp_p": ("Edifícios, estradas e equipamentos do OpenStreetMap na zona simulada. Indicativo: modelo não calibrado.",
+              "Buildings, roads and facilities from OpenStreetMap in the simulated area. Indicative: uncalibrated model."),
+    "imp_bld": ("edifícios com água", "buildings with water"),
+    "imp_bld_deep": ("com mais de 0,5 m", "deeper than 0.5 m"),
+    "imp_road": ("de estrada inundada", "of road flooded"),
+    "imp_road_imp": ("intransitável (> 0,3 m)", "impassable (> 0.3 m)"),
+    "imp_cut": ("Estradas e arruamentos cortados", "Roads and streets cut"),
+    "imp_fac": ("Equipamentos afetados", "Facilities affected"),
+    "imp_from": ("a partir de", "from"),
+    "ly_depth": ("Profundidade", "Depth"),
+    "ly_arrival": ("Chegada da água", "Water arrival"),
+    "ly_hazard": ("Perigosidade", "Hazard"),
+    "ly_duration": ("Duração", "Duration"),
+    "ly_arrival_l": ("Tempo até a água chegar (desde o início da previsão)", "Time until the water arrives (from the forecast start)"),
+    "ly_duration_l": ("Tempo inundado", "Time flooded"),
+    "ly_hazard_l": ("Perigosidade máxima (ARR 2019)", "Maximum hazard (ARR 2019)"),
+    "ly_hazard_note": ("H1 seguro em geral · H2 perigoso p/ veículos pequenos · H3 p/ veículos, crianças e idosos · H4 p/ pessoas e veículos · H5 edifícios vulneráveis · H6 todos os edifícios vulneráveis",
+                       "H1 generally safe · H2 unsafe for small vehicles · H3 for vehicles, children, elderly · H4 for people and vehicles · H5 buildings vulnerable · H6 all buildings vulnerable"),
     "t_max_btn": ("Profundidade máxima", "Maximum depth"),
     "t_max": ("máximo", "maximum"),
     "kpi_na": ("não calculado neste ciclo", "not computed this cycle"),
@@ -220,8 +253,7 @@ T: dict[str, tuple[str, str]] = {
     "anim_r": ("Chuva (mm/h)", "Rain (mm/h)"),
     "anim_now": ("Instante da animação", "Animation time"),
     "lock_on": ("Vista bloqueada — clique para explorar", "View locked — click to explore"),
-    "sun_on": ("Sol: hora da previsão", "Sun: forecast time"),
-    "sun_off": ("Sol: dia claro", "Sun: full daylight"),
+    "sun_lbl": ("Condições de luz locais", "Local light conditions"),
     "lock_off": ("Bloquear vista", "Lock view"),
     "anim_open": ("Abrir numa janela própria", "Open in its own window"),
     "anim_open_p": ("(fica sincronizada com esta página)", "(stays in sync with this page)"),
@@ -859,6 +891,56 @@ def _legend_html(i18n: _I18n) -> str:
     return f'<div class="depthlegend" aria-label="{_esc(i18n.plain("depth_legend"))}"><strong>{i18n.raw("depth_legend")}:</strong>{"".join(items)}</div>'
 
 
+def _layer_legends(i18n: _I18n) -> str:
+    from .hydraulics import ARRIVAL_CLASSES, DURATION_CLASSES, HAZARD_CLASSES
+
+    def hexc(rgb):
+        return "#%02x%02x%02x" % rgb
+
+    def items(classes, fmt):
+        return "".join(f'<span><i style="background:{hexc(c)}"></i>{fmt(lo, hi)}</span>' for lo, hi, c in classes)
+
+    rng = lambda lo, hi: f"{lo:g}–{hi:g} h" if hi is not None else f"> {lo:g} h"  # noqa: E731
+    haz = {1: "H1", 2: "H2", 3: "H3", 4: "H4", 5: "H5", 6: "H6"}
+    return (
+        f'<div class="depthlegend ly ly-arrival" hidden><strong>{i18n.raw("ly_arrival_l")}:</strong>{items(ARRIVAL_CLASSES, rng)}</div>'
+        f'<div class="depthlegend ly ly-duration" hidden><strong>{i18n.raw("ly_duration_l")}:</strong>{items(DURATION_CLASSES, rng)}</div>'
+        f'<div class="depthlegend ly ly-hazard" hidden><strong>{i18n.raw("ly_hazard_l")}:</strong>'
+        f'{items(HAZARD_CLASSES, lambda lo, hi: haz[int(lo)])}<span class="muted">{i18n.raw("ly_hazard_note")}</span></div>'
+    )
+
+
+def _impacts_block(i18n: _I18n, scenarios: list[dict]) -> str:
+    """Exposure summary per scenario (shown for the scenario selected with the page-wide switch)."""
+    byname = {sc.get("scenario"): sc for sc in scenarios if sc.get("impacts")}
+    if not byname:
+        return ""
+    names = {"p10": "lower", "p50": "central", "p90": "upper"}
+    blocks = []
+    for pid, sc in byname.items():
+        im = sc["impacts"]
+        roads = "".join(
+            f"<li><strong>{_esc(r['road'])}</strong> — {_num(r['max_depth_m'], 1)} m"
+            + (f" · {i18n.raw('imp_from')} {_fmt_ts(r['first_utc'])}" if r.get("first_utc") else "") + "</li>"
+            for r in im.get("roads_cut", []))
+        facs = "".join(
+            f"<li><strong>{_esc(f['name'])}</strong> ({_esc(f['type'])}) — {_num(f['max_depth_m'], 1)} m"
+            + (f" · {f['hazard']}" if f.get("hazard") else "")
+            + (f" · {i18n.raw('imp_from')} {_fmt_ts(f['first_utc'])}" if f.get("first_utc") else "") + "</li>"
+            for f in im.get("facilities", []))
+        blocks.append(
+            f'<div class="imp imp-{names.get(pid, pid)}">'
+            f'<div class="impfig"><span><b>{im.get("buildings_flooded", 0)}</b> {i18n.raw("imp_bld")}</span>'
+            f'<span><b>{im.get("buildings_deep", 0)}</b> {i18n.raw("imp_bld_deep")}</span>'
+            f'<span><b>{_num(im.get("roads_flooded_km"), 1)} km</b> {i18n.raw("imp_road")}</span>'
+            f'<span><b>{_num(im.get("roads_impassable_km"), 1)} km</b> {i18n.raw("imp_road_imp")}</span></div>'
+            + (f'<h4>{i18n.raw("imp_cut")}</h4><ul>{roads}</ul>' if roads else "")
+            + (f'<h4>{i18n.raw("imp_fac")}</h4><ul>{facs}</ul>' if facs else "")
+            + "</div>")
+    return (f'<div class="impacts"><h3>{i18n.raw("imp_h")}</h3><p class="muted">{i18n.raw("imp_p")}</p>'
+            + "".join(blocks) + "</div>")
+
+
 def _hydraulics_block(i18n: _I18n, scenarios: list[dict], status: dict, prefix: str, data_rel: str,
                       likelihood: dict | None = None) -> str:
     if not scenarios:
@@ -882,7 +964,8 @@ def _hydraulics_block(i18n: _I18n, scenarios: list[dict], status: dict, prefix: 
                      "image": f"{base}{sid}/{sc.get('image', 'max_depth.png')}",
                      "frames": [{"t": fr.get("time_utc"), "image": f"{base}{sid}/{fr['image']}", "km2": fr.get("flooded_km2")}
                                 for fr in sc.get("frames") or [] if fr.get("time_utc")],
-                     "area": sc.get("flooded_area_km2"), "depth": sc.get("max_depth_m"), "q": sc.get("inflow_peak_m3s")}
+                     "area": sc.get("flooded_area_km2"), "depth": sc.get("max_depth_m"), "q": sc.get("inflow_peak_m3s"),
+                     "layers": {k: f"{base}{sid}/{v}" for k, v in (sc.get("layers") or {}).items()}}
             cfg["scenarios"].append(entry)
         except (KeyError, TypeError, ValueError):
             continue
@@ -897,6 +980,10 @@ def _hydraulics_block(i18n: _I18n, scenarios: list[dict], status: dict, prefix: 
     buttons = _scn_buttons(i18n, "map-scn", available={k for k, p in (("lower", "p10"), ("central", "p50"), ("upper", "p90")) if p in have})
     if cfg["likelihood"]:
         buttons += f'<button type="button" class="seg lkbtn" aria-pressed="false">{i18n.raw("lk_btn")}</button>'
+    if any(e.get("layers") for e in cfg["scenarios"]):
+        buttons += ('<div class="segs lyr" role="group">' + "".join(
+            f'<button type="button" class="seg" data-layer="{k}" aria-pressed="{"true" if k == "depth" else "false"}">{i18n.raw("ly_" + k)}</button>'
+            for k in ("depth", "arrival", "hazard", "duration")) + "</div>")
     first = byname.get("p50") or scenarios[0]
     info = i18n.raw("map_info", d=_num(first.get("max_depth_m"), 2), a=_num(first.get("flooded_area_km2"), 2),
                     q=_num(first.get("inflow_peak_m3s")), h=_num(first.get("simulated_hours")))
@@ -923,7 +1010,8 @@ def _hydraulics_block(i18n: _I18n, scenarios: list[dict], status: dict, prefix: 
         f'<span class="tlabel"></span>'
         f'<button type="button" class="maxbtn" aria-pressed="false">{i18n.raw("t_max_btn")}</button></div>'
         f'<script type="application/json" id="map-data">{mapdata}</script>'
-        f'<div class="depthlegend dp">{_legend_html(i18n)}</div>{lk_legend}'
+        f'<div class="depthlegend dp">{_legend_html(i18n)}</div>{lk_legend}{_layer_legends(i18n)}'
+        f'{_impacts_block(i18n, scenarios)}'
         f'{_details(i18n, "<h3>" + i18n.raw("caveats") + "</h3><ul>" + "".join(caveats) + "</ul>")}</section>'
     )
 
@@ -965,6 +1053,47 @@ def _anim_rain_strip(i18n: _I18n, ens: dict | None, hours: int = 72) -> str:
     parts.append("</svg>")
     return (f'<div class="animhyd rainhead"><div class="animhyd-head"><strong>{i18n.raw("anim_rain")}</strong>'
             f'<span class="muted">mm/h</span></div>{"".join(parts)}</div>')
+
+
+def _tide_strip(i18n: _I18n, tide: dict | None) -> str:
+    """Compact sea-level strip (tide + surge at the Sado mouth) on the shared clock."""
+    if not tide or not tide.get("sea_level_m"):
+        return ""
+    times = tide["times_utc"]
+    vals = [None if v is None else float(v) for v in tide["sea_level_m"]]
+    pts_ok = [(i, v) for i, v in enumerate(vals) if v is not None]
+    n = len(times)
+    if n < 2 or len(pts_ok) < 2:
+        return ""
+    w, h = 880, 96
+    x0, x1, y0, y1 = 52, w - 16, 18, h - 22
+    pw, ph = x1 - x0, y1 - y0
+    lo = min(v for _, v in pts_ok); hi = max(v for _, v in pts_ok)
+    lo, hi = (min(lo, -1.0), max(hi, 1.0))
+
+    def px(i):
+        return x0 + pw * i / (n - 1)
+
+    def py(v):
+        return y1 - ph * (v - lo) / (hi - lo)
+
+    parts = [f'<svg class="chart wide strip tidestrip" viewBox="0 0 {w} {h}"' + _cursor_attr(times, [px(i) for i in range(n)], y0, y1)
+             + f' role="img" aria-label="{_esc(i18n.plain("tide_h"))}">']
+    for tick in (lo, 0.0, hi):
+        y = py(tick)
+        parts.append(f'<line class="gridl" x1="{x0}" x2="{x1}" y1="{y:.1f}" y2="{y:.1f}"/>'
+                     f'<text x="{x0 - 6}" y="{y + 4:.1f}" text-anchor="end">{tick:+.1f}</text>')
+    pts = " ".join(f"{px(i):.1f},{py(v):.1f}" for i, v in pts_ok)
+    parts.append(f'<polyline class="tide" points="{pts}"/>')
+    for ht in tide.get("high_tides") or []:
+        if ht["time_utc"] in times:
+            i = times.index(ht["time_utc"])
+            parts.append(f'<circle class="hw" cx="{px(i):.1f}" cy="{py(float(ht["level_m"])):.1f}" r="3"/>')
+    parts.append(f'<line class="axis" x1="{x0}" x2="{x1}" y1="{y1}" y2="{y1}"/>')
+    parts.append(_time_labels(times, x0, pw, 6).replace("{y}", str(y1 + 16)))
+    parts.append("</svg>")
+    return (f'<div class="animhyd tidehead"><div class="animhyd-head"><strong>{i18n.raw("tide_h")}</strong>'
+            f'<span class="muted">m ({i18n.raw("tide_ref")}) · ● {i18n.raw("tide_hw")}</span></div>{"".join(parts)}</div>')
 
 
 def _anim_hydrograph(i18n: _I18n, forcing: dict | None, hyd: dict | None = None, hours: int = 72) -> str:
@@ -1028,7 +1157,7 @@ def _anim_hydrograph(i18n: _I18n, forcing: dict | None, hyd: dict | None = None,
 
 
 def _animation_block(i18n: _I18n, scenarios: list[dict], prefix: str, data_rel: str, hyd: dict | None = None,
-                     ens: dict | None = None) -> str:
+                     ens: dict | None = None, tide: dict | None = None) -> str:
     byname = {sc.get("scenario"): sc for sc in scenarios if sc.get("webgl")}
     if not byname:
         return ""
@@ -1042,7 +1171,7 @@ def _animation_block(i18n: _I18n, scenarios: list[dict], prefix: str, data_rel: 
     return (
         f'<section class="card" id="anim-card"><h2><span class="num">4</span>{i18n.raw("anim_h")}</h2><p class="muted">{i18n.raw("anim_p")}</p>'
         f'{switch}<script type="application/json" class="anim-views">{data}</script>'
-        f'{_anim_rain_strip(i18n, ens)}{_anim_hydrograph(i18n, first.get("_forcing"), hyd)}'
+        f'{_anim_rain_strip(i18n, ens)}{_anim_hydrograph(i18n, first.get("_forcing"), hyd)}{_tide_strip(i18n, tide)}'
         f'<script type="application/json" class="anim-forcing">{json.dumps({"start": (first.get("_forcing") or {}).get("sim_start_utc"), "inflow": (first.get("_forcing") or {}).get("inflow", []), "rain": (first.get("_forcing") or {}).get("rain", [])}).replace("</", "<\\/")}</script>'
         f'<div class="webglwrap locked"><div class="outsim" hidden>{i18n.raw("out_sim")}</div><iframe src="{_esc(src)}" title="{_esc(i18n.plain("anim_h"))}" loading="lazy" '
         f'allowfullscreen></iframe>'
@@ -1050,9 +1179,9 @@ def _animation_block(i18n: _I18n, scenarios: list[dict], prefix: str, data_rel: 
         f'<svg class="lk-closed" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M17 9h-1V7a4 4 0 10-8 0v2H7a2 2 0 00-2 2v8a2 2 0 002 2h10a2 2 0 002-2v-8a2 2 0 00-2-2zm-7-2a2 2 0 114 0v2h-4V7z"/></svg>'
         f'<svg class="lk-open" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M17 9h-7V7a2 2 0 013.9-.6l1.9-.6A4 4 0 008 7v2H7a2 2 0 00-2 2v8a2 2 0 002 2h10a2 2 0 002-2v-8a2 2 0 00-2-2z"/></svg>'
         f'<span class="lk-t-locked">{i18n.raw("lock_on")}</span><span class="lk-t-open">{i18n.raw("lock_off")}</span></button>'
-        f'<button type="button" class="suntoggle" aria-pressed="true">'
+        f'<button type="button" class="suntoggle" aria-pressed="false">'
         f'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4.5" fill="currentColor"/><g stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 2v2.5M12 19.5V22M2 12h2.5M19.5 12H22M4.9 4.9l1.8 1.8M17.3 17.3l1.8 1.8M4.9 19.1l1.8-1.8M17.3 6.7l1.8-1.8"/></g></svg>'
-        f'<span class="sun-on">{i18n.raw("sun_on")}</span><span class="sun-off">{i18n.raw("sun_off")}</span></button></div>'
+        f'<span>{i18n.raw("sun_lbl")}</span><span class="sw" aria-hidden="true"><i></i></span></button></div>'
         f'</div>'
         f'<p><button type="button" class="popout" data-src="{_esc(src)}">{i18n.raw("anim_open")} ↗</button>'
         f' <span class="muted">{i18n.raw("anim_open_p")}</span></p></section>'
@@ -1061,6 +1190,41 @@ def _animation_block(i18n: _I18n, scenarios: list[dict], prefix: str, data_rel: 
 
 def _details(i18n: _I18n, inner: str) -> str:
     return f'<details class="tech"><summary>{i18n.raw("details")}</summary>{inner}</details>' if inner else ""
+
+
+def _decision_block(i18n: _I18n, data: dict) -> str:
+    """Decision-oriented headline: what floods, where and from when, per scenario, plus high tides."""
+    byname = {sc.get("scenario"): sc for sc in data.get("scenarios") or [] if sc.get("impacts")}
+    if not byname:
+        return ""
+    lines = []
+    for pid, key in (("p50", "dec_central"), ("p90", "dec_upper"), ("p10", "dec_lower")):
+        sc = byname.get(pid)
+        if not sc:
+            continue
+        im = sc["impacts"]
+        roads = ", ".join(r["road"] for r in im.get("roads_cut", [])[:3])
+        first = _fmt_ts(_first_utc(sc)) if _first_utc(sc) else None
+        txt = i18n.raw("dec_line", b=im.get("buildings_flooded", 0), r=_num(im.get("roads_impassable_km"), 1))
+        if roads:
+            txt += " " + i18n.raw("dec_roads", roads=roads)
+        if first:
+            txt += " " + i18n.raw("dec_from", t=first)
+        lines.append(f"<li><strong>{i18n.raw(key)}:</strong> {txt}</li>")
+    tide = data.get("tide") or {}
+    hw = ", ".join(_fmt_ts(h["time_utc"]) for h in (tide.get("high_tides") or [])[:4])
+    tide_html = f'<p class="muted">{i18n.raw("dec_tide", t=hw)}</p>' if hw else ""
+    return (f'<div class="decision"><h2>{i18n.raw("dec_h")}</h2><ul>{"".join(lines)}</ul>{tide_html}'
+            f'<p class="muted small">{i18n.raw("dec_note")}</p></div>')
+
+
+def _first_utc(sc: dict) -> str | None:
+    fh = sc.get("first_flooding_h")
+    st = _parse_ts(sc.get("window_start_utc"))
+    if fh is None or st is None:
+        return None
+    from datetime import timedelta
+    return (st + timedelta(hours=float(fh))).isoformat()
 
 
 def _kpis(i18n: _I18n, data: dict) -> str:
@@ -1201,6 +1365,7 @@ def _load_cycle(op: Path, rel: str) -> dict:
                 scenarios.append(summary)
     return {
         "health": _read_json(op / "health.json"),
+        "tide": _read_json(cdir / "tide.json"),
         "precip_ens": _with(_read_json(cdir / "hydrology" / "precip_ensemble.json"),
                             _scn_file=(cdir / "precip_scenarios.json").is_file()),
         "likelihood": _read_json(cdir / "hydraulics" / "likelihood.json"),
@@ -1232,6 +1397,7 @@ def _cycle_content(i18n: _I18n, latest, data: dict, prefix: str, data_rel: str, 
     out.append('<section id="summary" class="hero">')
     out.append(_banner(i18n, latest if is_latest else None, status))
     out.append(f'<div id="progress" class="progress" data-src="{prefix}api/progress.json" hidden></div>')
+    out.append(_decision_block(i18n, data))
     out.append(_kpis(i18n, data))
     out.append(_uncal_block(i18n, latest))
     out.append("</section>")
@@ -1245,7 +1411,7 @@ def _cycle_content(i18n: _I18n, latest, data: dict, prefix: str, data_rel: str, 
                                 base + "hydrology/reach_flow.json" if data.get("flow_file") else None, geo))
     out.append(_hydraulics_block(i18n, data["scenarios"], status, prefix, data_rel, data.get("likelihood")))
     out.append(_animation_block(i18n, data["scenarios"], prefix, data_rel, data.get("hydrology"),
-                                data.get("precip_ens")))
+                                data.get("precip_ens"), data.get("tide")))
     out.append(_emergency_block(i18n))
     api = f'{prefix}api/{data_rel}/'
     out.append(
@@ -1523,6 +1689,15 @@ def _chat_context(latest: dict | None, data: dict, history: list[dict]) -> dict:
         ctx["flooding"] = {k: s0.get(k) for k in ("scenario", "inflow_peak_m3s", "max_depth_m", "flooded_area_km2",
                                                      "simulated_hours", "window_start_utc", "window_end_utc", "caveats")}
         ctx["flooding"]["area"] = "6 x 6 km window around Alcácer do Sal"
+    imp = {sc.get("scenario"): sc.get("impacts") for sc in scn if sc.get("impacts")}
+    if imp:
+        ctx["impacts_by_scenario"] = {
+            {"p10": "lower", "p50": "central", "p90": "upper"}.get(k, k):
+            {kk: v.get(kk) for kk in ("buildings_flooded", "buildings_deep", "roads_flooded_km", "roads_impassable_km",
+                                      "roads_cut", "facilities")} for k, v in imp.items()}
+    td = data.get("tide") or {}
+    if td.get("high_tides"):
+        ctx["high_tides_sado_mouth"] = td["high_tides"][:6]
     ctx["recent_cycles"] = [{k: h.get(k) for k in ("cycle", "level")} for h in (history or [])[:8]]
     return ctx
 
