@@ -515,7 +515,7 @@
   var BASE_MAPS = [], BASE_SYNC = { busy: false };
   function addBasemaps(map) {
     var L = window.L, layers = {}, chosen = "Satélite / Satellite";   // satellite by default
-    try { chosen = sessionStorage.getItem("fc-basemap") || chosen; } catch (e) {}
+    try { chosen = sessionStorage.getItem("fc-basemap-v2") || chosen; } catch (e) {}
     Object.keys(BASEMAPS).forEach(function (k) { layers[k] = L.tileLayer(BASEMAPS[k][0], BASEMAPS[k][1]); });
     (layers[chosen] || layers["Satélite / Satellite"]).addTo(map);
     var ctl = L.control.layers(layers, null, { position: "topright", collapsed: true }).addTo(map);
@@ -523,7 +523,7 @@
       if (BASE_SYNC.busy) return;   // our own changes below fire this event again on the other maps
       BASE_SYNC.busy = true;
       try {
-        try { sessionStorage.setItem("fc-basemap", ev.name); } catch (e) {}
+        try { sessionStorage.setItem("fc-basemap-v2", ev.name); } catch (e) {}
         BASE_MAPS.forEach(function (o) {
           if (o.map === map || o.map.hasLayer(o.layers[ev.name])) return;
           Object.keys(o.layers).forEach(function (k) { if (o.map.hasLayer(o.layers[k])) o.map.removeLayer(o.layers[k]); });
