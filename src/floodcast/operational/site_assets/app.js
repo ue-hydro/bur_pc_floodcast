@@ -992,4 +992,31 @@
       setTimeout(function () { map.invalidateSize(); }, 50);
     });
   });
+
+  // ---- auto-refresh: every 5 min check whether a newer version of this page exists (new forecast or
+  // new layout) and reload only then, keeping the scroll position; never while the chat is open.
+  (function () {
+    var EVERY_MS = 5 * 60 * 1000;
+    function stamp(html) {
+      var a = (html.match(/assets\/app\.js\?v=([\w]+)/) || [])[1] || "";
+      var u = (html.match(/data-updated="([^"]*)"/) || [])[1] || "";
+      return a + "|" + u;
+    }
+    var mine = stamp(document.documentElement.outerHTML);
+    try {   // restore the scroll position after an automatic reload
+      var y = sessionStorage.getItem("fc-autoreload-y");
+      if (y !== null) { sessionStorage.removeItem("fc-autoreload-y"); window.addEventListener("load", function () { window.scrollTo(0, +y); }); }
+    } catch (e) {}
+    setInterval(function () {
+      var chat = document.getElementById("chat-panel");
+      if (chat && !chat.hidden) return;
+      fetch(location.pathname + "?_=" + Date.now(), { cache: "no-store", credentials: "same-origin" })
+        .then(function (r) { return r.ok ? r.text() : null; })
+        .then(function (html) {
+          if (!html || stamp(html) === mine || stamp(html) === "|") return;
+          try { sessionStorage.setItem("fc-autoreload-y", String(window.scrollY)); } catch (e) {}
+          location.reload();
+        }).catch(function () {});
+    }, EVERY_MS);
+  })();
 })();
