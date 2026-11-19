@@ -668,3 +668,8 @@ svg.chart .hoverl{stroke:var(--ink);stroke-width:1;stroke-dasharray:3 3;opacity:
 @keyframes discflash{0%{background:#d50000;color:#fff}50%{background:#ffea00;color:#8b0000}}
 @media (prefers-reduced-motion:reduce){.disc{animation:none}}
 @media (max-width:720px){.disc{font-size:1rem}}
+
+/* Leaflet uses z-index up to 1000 inside its maps: keep that inside each map so the chat bar,
+   the chat panel and the sticky section bar always stay on top */
+.leaflet-container{isolation:isolate;z-index:0}
+.chat-fab{z-index:1200}.chat-panel{z-index:1201}.chat-teaser{z-index:1202}.charttip{z-index:1300}
