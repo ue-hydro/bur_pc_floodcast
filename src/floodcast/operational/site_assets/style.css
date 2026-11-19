@@ -608,3 +608,6 @@ svg.chart .hoverl{stroke:var(--ink);stroke-width:1;stroke-dasharray:3 3;opacity:
 .speedctl select option{color:#1d2329;background:#fff}
 .speedctl:hover{background:rgba(255,255,255,.12)}
 @media (max-width:720px){.speedctl{order:2;height:30px}}
+
+.maplegend .ln-river{display:inline-block;width:18px;height:0;border-top:2px solid #1565c0;margin-right:6px;vertical-align:middle}
+.maplegend>span{margin-right:10px;white-space:nowrap}

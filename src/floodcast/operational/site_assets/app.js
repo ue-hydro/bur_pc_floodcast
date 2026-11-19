@@ -515,7 +515,7 @@
     try { chosen = sessionStorage.getItem("fc-basemap") || chosen; } catch (e) {}
     Object.keys(BASEMAPS).forEach(function (k) { layers[k] = L.tileLayer(BASEMAPS[k][0], BASEMAPS[k][1]); });
     (layers[chosen] || layers.OpenStreetMap).addTo(map);
-    L.control.layers(layers, null, { position: "topright", collapsed: true }).addTo(map);
+    var ctl = L.control.layers(layers, null, { position: "topright", collapsed: true }).addTo(map);
     map.on("baselayerchange", function (ev) {   // the same basemap on every map of the page
       if (BASE_SYNC.busy) return;   // our own changes below fire this event again on the other maps
       BASE_SYNC.busy = true;
@@ -529,6 +529,11 @@
       } finally { BASE_SYNC.busy = false; }
     });
     BASE_MAPS.push({ map: map, layers: layers });
+    return ctl;
+  }
+  // overlay label in the three site languages (the inactive ones are hidden by the page CSS)
+  function tri(pt, es, en) {
+    return '<span lang="pt">' + pt + '</span><span lang="es">' + es + '</span><span lang="en">' + en + "</span>";
   }
 
   // ONE scenario for the whole page: every Lower / Median / Upper switch is linked, and every map,
@@ -608,7 +613,7 @@
     });
     vmax = Math.max(vmax, 2);
     var map = L.map(el, { scrollWheelZoom: false, zoomSnap: 0.25 });
-    addBasemaps(map);
+    var ctl = addBasemaps(map);
     var cells = [];
     for (var y = 0; y < d.lats.length; y++) for (var x = 0; x < d.lons.length; x++) {
       var la = d.lats[y], lo = d.lons[x];
@@ -619,6 +624,14 @@
     }
     var outline = L.geoJSON(geo, { style: { color: "#1b2733", weight: 1.2, fill: false, opacity: 0.9 }, interactive: false }).addTo(map);
     map.fitBounds(outline.getBounds(), { padding: [6, 6] });
+    // tick boxes (layer control, top right): sub-basin limits and the river network, both on by default
+    ctl.addOverlay(outline, tri("Sub-bacias", "Subcuencas", "Sub-basins"));
+    fetch(el.getAttribute("data-geo").replace("hrus.geojson", "rivers.geojson")).then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (rv) {
+        if (!rv) return;
+        var rivers = L.geoJSON(rv, { style: { color: "#1565c0", weight: 1.6, opacity: 0.95 }, interactive: false }).addTo(map);
+        ctl.addOverlay(rivers, tri("Rede hidrográfica", "Red hidrográfica", "River network"));
+      }).catch(function () {});
     if (window.ResizeObserver) new ResizeObserver(function () { map.invalidateSize(); }).observe(el);
     var t = 0;
     slider.max = String(T - 1);
