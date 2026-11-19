@@ -1,0 +1,11 @@
+# Floodcast public site, served as static assets by a Cloudflare Worker (free: static requests are
+# unlimited). PRIVATE while testing: protect the workers.dev URL with Cloudflare Access.
+# Deploy:  npx wrangler deploy --config deploy/site-worker/wrangler.toml   (assets = directory below)
+name = "floodcast-alcacer"
+compatibility_date = "2026-10-01"
+workers_dev = true
+preview_urls = false   # preview URLs would bypass Cloudflare Access
+
+[assets]
+directory = "./placeholder"
+not_found_handling = "404-page"

@@ -22,6 +22,7 @@ from __future__ import annotations
 
 import argparse
 import logging
+import os
 import signal
 import sys
 import time
@@ -39,6 +40,7 @@ from floodcast.operational.system import build_processor, parse_cycle
 log = logging.getLogger("floodcast.master")
 STOP = False
 PROG = None  # Progress (live progress.json for the site)
+RESTART = {"now": False}
 
 
 def new_cycles(cfg: OperationalConfig, store) -> list[datetime]:
@@ -397,12 +399,42 @@ def publish_site(cfg: OperationalConfig, store) -> None:
             log.error("publish.post_command failed: %s", type(exc).__name__)
 
 
+def git_update_available(repo: Path) -> bool:
+    """True after fast-forwarding to new commits on the tracked GitHub branch (then we restart)."""
+    import subprocess
+
+    def git(*a):
+        return subprocess.run(["git", "-C", str(repo), *a], capture_output=True, text=True, timeout=120)
+
+    up = git("rev-parse", "--abbrev-ref", "--symbolic-full-name", "@{u}")
+    if up.returncode != 0:
+        return False  # branch not tracking a remote
+    if git("fetch", "--quiet").returncode != 0:
+        log.warning("auto-update: git fetch failed")
+        return False
+    behind = git("rev-list", "--count", "HEAD..@{u}").stdout.strip()
+    if not behind or behind == "0":
+        return False
+    if git("status", "--porcelain", "--untracked-files=no").stdout.strip():
+        log.warning("auto-update: local changes present; not pulling")
+        return False
+    res = git("merge", "--ff-only", "@{u}")
+    if res.returncode != 0:
+        log.warning("auto-update: cannot fast-forward (%s)", res.stderr.strip()[:200])
+        return False
+    log.info("auto-update: pulled %s new commit(s); restarting on the new code", behind)
+    return True
+
+
 def main() -> int:
     global STOP
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawTextHelpFormatter)
     ap.add_argument("config", type=Path)
     ap.add_argument("--once", action="store_true", help="one pass, then exit")
     ap.add_argument("--cycle", help="process this cycle (e.g. 2026111812) instead of polling")
+    ap.add_argument("--auto-update", action="store_true",
+                    help="follow the GitHub branch: pull new commits between passes and restart on them "
+                         "(code/design changes go online automatically)")
     ap.add_argument("--hindcast", metavar="CYCLE",
                     help="re-run a PAST cycle (e.g. 2025121800) from scratch in run/hindcasts/<CYCLE>: warm the model "
                          "state from archived IFS (AWS mirror) up to that time, then run the full chain")
@@ -475,12 +507,17 @@ def main() -> int:
                 write_json(store.root / "health.json", {"state": "error", "time": iso(now_utc())})
             if args.once or args.cycle:
                 break
+            if args.auto_update and git_update_available(Path(__file__).resolve().parent):
+                RESTART["now"] = True
+                break
             wait = max(30.0, cfg.poll_interval_minutes * 60 - (now_utc() - started).total_seconds())
             end = time.monotonic() + wait
             while not STOP and time.monotonic() < end:
                 time.sleep(1)
     finally:
         lock.release()
+    if RESTART["now"]:  # re-exec on the updated code (site is rebuilt and published at start-up)
+        os.execv(sys.executable, [sys.executable, *sys.argv])
     return 0
 
 

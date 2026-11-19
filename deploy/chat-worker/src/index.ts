@@ -17,6 +17,7 @@ export interface Env {
   MAX_PER_IP_PER_HOUR: string;
   MAX_PER_DAY: string;
   CHAT_MOCK: string;
+  CTX?: { get(key: string): Promise<string | null> };
 }
 
 type Turn = { role: "user" | "assistant"; content: string };
@@ -78,6 +79,13 @@ function limited(ip: string, env: Env): string | null {
 
 async function forecastContext(env: Env): Promise<string> {
   if (cachedContext && Date.now() - cachedContext.at < CONTEXT_TTL_MS) return cachedContext.text;
+  if (env.CTX) {  // pushed by deploy/publish.sh (works while the site itself is behind Cloudflare Access)
+    const kv = await env.CTX.get("chat_context");
+    if (kv) {
+      cachedContext = { text: JSON.stringify(JSON.parse(kv)), at: Date.now() };
+      return cachedContext.text;
+    }
+  }
   const res = await fetch(`${env.SITE_URL.replace(/\/$/, "")}/api/chat_context.json`, {
     headers: { "Cache-Control": "no-cache" },
   });
