@@ -9,8 +9,8 @@ from floodcast.data.errors import DataError
 from floodcast.data.preprocessing.dataset_handlers.ifs_utils import IFSHandler
 from floodcast.data.preprocessing.dataset_handlers.s2s_utils import S2SHandler
 from floodcast.data.preprocessing.dataset_handlers.seasonal_utils import SeasonalHandler
-from floodcast.data.utils.grib_framing import count_grib_messages
-from floodcast.data.utils.grib_utils import EcCodesReader
+from floodcast.data.utils.grib import count_grib_messages
+from floodcast.data.utils.grib import EcCodesReader
 
 
 @pytest.fixture

@@ -39,7 +39,7 @@ def main(argv: list[str] | None = None) -> int:
     from floodcast.core.errors import ErrorCode, FloodcastError
 
     try:
-        if args.command == "data":
+        if args.command in ("data", "operate"):
             return args.handler(args, json_output=json_output)
         from floodcast.core.config import load_config
 

@@ -1,0 +1,59 @@
+# Operational configuration: Alcácer do Sal (Sado basin).
+# Paths are relative to this file.
+[operational]
+domain = "../../domains/alcacer_do_sal/domain.toml"
+data_root = "../../data"
+poll_interval_minutes = 10
+
+[operational.forecast]
+source = "ecmwf"            # "aws"/"google"/"azure" are mirrors of the same Open Data
+resolution = "0p25"
+cycles = [0, 6, 12, 18]
+screening_max_lead_h = 120
+ensemble_members = 11       # control + 10 perturbed; raise to 51 on a bigger machine
+ensemble_max_lead_h = 120
+max_cycle_age_h = 30
+
+# Basin-mean precipitation accumulations (mm) that trigger the hydrological ensemble.
+# PLACEHOLDERS: to be tuned with APA/SNIRH rainfall-runoff history of the Sado.
+[operational.screening.watch]
+mm_24h = 25
+mm_48h = 40
+mm_72h = 50
+hru_mm_24h = 50
+
+[operational.screening.warning]
+mm_24h = 50
+mm_48h = 80
+mm_72h = 100
+hru_mm_24h = 100
+
+[operational.hydrology]
+probability_to_declare = 0.2
+hydraulics_from_level = "warning"
+spinup_days = 60
+max_state_age_h = 36
+parallel_members = 4
+
+# Discharge at the Alcácer outlet (m3/s). PLACEHOLDERS pending a return-period analysis of
+# SNIRH/APA gauge data; the model itself is uncalibrated, so all levels are indicative only.
+[operational.hydrology.thresholds_m3s]
+watch = 150
+warning = 400
+alert = 800
+placeholder = true
+
+[operational.hydraulics]
+scenarios = ["p90"]
+simulated_hours = 72
+
+[operational.models]
+runtime = "docker"
+docker_platform = "linux/amd64"   # the hydrology image is built for amd64 (runs emulated on Apple silicon)
+# summa_image is resolved from the Floodcast installation registry when empty
+# fluxos_image is resolved from the registry (floodcast install models --docker --group hydraulics)
+
+[operational.publish]
+site_title = "Floodcast Alcácer do Sal — previsão experimental"
+output_dir = "../../site_out"
+keep_cycles = 40

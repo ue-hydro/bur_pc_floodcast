@@ -102,7 +102,7 @@ candidate `5e75b0ad...` before a later D03 review requested model corrections.
 Those results demonstrate runtime mechanics and the then-declared check scope;
 they do not approve these images for E1. Preserve the results and repeat the
 reviewed suite against D03's corrected candidate before acceptance. No user
-installation was promoted by D04. SUMMA/mizuRoute model fixtures, E2/GSci/G4,
+installation was promoted by D04. SUMMA-mizuRoute model fixtures, E2/GSci/G4,
 operational basin policy, Linux-host execution and HPC remain outside the
 verified scope of this handoff. D01's subsequent local-endpoint and replay-suite
 changes must be integrated and tested with this commit by the coordinator.

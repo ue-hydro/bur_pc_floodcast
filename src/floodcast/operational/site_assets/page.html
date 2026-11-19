@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="{{default_lang}}" data-lang="{{default_lang}}" data-langs="{{langs}}" data-default-lang="{{default_lang}}">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{title}}</title>
+<meta name="description" content="{{description}}">
+<meta name="theme-color" content="#003a70">
+{{canonical}}
+<script>try{if(localStorage.getItem("floodcast-theme")==="dark")document.documentElement.setAttribute("data-theme","dark")}catch(e){}</script>
+<link rel="stylesheet" href="{{prefix}}assets/style.css?v={{assetver}}">
+</head>
+<body data-updated="{{updated}}">
+<a class="skip" href="#main">Skip to content</a>
+<header class="site">
+<div class="wrap hdr">
+<a class="brand" href="{{prefix}}index.html">
+<svg class="logo-mark" viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="20" r="19" fill="#13406b"/><path d="M6 23c4-4 8-4 12 0s8 4 12 0 6-3 6-3v8c-2 1-4 3-6 3-4 0-8-4-12-4s-8 4-12 4V23z" fill="#7cc0ec"/><path d="M6 17c4-4 8-4 12 0s8 4 12 0 6-3 6-3" stroke="#cfe6f7" stroke-width="2.4" fill="none" stroke-linecap="round"/></svg>
+<span class="b-text"><span class="b-name">{{brand_name}}</span><span class="b-tag">{{tagline}}</span></span>
+</a>
+<nav class="main" aria-label="Main">{{nav}}</nav>
+{{toggle}}
+<button type="button" class="themetoggle" aria-label="Modo escuro / Dark mode" title="Modo escuro / Dark mode">
+<svg class="i-moon" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M21 12.8A9 9 0 1111.2 3a7 7 0 009.8 9.8z"/></svg>
+<svg class="i-sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4.5" fill="currentColor"/><g stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 2v2.5M12 19.5V22M2 12h2.5M19.5 12H22M4.9 4.9l1.8 1.8M17.3 17.3l1.8 1.8M4.9 19.1l1.8-1.8M17.3 6.7l1.8-1.8"/></g></svg>
+</button>
+<div class="hdr-logos" aria-label="BUR_PC · Universidade de Évora · MED · CREATE">
+{{burpc_logo}}<img src="{{prefix}}assets/logos/uevora_white.png" alt="Universidade de Évora"><img src="{{prefix}}assets/logos/med_white.svg" alt="MED"><img class="lg-create" src="{{prefix}}assets/logos/create_white.png" alt="CREATE">
+</div>
+</div>
+<div class="disc"><div class="wrap">{{disclaimer}}</div></div>
+</header>
+<div id="stale" class="stale" role="alert"><div class="wrap">{{stale_text}}</div></div>
+<noscript><div class="wrap"><div class="notice">{{noscript_text}}</div></div></noscript>
+<main id="main">
+{{content}}
+</main>
+<footer class="site"><div class="wrap">{{footer}}</div></footer>
+<script src="{{prefix}}assets/app.js?v={{assetver}}" defer></script>
+</body>
+</html>

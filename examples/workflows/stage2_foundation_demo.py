@@ -128,7 +128,7 @@ def compose(data_root: Path) -> Floodcast:
             component_id=name, contract_id="ffw.step/v1",
             implementation_version="1", source_revision=revision,
         ), factory)
-    for model in ("summa", "mizuroute", "fluxos"):
+    for model in ("summa", "fluxos"):
         app.R.model_adapters.register(ComponentManifest(
             component_id=f"demo.{model}", contract_id="ffw.model-adapter/v1",
             implementation_version="1", source_revision=revision,
@@ -142,20 +142,19 @@ def workflow() -> WorkflowDefinition:
                  configuration={"role": "forecast"}),
         StepSpec(step_id="maintain_state", component_id="demo.data",
                  configuration={"role": "state-maintenance-demonstration"}),
+        # SUMMA with mizuRoute coupled internally: one model step produces routed discharge.
         StepSpec(step_id="run_summa", component_id="demo.model",
                  needs=("acquire_forecast", "maintain_state"),
                  configuration={"adapter_id": "demo.summa"}),
-        StepSpec(step_id="route_mizuroute", component_id="demo.model", needs=("run_summa",),
-                 configuration={"adapter_id": "demo.mizuroute"}),
         StepSpec(step_id="analyse_discharge", component_id="demo.data",
-                 needs=("route_mizuroute",), configuration={"role": "analysis-demonstration"}),
+                 needs=("run_summa",), configuration={"role": "analysis-demonstration"}),
         StepSpec(step_id="decide_hydraulics", component_id="demo.decision",
                  needs=("analyse_discharge",)),
         StepSpec(step_id="run_hydraulics", component_id="demo.model", needs=("decide_hydraulics",),
                  condition=DecisionCondition(decision_step="decide_hydraulics"),
                  configuration={"adapter_id": "demo.fluxos"}),
         StepSpec(step_id="report", component_id="demo.report", dependency_mode="all_settled",
-                 needs=("acquire_forecast", "maintain_state", "run_summa", "route_mizuroute",
+                 needs=("acquire_forecast", "maintain_state", "run_summa",
                         "analyse_discharge", "decide_hydraulics", "run_hydraulics")),
     ))
 

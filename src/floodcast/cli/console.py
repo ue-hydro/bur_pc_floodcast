@@ -155,7 +155,7 @@ def format_inventory(
 
 
 def format_embedded_models(models: Sequence[dict]) -> str:
-    labels = {"summa": "SUMMA", "mizuroute": "mizuRoute", "fluxos": "FLUXOS"}
+    labels = {"summa": "SUMMA-mizuRoute", "fluxos": "FLUXOS"}
     lines = [HEADER, "Model installations", "", "Execution    Local (embedded binaries)", ""]
     lines.extend(
         _format_table(

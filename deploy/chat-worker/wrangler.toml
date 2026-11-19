@@ -1,0 +1,20 @@
+# Floodcast Q&A chat: a Cloudflare Worker that answers questions about the latest forecast with Claude.
+# Secrets (never commit): ANTHROPIC_API_KEY  ->  `npx wrangler secret put ANTHROPIC_API_KEY`
+# Local test: put it in .dev.vars (git-ignored) and run `npm run dev`.
+name = "floodcast-chat"
+main = "src/index.ts"
+compatibility_date = "2026-10-01"
+compatibility_flags = ["nodejs_compat"]
+
+[vars]
+# Where the published site lives; the worker reads <SITE_URL>/api/chat_context.json
+SITE_URL = "http://localhost:8080"
+# Comma-separated origins allowed to call the chat (the site itself)
+ALLOWED_ORIGINS = "http://localhost:8080,http://127.0.0.1:8080"
+CHAT_MODEL = "claude-haiku-5-5"
+# Abuse limits (best effort, per worker instance). The hard cost limit is the monthly
+# spend limit you set in the Anthropic console.
+MAX_PER_IP_PER_HOUR = "12"
+MAX_PER_DAY = "1500"
+# "1" answers from the context without calling Claude (for testing the plumbing)
+CHAT_MOCK = "0"

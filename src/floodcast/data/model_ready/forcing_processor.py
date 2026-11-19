@@ -27,7 +27,7 @@ from ..preprocessing.cfif import CFIF_VARIABLES
 from ..preprocessing.forcing_resampler import ForcingResampler
 from ..preprocessing.remapping_contracts import RemappedManifest
 from ..preprocessing.symfluence_bridge import remap_dataset
-from ..utils.io_utils import atomic_json, digest, file_sha256, reject_links, verify_file
+from ..utils.storage import atomic_json, digest, file_sha256, reject_links, verify_file
 from . import FORCING_REVISION
 from .temporal import align_variable, target_intervals
 

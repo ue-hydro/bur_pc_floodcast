@@ -1,14 +1,16 @@
 {
   "schema_version": 1,
   "fixture_id": "hydrology-technical-checks-v1",
-  "description": "Project-authored technical checks shared by SUMMA and mizuRoute. The fixture consists only of the two validation scripts, mounted read-only. Provenance checks verify recorded artefact hashes and embedded source identity; load checks verify ELF format, dynamic linkage and the supported SUMMA version command. These checks contain no scientific case and do not establish numerical or forecasting validity.",
+  "description": "Project-authored technical checks for the coupled SUMMA-mizuRoute executable. The fixture consists only of the two validation scripts, mounted read-only. Provenance checks verify recorded artefact hashes and embedded source identity; load checks verify ELF format, dynamic linkage, the SUMMA version command and that the mizuRoute coupling (-c/--config) is compiled in. These checks contain no scientific case and do not establish numerical or forecasting validity.",
   "source": "Floodcast tests/integration/hydrology/check_model.py and validate_outputs.py, identified by the validation profile hashes.",
   "license": "Not separately specified; Floodcast project-authored validation code, with no third-party fixture data included.",
-  "model_ids": ["summa", "mizuroute"],
+  "model_ids": [
+    "summa"
+  ],
   "expectations": [
-    "Recorded model artefact hashes and full source revisions match the installed image",
-    "Compiled binaries are little-endian 64-bit ELF files and their dynamic libraries resolve",
-    "SUMMA supports its documented version command; no mizuRoute version flag is invented",
+    "Recorded model artefact hashes and full source revisions (SUMMA and its mizuRoute/toml-f submodules) match the installed image",
+    "The coupled executable is a little-endian 64-bit ELF file and its dynamic libraries resolve",
+    "SUMMA supports its documented version command and reports -c/--config; libsumma contains the mizuRoute coupling",
     "A zero exit status applies only to the explicitly selected technical check"
   ],
   "tolerances": {},

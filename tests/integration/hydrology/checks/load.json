@@ -1,5 +1,10 @@
 {
   "kind": "exit_code",
   "expected_exit_code": 0,
-  "assertions": ["Executable is a little-endian 64-bit ELF", "All dynamic libraries resolve", "SUMMA --version matches its recorded source commit; mizuRoute has no invented version flag"]
+  "assertions": [
+    "Executable is a little-endian 64-bit ELF",
+    "All dynamic libraries resolve",
+    "SUMMA --version matches its recorded source commit",
+    "The coupled build exposes -c/--config and libsumma contains the mizuRoute coupling; mizuRoute and toml-f submodule revisions are pinned"
+  ]
 }

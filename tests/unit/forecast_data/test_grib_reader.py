@@ -3,7 +3,7 @@ import pytest
 
 from floodcast.data.data_manager import DataManager
 from floodcast.data.errors import DataError
-from floodcast.data.utils.grib_utils import EcCodesReader
+from floodcast.data.utils.grib import EcCodesReader
 
 
 class FakeEcCodes:

@@ -1,0 +1,5 @@
+{
+ "land_cover": "ESA WorldCover 2021 v200 (CC-BY 4.0), dominant-class rule in pick_vegetation()",
+ "soil": "SoilGrids 2.0 (ISRIC) sand/clay 5-15 cm mean, HRU mean",
+ "worldcover_url": "https://esa-worldcover.s3.eu-central-1.amazonaws.com/v200/2021/map/ESA_WorldCover_10m_2021_v200_N36W009_Map.tif"
+}

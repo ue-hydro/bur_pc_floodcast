@@ -28,10 +28,7 @@ def build_profile() -> dict:
         {"source": evidence(path)["path"], "target": f"/checks/{path.name}", "mode": "ro"}
         for path in scripts
     ]
-    for model, case, executable in (
-        ("summa", "celia1990", "summa_sundials.exe"),
-        ("mizuroute", "cameo", "route_runoff"),
-    ):
+    for model, case, executable in (("summa", "celia1990", "summa_sundials_mizuroute.exe"),):
         levels = ["provenance", "load", "reference"]
         if model == "summa":
             levels.append("reference-ida")

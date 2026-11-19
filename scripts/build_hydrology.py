@@ -20,10 +20,13 @@ WORK = Path("/tmp/hydrology-build")
 SOURCES = {
     "sundials": "https://github.com/LLNL/sundials.git",
     "summa": "https://github.com/CH-Earth/summa.git",
-    "pio": "https://github.com/NCAR/ParallelIO.git",
-    "pio_cmake": "https://github.com/CESM-Development/CMake_Fortran_utils.git",
+    # Git submodules of SUMMA, compiled into the single coupled executable.
     "mizuroute": "https://github.com/ESCOMP/mizuRoute.git",
+    "toml_f": "https://github.com/toml-f/toml-f.git",
 }
+# Component -> path of its submodule inside the SUMMA checkout.
+SUBMODULES = {"mizuroute": "external/mizuRoute", "toml_f": "external/toml-f"}
+EXECUTABLE = "summa_sundials_mizuroute.exe"
 
 
 def run(*args: str, cwd: Path | None = None, capture: bool = False) -> str:
@@ -44,11 +47,11 @@ def write_json(path: Path, value: object) -> None:
     path.write_text(json.dumps(value, indent=2, sort_keys=True) + "\n", encoding="utf-8")
 
 
-def checkout(component: str, revision: str) -> Path:
+def checkout(component: str, revision: str, dest: Path | None = None) -> Path:
     if not re.fullmatch(r"[0-9a-f]{40}", revision):
         raise ValueError("revision must be an explicit, lower-case, full Git commit")
-    source = WORK / component
-    source.mkdir(parents=True, exist_ok=False)
+    source = dest if dest is not None else WORK / component
+    source.mkdir(parents=True, exist_ok=dest is not None)
     run("git", "init", str(source))
     run("git", "remote", "add", "origin", SOURCES[component], cwd=source)
     run(
@@ -66,7 +69,8 @@ def checkout(component: str, revision: str) -> Path:
     run("git", "checkout", "--detach", "FETCH_HEAD", cwd=source)
     if run("git", "rev-parse", "HEAD", cwd=source, capture=True) != revision:
         raise ValueError("downloaded source revision differs from requested revision")
-    # Submodules must be explicitly pinned and reviewed, never silently fetched.
+    # Submodules are never fetched implicitly: they are checked out explicitly at the
+    # revisions pinned in model-sources.toml (see fetch_submodule).
     if (source / ".gitmodules").exists():
         print((source / ".gitmodules").read_text(), flush=True)
     notices = PREFIX / "licenses" / component
@@ -81,6 +85,18 @@ def checkout(component: str, revision: str) -> Path:
         {"url": SOURCES[component], "revision": revision, "patches": []},
     )
     return source
+
+
+def fetch_submodule(parent: Path, component: str, revision: str) -> Path:
+    """Check out a SUMMA submodule at its pinned revision and verify the parent's gitlink."""
+    path = SUBMODULES[component]
+    recorded = run("git", "ls-tree", "HEAD", path, cwd=parent, capture=True).split()
+    if recorded[:2] != ["160000", "commit"] or recorded[2] != revision:
+        raise ValueError(
+            f"{component}: pinned revision {revision} differs from the gitlink recorded by SUMMA "
+            f"({recorded[2] if len(recorded) > 2 else 'none'})"
+        )
+    return checkout(component, revision, dest=parent / path)
 
 
 def cmake(source: Path, build: Path, jobs: int, *options: str, install: bool = True) -> None:
@@ -101,7 +117,13 @@ def cmake(source: Path, build: Path, jobs: int, *options: str, install: bool = T
         run("cmake", "--install", str(build))
 
 
-def build(component: str, revision: str, jobs: int, helper_revision: str = "") -> None:
+def build(
+    component: str,
+    revision: str,
+    jobs: int,
+    mizuroute_revision: str = "",
+    toml_f_revision: str = "",
+) -> None:
     if not 1 <= jobs <= 16:
         raise ValueError("build jobs must be between 1 and 16")
     source = checkout(component, revision)
@@ -127,77 +149,27 @@ def build(component: str, revision: str, jobs: int, helper_revision: str = "") -
             "-DEXAMPLES_ENABLE_F2003=OFF",
         )
     elif component == "summa":
+        fetch_submodule(source, "mizuroute", mizuroute_revision)
+        fetch_submodule(source, "toml_f", toml_f_revision)
         cmake(
             source / "build",
             build_dir,
             jobs,
             f"-DCMAKE_PREFIX_PATH={PREFIX}",
             "-DUSE_SUNDIALS=ON",
+            "-DUSE_MIZUROUTE=ON",
+            "-DUSE_MPI=OFF",
             "-DUSE_NEXTGEN=OFF",
             "-DUSE_OPENWQ=OFF",
             "-DCMAKE_BUILD_WITH_INSTALL_RPATH=ON",
             install=False,
         )
         (PREFIX / "bin").mkdir(exist_ok=True)
-        shutil.copy2(source / "bin" / "summa_sundials.exe", PREFIX / "bin")
+        shutil.copy2(source / "bin" / EXECUTABLE, PREFIX / "bin")
         for library in build_dir.glob("libsumma.so*"):
             shutil.copy2(library, PREFIX / "lib")
-        if not (PREFIX / "lib" / "libsumma.so").is_file():
-            raise FileNotFoundError("SUMMA shared library was not produced")
-    elif component == "pio":
-        helper = checkout("pio_cmake", helper_revision)
-        multiarch = run("gcc", "-print-multiarch", capture=True)
-        netcdf_c = Path("/usr/lib") / multiarch / "libnetcdf.so"
-        netcdf_fortran = Path("/usr/lib") / multiarch / "libnetcdff.so"
-        if not netcdf_c.is_file() or not netcdf_fortran.is_file():
-            raise FileNotFoundError("packaged multiarch NetCDF libraries are missing")
-        cmake(
-            source,
-            build_dir,
-            jobs,
-            "-DCMAKE_C_COMPILER=mpicc",
-            "-DCMAKE_Fortran_COMPILER=mpifort",
-            "-DBUILD_SHARED_LIBS=ON",
-            "-DPIO_ENABLE_FORTRAN=ON",
-            "-DPIO_ENABLE_TIMING=ON",
-            "-DPIO_ENABLE_TESTS=OFF",
-            "-DPIO_ENABLE_DOC=OFF",
-            "-DPIO_ENABLE_EXAMPLES=OFF",
-            "-DWITH_PNETCDF=OFF",
-            "-DPIO_USE_MPIIO=OFF",
-            "-DPIO_USE_MPISERIAL=OFF",
-            f"-DNetCDF_C_LIBRARY={netcdf_c}",
-            "-DNetCDF_C_INCLUDE_DIR=/usr/include",
-            f"-DNetCDF_Fortran_LIBRARY={netcdf_fortran}",
-            "-DNetCDF_Fortran_INCLUDE_DIR=/usr/include",
-            "-DPIO_FILESYSTEM_HINTS=",
-            f"-DUSER_CMAKE_MODULE_PATH={helper}",
-            f"-DGENF90_PATH={source / 'scripts'}",
-        )
-        shutil.rmtree(helper)
     else:
-        route = source / "route"
-        options = (
-            "FC=gnu",
-            "FC_EXE=mpifort",
-            "EXE=route_runoff",
-            "MODE=fast",
-            f"VERSION={revision}",
-            "isOpenMP=yes",
-            "isPIO=yes",
-            "isGPTL=yes",
-            "PIO_FILESYSTEM_HINTS=",
-            f"F_MASTER={route}/",
-            f"PIO_PATH={PREFIX}",
-            "NCDF_PATH=/usr",
-            "LIBNETCDF=" + run("nf-config", "--flibs", capture=True),
-            "INCNETCDF=" + run("nf-config", "--fflags", capture=True),
-        )
-        write_json(PREFIX / "provenance" / "mizuroute-make.json", list(options))
-        # Upstream all has install/clean siblings; never parallelise that target.
-        run("make", "compile", *options, cwd=route / "build")
-        run("make", "install", *options, cwd=route / "build")
-        shutil.copy2(route / "bin" / "route_runoff", PREFIX / "bin")
+        raise ValueError(f"unknown component: {component}")
     cache = build_dir / "CMakeCache.txt"
     if cache.exists():
         shutil.copy2(cache, PREFIX / "provenance" / f"{component}-CMakeCache.txt")
@@ -218,7 +190,6 @@ def provenance(base: str, snapshot: str) -> None:
         "cmake": ["cmake", "--version"],
         "netcdf_c": ["nc-config", "--all"],
         "netcdf_fortran": ["nf-config", "--all"],
-        "mpi": ["mpifort", "--showme"],
         "packages": ["dpkg-query", "-W", "-f=${Package}\t${Version}\t${Architecture}\n"],
     }
     artifacts = {}
@@ -227,7 +198,7 @@ def provenance(base: str, snapshot: str) -> None:
             if path.is_file():
                 artifacts[str(path)] = hashlib.sha256(path.read_bytes()).hexdigest()
     checks = {}
-    for name in ("summa_sundials.exe", "route_runoff"):
+    for name in (EXECUTABLE,):
         binary = PREFIX / "bin" / name
         linked = run("ldd", str(binary), capture=True)
         if "not found" in linked:
@@ -249,10 +220,10 @@ def provenance(base: str, snapshot: str) -> None:
             "artifacts": artifacts,
             "load_checks": checks,
             "profile": {
-                "summa": "SUNDIALS shared, double, 64-bit index; no source patches",
-                "mizuroute": (
-                    "GNU fast, OpenMPI, OpenMP, PIO/GPTL, "
-                    "serial NetCDF with classic PIO output; no PnetCDF"
+                "summa": (
+                    "SUMMA develop, SUNDIALS shared (double, 64-bit index), "
+                    "mizuRoute compiled in (USE_MIZUROUTE=ON, serial: no MPI), "
+                    "TOML configuration reader (toml-f); no source patches"
                 ),
             },
             "reference_validation": "not performed during build",
@@ -262,21 +233,26 @@ def provenance(base: str, snapshot: str) -> None:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument(
-        "component", choices=["sundials", "summa", "pio", "mizuroute", "provenance"]
-    )
+    parser.add_argument("component", choices=["sundials", "summa", "provenance"])
     parser.add_argument("--revision")
     parser.add_argument("--jobs", type=int)
     parser.add_argument("--base")
     parser.add_argument("--snapshot")
-    parser.add_argument("--helper-revision", default="")
+    parser.add_argument("--mizuroute-revision", default="")
+    parser.add_argument("--toml-f-revision", default="")
     args = parser.parse_args()
     if args.component == "provenance":
         provenance(args.base or "", args.snapshot or "")
     else:
         if args.jobs is None:
             parser.error("--jobs must be explicit")
-        build(args.component, args.revision or "", args.jobs, args.helper_revision)
+        build(
+            args.component,
+            args.revision or "",
+            args.jobs,
+            args.mizuroute_revision,
+            args.toml_f_revision,
+        )
     return 0
 
 

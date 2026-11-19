@@ -27,7 +27,7 @@ Architecture:
         -> Spatial remapping
         -> Model-specific forcing adapters
 
-CFIF is independent of SUMMA, mizuRoute and FLUXOS.
+CFIF is independent of SUMMA-mizuRoute and FLUXOS.
 
 Importing this package does not register handlers, download data
 or perform preprocessing. These operations belong to their

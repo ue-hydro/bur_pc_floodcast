@@ -10,10 +10,11 @@ import subprocess
 import sys
 from pathlib import Path
 
-from validate_outputs import require, validate_mizuroute, validate_summa, verify_inputs
+from validate_outputs import require, validate_summa, verify_inputs
 
 PREFIX = Path("/opt/floodcast/hydrology")
-BINARIES = {"summa": PREFIX / "bin/summa_sundials.exe", "mizuroute": PREFIX / "bin/route_runoff"}
+# One executable: SUMMA with mizuRoute compiled in (USE_MIZUROUTE=ON, summa -c <config.toml>).
+BINARIES = {"summa": PREFIX / "bin/summa_sundials_mizuroute.exe"}
 
 
 def check(level: str, model: str) -> dict:
@@ -58,27 +59,45 @@ def check(level: str, model: str) -> dict:
                 toolchain["sources"][model]["revision"] in result.stdout,
                 "SUMMA version identity differs",
             )
+            # Coupled build: the TOML reader (-c/--config) and mizuRoute must be compiled in.
+            # The usage text is printed with a nonzero status, so do not use check=True.
+            usage = subprocess.run(
+                [str(binary), "--help"], capture_output=True, text=True, timeout=30
+            )
+            require(
+                "--config" in usage.stdout + usage.stderr,
+                "executable lacks the -c/--config option (not built with USE_MIZUROUTE)",
+            )
+            encoded = subprocess.run(
+                ["/usr/bin/strings", str(PREFIX / "lib/libsumma.so")],
+                check=True,
+                capture_output=True,
+                text=True,
+                timeout=30,
+            ).stdout.lower()
+            require("mizuroute" in encoded, "libsumma does not contain the mizuRoute coupling")
+            for name in ("mizuroute", "toml_f"):
+                require(
+                    bool(re.fullmatch(r"[0-9a-f]{40}", toolchain["sources"][name]["revision"])),
+                    f"{name} submodule revision is not pinned",
+                )
         return {"model": model, "level": level, "status": "passed", "libraries": linked}
     data, output = Path("/data"), Path("/output")
     verify_inputs(data)
     require(not any(output.glob("*.nc")), "reference output directory is not fresh")
-    arguments = (
-        [
-            "-p",
-            "never",
-            "-s",
-            "_testSumma",
-            "-m",
-            "/data/settings/syntheticTestCases/celia1990/summa_fileManager_celia1990.txt",
-        ]
-        if model == "summa"
-        else ["/data/control.txt"]
-    )
+    arguments = [
+        "-p",
+        "never",
+        "-s",
+        "_testSumma",
+        "-m",
+        "/data/settings/syntheticTestCases/celia1990/summa_fileManager_celia1990.txt",
+    ]
     # Executor enforces the outer timeout and cancellation. The child remains in
     # the same container, foreground process tree; no detached model is launched.
     subprocess.run([str(binary), *arguments], cwd=output, check=True, timeout=540)
     verify_inputs(data)
-    return (validate_summa if model == "summa" else validate_mizuroute)(data, output)
+    return validate_summa(data, output)
 
 
 if __name__ == "__main__":

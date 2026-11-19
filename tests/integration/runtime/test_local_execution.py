@@ -113,7 +113,7 @@ def test_embedded_inventory_without_docker(runtime, group, method):
     assert inventory.returncode == 0, inventory.stderr
     report = json.loads(inventory.stdout)
     assert report["runtime"] == "local"
-    expected = {"fluxos"} if group == "hydraulics" else {"summa", "mizuroute"}
+    expected = {"fluxos"} if group == "hydraulics" else {"summa"}
     assert {item["model_id"] for item in report["models"]} == expected
     (destination / "inventory.json").write_text(inventory.stdout, encoding="utf-8")
 
@@ -184,7 +184,7 @@ def test_process_lifecycle(runtime, scenario):
 
 
 @pytest.mark.parametrize("method", ("pip", "conda", "source-manual"))
-@pytest.mark.parametrize("model", ("summa", "mizuroute", "fluxos"))
+@pytest.mark.parametrize("model", ("summa", "fluxos"))
 def test_scientific_cli(runtime, method, model):
     group = "hydraulics" if model == "fluxos" else "hydrology"
     destination, args = prepare(
@@ -194,11 +194,7 @@ def test_scientific_cli(runtime, method, model):
         fixture = runtime.root / "tests/integration/hydraulics/cases/subthreshold-storage"
         target = "/input"
     else:
-        fixture = runtime.root / (
-            "tests/fixtures/summa/celia1990-ida/data"
-            if model == "summa"
-            else "tests/fixtures/mizuroute/cameo/data"
-        )
+        fixture = runtime.root / "tests/fixtures/summa/celia1990-ida/data"
         target = "/data"
     config = (runtime.root / f"examples/local/{model}.toml").read_text()
     (destination / "case/run.toml").write_text(config, encoding="utf-8")

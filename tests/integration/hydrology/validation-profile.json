@@ -5,26 +5,12 @@
     {
       "model_id": "summa",
       "group": "hydrology",
-      "executable": "/opt/floodcast/hydrology/bin/summa_sundials.exe",
+      "executable": "/opt/floodcast/hydrology/bin/summa_sundials_mizuroute.exe",
       "check_ids": [
         "summa-provenance",
         "summa-load",
         "summa-reference",
         "summa-reference-ida"
-      ],
-      "supports_mpi": false,
-      "allowed_environment": [
-        "OPENBLAS_NUM_THREADS"
-      ]
-    },
-    {
-      "model_id": "mizuroute",
-      "group": "hydrology",
-      "executable": "/opt/floodcast/hydrology/bin/route_runoff",
-      "check_ids": [
-        "mizuroute-provenance",
-        "mizuroute-load",
-        "mizuroute-reference"
       ],
       "supports_mpi": false,
       "allowed_environment": [
@@ -42,16 +28,16 @@
         "fixture_id": "hydrology-technical-checks-v1",
         "metadata_ref": {
           "path": "checks/metadata.json",
-          "sha256": "bfc5f41e2bc40c5c798c8745a5f675ce363282042b8c7e87f2470be70e8cab31"
+          "sha256": "408eed8567b7d4cd565bee99022d7f462ce9a85e37105965b9771aae5250494c"
         },
         "files": [
           {
             "path": "check_model.py",
-            "sha256": "7618b473e22b908b84c44334291e004fe45fd1020f1131db6e229473ca0d1d42"
+            "sha256": "1bcef614b0adee414cca83c36d187a0f1061a87a141d10bba5b63389996c7478"
           },
           {
             "path": "validate_outputs.py",
-            "sha256": "8a779d39313032f8d2398953920486e25efdaa8fbb57ed9083743fd6a071af9c"
+            "sha256": "111de4f69cc2a09984abcdacf163ee63ee20a8d2abef5b397aa9026d70c1d09a"
           }
         ],
         "expected_result_ref": {
@@ -103,21 +89,21 @@
         "fixture_id": "hydrology-technical-checks-v1",
         "metadata_ref": {
           "path": "checks/metadata.json",
-          "sha256": "bfc5f41e2bc40c5c798c8745a5f675ce363282042b8c7e87f2470be70e8cab31"
+          "sha256": "408eed8567b7d4cd565bee99022d7f462ce9a85e37105965b9771aae5250494c"
         },
         "files": [
           {
             "path": "check_model.py",
-            "sha256": "7618b473e22b908b84c44334291e004fe45fd1020f1131db6e229473ca0d1d42"
+            "sha256": "1bcef614b0adee414cca83c36d187a0f1061a87a141d10bba5b63389996c7478"
           },
           {
             "path": "validate_outputs.py",
-            "sha256": "8a779d39313032f8d2398953920486e25efdaa8fbb57ed9083743fd6a071af9c"
+            "sha256": "111de4f69cc2a09984abcdacf163ee63ee20a8d2abef5b397aa9026d70c1d09a"
           }
         ],
         "expected_result_ref": {
           "path": "checks/load.json",
-          "sha256": "26245faaa81a397ab56e40e2525f26460c9623b8494e022f17327ca909c50b74"
+          "sha256": "0da93ce7b3882c8aedc43577ae349ec388ddd094180e3662d471d3aadb8d42c2"
         },
         "execution": {
           "argv": [
@@ -285,11 +271,11 @@
           },
           {
             "path": "check_model.py",
-            "sha256": "7618b473e22b908b84c44334291e004fe45fd1020f1131db6e229473ca0d1d42"
+            "sha256": "1bcef614b0adee414cca83c36d187a0f1061a87a141d10bba5b63389996c7478"
           },
           {
             "path": "validate_outputs.py",
-            "sha256": "8a779d39313032f8d2398953920486e25efdaa8fbb57ed9083743fd6a071af9c"
+            "sha256": "111de4f69cc2a09984abcdacf163ee63ee20a8d2abef5b397aa9026d70c1d09a"
           }
         ],
         "expected_result_ref": {
@@ -475,11 +461,11 @@
           },
           {
             "path": "check_model.py",
-            "sha256": "7618b473e22b908b84c44334291e004fe45fd1020f1131db6e229473ca0d1d42"
+            "sha256": "1bcef614b0adee414cca83c36d187a0f1061a87a141d10bba5b63389996c7478"
           },
           {
             "path": "validate_outputs.py",
-            "sha256": "8a779d39313032f8d2398953920486e25efdaa8fbb57ed9083743fd6a071af9c"
+            "sha256": "111de4f69cc2a09984abcdacf163ee63ee20a8d2abef5b397aa9026d70c1d09a"
           }
         ],
         "expected_result_ref": {
@@ -498,218 +484,6 @@
           "mounts": [
             {
               "source": "../../fixtures/summa/celia1990-ida/data",
-              "target": "/data",
-              "mode": "ro"
-            },
-            {
-              "source": "check_model.py",
-              "target": "/checks/check_model.py",
-              "mode": "ro"
-            },
-            {
-              "source": "validate_outputs.py",
-              "target": "/checks/validate_outputs.py",
-              "mode": "ro"
-            }
-          ],
-          "staged_files": [],
-          "environment": {
-            "OPENBLAS_NUM_THREADS": "1"
-          },
-          "resources": {
-            "nodes": 1,
-            "mpi_ranks": 1,
-            "omp_threads": 1,
-            "cpus_per_rank": 1,
-            "memory_bytes": 2147483648,
-            "gpus": 0
-          }
-        }
-      }
-    },
-    {
-      "check_id": "mizuroute-provenance",
-      "model_id": "mizuroute",
-      "level": "provenance",
-      "required_for_promotion": true,
-      "fixture": {
-        "fixture_id": "hydrology-technical-checks-v1",
-        "metadata_ref": {
-          "path": "checks/metadata.json",
-          "sha256": "bfc5f41e2bc40c5c798c8745a5f675ce363282042b8c7e87f2470be70e8cab31"
-        },
-        "files": [
-          {
-            "path": "check_model.py",
-            "sha256": "7618b473e22b908b84c44334291e004fe45fd1020f1131db6e229473ca0d1d42"
-          },
-          {
-            "path": "validate_outputs.py",
-            "sha256": "8a779d39313032f8d2398953920486e25efdaa8fbb57ed9083743fd6a071af9c"
-          }
-        ],
-        "expected_result_ref": {
-          "path": "checks/provenance.json",
-          "sha256": "faa861de992bd41e745b1bde2d41a9d5b60dd4aef1c4cbcb0e183887d4e108bc"
-        },
-        "execution": {
-          "argv": [
-            "/usr/bin/python3",
-            "/checks/check_model.py",
-            "provenance",
-            "mizuroute"
-          ],
-          "timeout_s": 60,
-          "working_directory": "/output",
-          "mounts": [
-            {
-              "source": "check_model.py",
-              "target": "/checks/check_model.py",
-              "mode": "ro"
-            },
-            {
-              "source": "validate_outputs.py",
-              "target": "/checks/validate_outputs.py",
-              "mode": "ro"
-            }
-          ],
-          "staged_files": [],
-          "environment": {
-            "OPENBLAS_NUM_THREADS": "1"
-          },
-          "resources": {
-            "nodes": 1,
-            "mpi_ranks": 1,
-            "omp_threads": 1,
-            "cpus_per_rank": 1,
-            "memory_bytes": 2147483648,
-            "gpus": 0
-          }
-        }
-      }
-    },
-    {
-      "check_id": "mizuroute-load",
-      "model_id": "mizuroute",
-      "level": "load",
-      "required_for_promotion": true,
-      "fixture": {
-        "fixture_id": "hydrology-technical-checks-v1",
-        "metadata_ref": {
-          "path": "checks/metadata.json",
-          "sha256": "bfc5f41e2bc40c5c798c8745a5f675ce363282042b8c7e87f2470be70e8cab31"
-        },
-        "files": [
-          {
-            "path": "check_model.py",
-            "sha256": "7618b473e22b908b84c44334291e004fe45fd1020f1131db6e229473ca0d1d42"
-          },
-          {
-            "path": "validate_outputs.py",
-            "sha256": "8a779d39313032f8d2398953920486e25efdaa8fbb57ed9083743fd6a071af9c"
-          }
-        ],
-        "expected_result_ref": {
-          "path": "checks/load.json",
-          "sha256": "26245faaa81a397ab56e40e2525f26460c9623b8494e022f17327ca909c50b74"
-        },
-        "execution": {
-          "argv": [
-            "/usr/bin/python3",
-            "/checks/check_model.py",
-            "load",
-            "mizuroute"
-          ],
-          "timeout_s": 60,
-          "working_directory": "/output",
-          "mounts": [
-            {
-              "source": "check_model.py",
-              "target": "/checks/check_model.py",
-              "mode": "ro"
-            },
-            {
-              "source": "validate_outputs.py",
-              "target": "/checks/validate_outputs.py",
-              "mode": "ro"
-            }
-          ],
-          "staged_files": [],
-          "environment": {
-            "OPENBLAS_NUM_THREADS": "1"
-          },
-          "resources": {
-            "nodes": 1,
-            "mpi_ranks": 1,
-            "omp_threads": 1,
-            "cpus_per_rank": 1,
-            "memory_bytes": 2147483648,
-            "gpus": 0
-          }
-        }
-      }
-    },
-    {
-      "check_id": "mizuroute-reference",
-      "model_id": "mizuroute",
-      "level": "reference",
-      "required_for_promotion": true,
-      "fixture": {
-        "fixture_id": "mizuroute-cameo-three-day-operational-v1",
-        "metadata_ref": {
-          "path": "../../fixtures/mizuroute/cameo/metadata.json",
-          "sha256": "63493e9e31473c8879ea520c32137edcf32db9e8bd9cb81e8f0b5ab73871db53"
-        },
-        "files": [
-          {
-            "path": "../../fixtures/mizuroute/cameo/data/ancillary_data/ntopo_nhdplus_cameo_pfaf.nc",
-            "sha256": "e52114f589e8c4d197cd4d670284076915953a2415960f995730b2aa4e6f5677"
-          },
-          {
-            "path": "../../fixtures/mizuroute/cameo/data/control.txt",
-            "sha256": "ce55e4f23cbee814db3c015384f97cdbf547b60e54e77b1ea966d322ec8e2068"
-          },
-          {
-            "path": "../../fixtures/mizuroute/cameo/data/files.json",
-            "sha256": "d2c357431f4ac3695c971b06284f9aaee0a33d8c96142b6fdf9db61f2091eb7a"
-          },
-          {
-            "path": "../../fixtures/mizuroute/cameo/data/input/param.nml.default",
-            "sha256": "81d2dba11eadc50cb862220995e3b6aaa664044547c60007fc74be6a3756c01d"
-          },
-          {
-            "path": "../../fixtures/mizuroute/cameo/data/input/runoff_case1.in",
-            "sha256": "e377846624c33b9022ecc20f8342e0c4dd0470282928cbe22dadca573694b239"
-          },
-          {
-            "path": "../../fixtures/mizuroute/cameo/data/input/RUNOFF_case1.nc",
-            "sha256": "825d4e6bbfff690445992693bd0c8443637be64b554951d1db6964627c4ea222"
-          },
-          {
-            "path": "check_model.py",
-            "sha256": "7618b473e22b908b84c44334291e004fe45fd1020f1131db6e229473ca0d1d42"
-          },
-          {
-            "path": "validate_outputs.py",
-            "sha256": "8a779d39313032f8d2398953920486e25efdaa8fbb57ed9083743fd6a071af9c"
-          }
-        ],
-        "expected_result_ref": {
-          "path": "../../fixtures/mizuroute/cameo/expected.json",
-          "sha256": "f0c8837fa2974b13a9b5c07bdfce785bfacae73100af683a750e483c68370a2d"
-        },
-        "execution": {
-          "argv": [
-            "/usr/bin/python3",
-            "/checks/check_model.py",
-            "reference",
-            "mizuroute"
-          ],
-          "timeout_s": 600,
-          "working_directory": "/output",
-          "mounts": [
-            {
-              "source": "../../fixtures/mizuroute/cameo/data",
               "target": "/data",
               "mode": "ro"
             },

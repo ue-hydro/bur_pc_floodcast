@@ -1,0 +1,183 @@
+/* Floodcast operational adapter for the FLUXOS WebGL viewer (floodcast-owned; the vendored
+ * index.html template is left untouched). Injected into every exported viewer by hydraulics.py.
+ *
+ *  - controls start hidden; only basic controls remain (time, play, fullscreen, speed,
+ *    water/particles/satellite-hillshade toggles, sun clock, forecast rain)
+ *  - camera views: all except "Cinematic" and "Fly Path"
+ *  - sun clock linked to the real (Lisbon) time of day of the simulation; untick = full daylight
+ *  - rain overlay driven by the forecast rain at Alcácer do Sal (forcing.json)
+ *  - simulation time posted to the parent page so its hydrograph cursor follows the animation
+ */
+(function () {
+  "use strict";
+  var forcing = null, rainOn = true, lastPost = 0;
+  // Who owns the clock: the page embedding us (iframe) or the page that opened us (pop-up window).
+  var CTRL = window.parent !== window ? window.parent : (window.opener || null);
+  var lang = (location.hash.match(/lang=(pt|en|es)/) || [0, "pt"])[1];  // the site passes #lang=pt|en|es
+
+  function txt(ptS, enS, esS) { return lang === "en" ? enS : (lang === "es" ? (esS || enS) : ptS); }
+  function hide(el) { if (el) el.style.display = "none"; }
+  function rowOf(id) { var e = document.getElementById(id); return e ? e.closest(".ctrl-row") : null; }
+
+  function lisbonDayFraction(iso) {
+    try {
+      var p = new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/Lisbon", hour: "2-digit", minute: "2-digit", hour12: false })
+        .formatToParts(new Date(iso));
+      var h = 0, m = 0;
+      p.forEach(function (x) { if (x.type === "hour") h = +x.value % 24; if (x.type === "minute") m = +x.value; });
+      return (h + m / 60) / 24;
+    } catch (e) { return 0.5; }
+  }
+
+  function rainAt(t) {  // forecast rain intensity (mm/h) at simulation second t
+    if (!forcing || !forcing.rain || !forcing.rain.length) return 0;
+    var r = forcing.rain, i = 0;
+    while (i < r.length - 1 && r[i + 1].t_s <= t) i++;
+    return t >= r[0].t_s ? r[i].mm_h : 0;
+  }
+
+  function trimControls() {
+    var panel = document.getElementById("controls"), tab = document.getElementById("controls-tab");
+    if (panel && tab) { panel.dataset.collapsed = "true"; panel.style.transform = ""; tab.hidden = false; }
+    ["sl-trail", "sl-exag", "sl-foam", "sl-turbidity", "sl-suntime", "sl-rain"].forEach(function (id) { hide(rowOf(id)); });
+    ["btn-reset", "btn-rec", "btn-particles"].forEach(function (id) { hide(document.getElementById(id)); });
+    hide(rowOf("sl-particles"));               // no particles in the operational view
+    viewer.showParticles = false;
+    var ip = document.getElementById("i-particles"); if (ip && ip.parentElement) hide(ip.parentElement);
+    // views: drop "Cinematic" and "Fly Path" (both buttons share id="cam-fly" in the template)
+    Array.prototype.forEach.call(document.querySelectorAll("#controls button"), function (b) {
+      var t = (b.textContent || "").toLowerCase();
+      if (t.indexOf("cinematic") >= 0 || t.indexOf("fly path") >= 0) b.remove();
+    });
+    var flyPanel = document.getElementById("fly-list");
+    if (flyPanel) hide(flyPanel.closest("div[id], section, aside") || flyPanel.parentElement);
+    var v3d = document.getElementById("cam-3d");
+    if (v3d) v3d.click();
+    var title = document.getElementById("controls-title");
+    if (title) title.textContent = txt("Controlos", "Controls", "Controles");
+    var tabLabel = tab && tab.querySelector("span");
+    if (tabLabel) tabLabel.textContent = "☰ " + txt("Controlos", "Controls", "Controles");
+  }
+
+  // the page's sun button: {type:"fluxos-sun", follow:true|false}
+  function listenSun(link) {
+    window.addEventListener("message", function (ev) {
+      var d = ev.data;
+      if (!d || d.type !== "fluxos-sun" || (CTRL && ev.source !== CTRL)) return;
+      var ck = document.getElementById("ck-sun-follow"), lbl = document.getElementById("v-sun-follow");
+      if (d.follow) { if (ck) ck.checked = true; link(); }
+      else {
+        if (ck) ck.checked = false;
+        viewer.sunFollowSim = false; viewer.sunTime = 0.5; viewer._sunUiLast = undefined;
+        if (lbl) lbl.textContent = txt("dia claro", "full daylight", "pleno día");
+      }
+    });
+  }
+
+  function sunClock() {
+    var ck = document.getElementById("ck-sun-follow"), lbl = document.getElementById("v-sun-follow");
+    var row = ck && ck.closest(".ctrl-row");
+    if (row) { var l = row.querySelector("label"); if (l) l.textContent = txt("Hora da previsão", "Forecast time", "Hora de la previsión"); }
+    var base = forcing && forcing.sim_start_utc ? lisbonDayFraction(forcing.sim_start_utc) : null;
+    function link() {
+      if (base == null) return;
+      viewer.sunTimeBase = base; viewer.sunFollowSim = true; viewer._sunUiLast = undefined;
+      if (lbl) lbl.textContent = txt("sol segue a hora da previsão", "sun follows the forecast time", "el sol sigue la hora de la previsión");
+    }
+    if (ck) {
+      ck.checked = base != null;
+      ck.addEventListener("change", function () {  // runs after the template's own handler
+        if (ck.checked) link();
+        else { viewer.sunFollowSim = false; viewer.sunTime = 0.5; if (lbl) lbl.textContent = txt("dia claro", "full daylight", "pleno día"); }
+      });
+    }
+    if (base != null) link(); else { viewer.sunFollowSim = false; viewer.sunTime = 0.5; }
+    listenSun(link);
+  }
+
+  function rainToggle() {
+    var anchor = rowOf("ck-sun-follow");
+    if (!anchor) return;
+    var row = document.createElement("div");
+    row.className = "ctrl-row";
+    row.innerHTML = '<label>' + txt("Chuva prevista", "Forecast rain", "Lluvia prevista") + '</label>' +
+      '<input type="checkbox" id="ck-rain-fc" checked style="flex:0 0 auto; margin:0 8px 0 0">' +
+      '<span class="val" id="v-rain-fc" style="flex:1; text-align:left; color:#8899bb">–</span>';
+    anchor.parentNode.insertBefore(row, anchor.nextSibling);
+    var ck = row.querySelector("input");
+    ck.addEventListener("change", function () { rainOn = ck.checked; if (!rainOn) viewer.rainAmount = 0; });
+    if (!forcing || !forcing.rain || !forcing.rain.length) { ck.checked = false; ck.disabled = true; rainOn = false; }
+  }
+
+  function tick(now) {
+    var t = viewer._simSeconds ? viewer._simSeconds() : 0;
+    if (rainOn) {
+      var mm = rainAt(t);
+      // any measurable rain is visible; 8 mm/h ~ heavy downpour
+      viewer.rainAmount = mm >= 0.1 ? Math.min(1, Math.max(0.25, Math.sqrt(mm / 8))) : 0;
+      var v = document.getElementById("v-rain-fc");
+      if (v) v.textContent = mm.toFixed(1) + " mm/h";
+    }
+    if (CTRL && now - lastPost > 100) {
+      lastPost = now;
+      try { CTRL.postMessage({ type: "fluxos-time", t: t, playing: !!viewer.playing }, "*"); } catch (e) {}
+    }
+    requestAnimationFrame(tick);
+  }
+
+  // The page owns the clock: it posts the simulation second, the viewer shows that moment.
+  function followPageClock() {
+    var m = viewer.meta, n = m.n_timesteps;
+    viewer.playing = false;
+    hide(document.getElementById("btn-play"));
+    viewer.frameCacheMax = Math.max(viewer.frameCacheMax || 30, Math.min(n + 2, 400));
+    for (var i = 0; i < Math.min(n, 400); i++) viewer.loadVelFrame(i);   // decode all up front → smooth loop
+    window.addEventListener("message", function (ev) {
+      var d = ev.data;
+      if (!d || d.type !== "fluxos-set-time" || ev.source !== CTRL) return;
+      var ts = m.times, t = d.t, i = 0;
+      while (i < n - 2 && ts[i + 1] <= t) i++;
+      var span = (ts[i + 1] - ts[i]) || 1, frac = Math.max(0, Math.min(1, (t - ts[i]) / span));
+      viewer.playing = false;
+      if (viewer.frameCache.has(i)) { viewer.currentFrame = i; viewer.timeFrac = frac; }
+      else viewer.loadVelFrame(i);
+    });
+  }
+
+  // Time labels show the real (Lisbon) day and hour of the simulated moment, not elapsed hours.
+  function realClock() {
+    if (!forcing || !forcing.sim_start_utc) return;
+    var t0 = Date.parse(forcing.sim_start_utc);
+    var loc = { pt: "pt-PT", en: "en-GB", es: "es-ES" }[lang] || "pt-PT";
+    var fmt;
+    try {
+      fmt = new Intl.DateTimeFormat(loc, { timeZone: "Europe/Lisbon", weekday: "short", day: "2-digit",
+                                            month: "short", hour: "2-digit", minute: "2-digit" });
+    } catch (e) { fmt = null; }
+    window.fmtTime = function (tSec) {
+      var d = new Date(t0 + (tSec || 0) * 1000);
+      return fmt ? fmt.format(d) : d.toISOString().substr(0, 16).replace("T", " ") + " UTC";
+    };
+    var vt = document.getElementById("v-time"); if (vt) vt.style.minWidth = "11em";
+  }
+
+  function start() {
+    trimControls();
+    realClock();
+    if (CTRL) followPageClock();
+    sunClock();
+    rainToggle();
+    requestAnimationFrame(tick);
+  }
+
+  var tries = 0;
+  var wait = setInterval(function () {
+    tries++;
+    if (typeof viewer !== "undefined" && viewer && viewer.meta) {
+      clearInterval(wait);
+      fetch("forcing.json").then(function (r) { return r.ok ? r.json() : null; })
+        .catch(function () { return null; })
+        .then(function (f) { forcing = f; start(); });
+    } else if (tries > 600) clearInterval(wait);
+  }, 100);
+})();

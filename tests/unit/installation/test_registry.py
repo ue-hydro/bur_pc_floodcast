@@ -238,12 +238,9 @@ def test_promote_and_resolve_without_checkout_or_profiles(tmp_path, profile):
         "summa.provenance",
         "summa.load",
         "summa.reference",
-        "mizuroute.provenance",
-        "mizuroute.load",
-        "mizuroute.reference",
     ],
 )
-def test_hydrology_requires_both_models_all_mandatory_checks(tmp_path, profile, failed_check):
+def test_hydrology_requires_all_mandatory_checks(tmp_path, profile, failed_check):
     registry, _, checks = profile
     candidate, report = candidate_and_report(tmp_path, checks, "hydrology", failure=failed_check)
     assert_code("VALIDATION_FAILED", lambda: registry.promote(candidate, report, 0))
@@ -251,12 +248,11 @@ def test_hydrology_requires_both_models_all_mandatory_checks(tmp_path, profile, 
     assert registry.list_installations() == []
 
 
-def test_successful_hydrology_is_one_installation_for_both_models(tmp_path, profile):
+def test_successful_hydrology_is_one_installation_for_the_coupled_model(tmp_path, profile):
     registry, _, checks = profile
     candidate, report = candidate_and_report(tmp_path, checks, "hydrology")
     record = registry.promote(candidate, report, 0)
     assert registry.resolve("summa", "docker").record == record
-    assert registry.resolve("mizuroute", "docker").record == record
     assert len(registry.list_installations()) == 1
 
 

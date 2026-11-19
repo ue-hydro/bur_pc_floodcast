@@ -89,7 +89,7 @@ python tools/verify_saved_ifs.py \
 ```
 
 This check does not establish calibrated-basin performance, state compatibility,
-SUMMA/mizuRoute/FLUXOS execution, hydrological skill, or operational flood-warning
+coupled SUMMA-mizuRoute / FLUXOS execution, hydrological skill, or operational flood-warning
 reliability. It does not validate authenticated live S2S or seasonal acquisition.
 The explicit hourly redistribution preserves integrals; it does not recover
 unobserved subinterval variability.

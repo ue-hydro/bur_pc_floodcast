@@ -272,18 +272,12 @@ def test_not_run_cannot_claim_execution_or_pass():
     )
 
 
-def test_hydrology_record_cannot_promote_summa_alone(tmp_path):
-    with pytest.raises(ValidationError, match="exactly the models"):
+def test_hydrology_record_requires_the_coupled_model(tmp_path):
+    # SUMMA-mizuRoute is one coupled executable; an empty hydrology record is not a model.
+    with pytest.raises(ValidationError):
         InstallationRecord(
             group="hydrology",
-            models=(
-                ModelSpec(
-                    model_id="summa",
-                    group="hydrology",
-                    executable="/opt/bin/summa",
-                    check_ids=("summa-reference",),
-                ),
-            ),
+            models=(),
             artifact=artifact(),
             build_spec_sha256=DIGEST,
             toolchain_ref=evidence(tmp_path),

@@ -1,0 +1,23 @@
+# systemd unit: keeps the operational system running on a Linux server with Docker.
+# Install:  sudo cp deploy/floodcast-operate.service /etc/systemd/system/
+#           sudo systemctl daemon-reload && sudo systemctl enable --now floodcast-operate
+# Adjust User, WorkingDirectory and the config path. The user must be in the `docker` group.
+[Unit]
+Description=Floodcast operational flood forecast (Alcácer do Sal)
+After=network-online.target docker.service
+Wants=network-online.target
+Requires=docker.service
+
+[Service]
+Type=simple
+User=floodcast
+WorkingDirectory=/opt/bur_pc_floodcast
+ExecStart=/opt/bur_pc_floodcast/.venv/bin/floodcast operate daemon --config examples/operational/alcacer_do_sal.toml
+Restart=always
+RestartSec=30
+# A stuck forecast must never take the box down.
+MemoryMax=12G
+Nice=5
+
+[Install]
+WantedBy=multi-user.target

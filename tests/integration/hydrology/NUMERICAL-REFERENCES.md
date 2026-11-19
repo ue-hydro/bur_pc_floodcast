@@ -1,9 +1,16 @@
 # Numerical references for the hydrology image
 
-This profile tests three individual, public synthetic/reference cases. It does
-not validate the SUMMA-to-mizuRoute chain, Alcacer do Sal, operational forecasts,
-or all scientific processes implemented by either executable. Acceptance checks
-structure, units, identity and numerical quantities, not exit status alone.
+This profile tests two individual, public synthetic/reference SUMMA cases (Celia
+1990). The image now contains the **coupled SUMMA-mizuRoute** executable
+(`summa_sundials_mizuroute.exe`, SUMMA `develop` with mizuRoute compiled in). These
+cases exercise the land-surface/subsurface solver only; they do **not** validate the
+coupled river routing, Alcacer do Sal, operational forecasts, or all scientific
+processes implemented by the executable. The earlier standalone mizuRoute (Cameo)
+reference was removed together with that executable and has **no replacement yet**;
+a routing reference for the coupled build is pending. The Celia fixtures were
+produced for the previous (decoupled) SUMMA revision and are **pending
+re-validation** against the coupled build. Acceptance checks structure, units,
+identity and numerical quantities, not exit status alone.
 
 ## Celia: original iterative profile
 
@@ -74,62 +81,12 @@ The generator refuses to overwrite an existing reference. Installing from a
 clone uses the committed `.npz` and hash-bound metadata. A changed generator or
 reference requires explicit review and refreshed profile hashes.
 
-## Cameo: analytic headwaters and integral volume by reach
-
-The [public Cameo archive](https://doi.org/10.5281/zenodo.17794327) provides runoff,
-HRU areas and topology. The legacy comparison output uses another routing
-profile and inconsistent runoff units; it is not used as a numerical golden.
-The declared cold-start profile uses `route_opt=5`, `doesBasinRoute=1`, one-day
-forcing/routing intervals, no remap, and bottom-draining headwaters. The validator
-checks these assumptions before applying the reference.
-
-For each HRU, input runoff in mm/s is multiplied by its area in m2 and `0.001`
-to obtain m3/s. Contributions are grouped by reach **ID**, not array position.
-The public basin response has gamma shape 2.5 and scale 86400 seconds. Its
-closed-form cumulative distribution is evaluated using `math.erf`, separately
-from the model's incomplete-gamma implementation:
-
-```text
-P(5/2,x) = erf(sqrt(x)) - exp(-x)/sqrt(pi) * (2*sqrt(x) + 4*x^(3/2)/3)
-w_j = [P(5/2,j+1) - P(5/2,j)] / P(5/2,9), j = 0..8
-basin_Q(t,r) = sum_(j=0..t) w_j * local_input_Q(t-j,r)
-```
-
-The nine-bin normalization belongs to this source/profile. The resulting
-hydrographs are checked at all 2,507 headwater reaches, where the selected
-bottom-draining convention bypasses channel storage. Relative tolerance is
-`2e-7`, with `1e-10 m3/s` absolute tolerance for float32 output rounding. The
-same independent response is compared with final restart `basin_q`.
-
-For every one of 6,895 reaches, input-derived lateral volume and the topology's
-upstream flows are integrated, and compared with outgoing volume and separately
-reported final channel storage. Initial storage is zero in this cold start:
-
-```text
-residual_r = 86400 * sum_t(basin_Q(t,r) + upstream_Q(t,r) - output_Q(t,r))
-             - final_storage_r
-abs(residual_r) <= 1e-6 m3 + 2e-7 * (abs(Vin_r) + abs(Vout_r) + abs(storage_r))
-```
-
-This supplies an analytic headwater reference and a conservation invariant for
-interior reaches. It does **not** independently certify the transient interior
-diffusive-wave waveform; a compensating interior error could preserve this
-integral. Full channel-solution accuracy is a separate scientific gate. Both
-ordinary reach-order changes and genuine reach-ID mismatches have regressions.
-
-History times denote interval starts. Three positive, continuous daily bounds
-must cover **1950-01-01 12:00 through 1950-01-04 12:00**; the last timestamp is
-January 3. Discharges are interval means. Bounds units/calendar must agree with
-time; final restart time must equal the last interval endpoint. Future adapters
-must preserve this support, not infer it from the final timestamp alone.
-
 ## Regression evidence and licences
 
 `tests/integration/hydrology/test_model_outputs.py` mutates temporary copies of
 actual model outputs and verifies that original NetCDF hashes stay unchanged.
-It covers scale, local numerical errors, units/dimensions, depth/reach identity,
-volume/storage and time bounds; unchanged outputs and consistent reach
-permutations must pass. Missing actual outputs are `skipped`, not proof of a run.
+It covers scale, local numerical errors, units/dimensions and depth identity;
+unchanged outputs must pass. Missing actual outputs are `skipped`, not proof of a run.
 The four earlier structural/tamper regressions remain in `test_validation.py`.
 
 Public source data and benchmark attribution remain CC-BY-4.0. The independent

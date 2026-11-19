@@ -1,5 +1,12 @@
 # Verificação da integração Floodcast / ECMWF / SYMFLUENCE
 
+> **Nota (histórica / pending re-validation).** Este relatório foi produzido pelo contribuidor
+> antes da migração para o SUMMA-mizuRoute acoplado (SUMMA `develop`, `USE_MIZUROUTE=ON`) e
+> refere-se a um repositório completo que **não** corresponde a este checkout: vários módulos
+> de dados nunca foram submetidos (ver [`../KNOWN_MISSING_MODULES.md`](../KNOWN_MISSING_MODULES.md)).
+> As contagens abaixo não são reproduzíveis a partir deste checkout.
+
+
 Data: **17 de novembro de 2026**. Execução sobre um clone completo do Floodcast,
 base `39cd5511a0f85d778e11ec85e0289364449c4b15`, com as alterações já integradas.
 O SYMFLUENCE foi obtido no commit exato
@@ -27,7 +34,7 @@ O SYMFLUENCE foi obtido no commit exato
 Os 79 skips não são testes aprovados. Correspondem a verificações que exigem
 imagens Docker explicitamente selecionadas, outputs reais de modelos ou a
 ativação deliberada dos wrappers/Compose. Não foram executados Docker, SUMMA,
-mizuRoute, FLUXOS ou HPC nesta entrega.
+FLUXOS, mizuRoute (agora acoplado ao SUMMA) ou HPC nesta entrega.
 
 As duas suites são distintas. O total é **815 testes aprovados, 2 subtestes
 aprovados e 79 testes não executados**. As contagens dos subconjuntos executados
@@ -182,7 +189,7 @@ serem fornecidos os recursos/flags requeridos; não os interpretar como aprovaç
 
 ## Limites que permanecem
 
-- Execução de SUMMA, mizuRoute e FLUXOS, simulações de bacia e validação
+- Execução de SUMMA-mizuRoute (acoplado) e FLUXOS, simulações de bacia e validação
   hidrológica: **não executadas**.
 - Estado físico T0, calibração, limiares por troço, probabilidades de cheia,
   fronteiras FLUXOS e produto de aviso: fora deste incremento de dados.

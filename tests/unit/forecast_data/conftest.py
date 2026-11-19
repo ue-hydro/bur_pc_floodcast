@@ -6,7 +6,7 @@ import pytest
 
 from floodcast.data.catalog import IFS, S2S, SEASONAL, variables
 from floodcast.data.config import DataConfig, ForecastConfig
-from floodcast.data.utils.grib_utils import FieldMessage
+from floodcast.data.utils.grib import FieldMessage
 
 
 @pytest.fixture

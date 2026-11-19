@@ -116,7 +116,7 @@ class Registry:
     def resolve(
         self, model_id: ModelId, runtime: Runtime, installation_id: UUID | None = None
     ) -> VerifiedInstallation:
-        if model_id not in ("summa", "mizuroute", "fluxos") or runtime != "docker":
+        if model_id not in ("summa", "fluxos") or runtime != "docker":
             raise FloodcastError(
                 "INVALID_CONFIG", "resolve", "Unknown model or unsupported runtime"
             )

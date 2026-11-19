@@ -81,7 +81,7 @@ def build_parser() -> argparse.ArgumentParser:
                 "--all", action="store_true", help="Include history in text output"
             )
         if name == "run":
-            command.add_argument("--model", required=True, choices=("summa", "mizuroute", "fluxos"))
+            command.add_argument("--model", required=True, choices=("summa", "fluxos"))
         if name == "validate":
             command.add_argument("--installation-id", type=UUID)
     from .data_arguments import add_data_arguments
@@ -91,6 +91,14 @@ def build_parser() -> argparse.ArgumentParser:
     add_data_arguments(data)
     _add_output_arguments(data)
     data.set_defaults(handler=run_data)
+    from .operate_commands import add_operate_arguments, run_operate
+
+    operate = groups.add_parser(
+        "operate", help="Run the operational flood forecast system (screen, model, publish)"
+    )
+    add_operate_arguments(operate)
+    _add_output_arguments(operate)
+    operate.set_defaults(handler=run_operate)
     return root
 
 

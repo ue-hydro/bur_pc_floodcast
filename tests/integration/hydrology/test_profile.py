@@ -21,7 +21,7 @@ def test_profile_generation_is_idempotent_and_current():
 
 def test_every_check_mounts_identified_read_only_scripts():
     profile = load_validation_profile(HERE / "validation-profile.json")
-    assert len(profile.checks) == 7
+    assert len(profile.checks) == 4
     for check in profile.checks:
         assert check.fixture is not None
         validate_fixture(check.fixture, check.model_id)
@@ -36,11 +36,11 @@ def test_every_check_mounts_identified_read_only_scripts():
 def test_technical_checks_have_no_scientific_inputs():
     profile = load_validation_profile(HERE / "validation-profile.json")
     technical = [check for check in profile.checks if check.level != "reference"]
-    assert len(technical) == 4
+    assert len(technical) == 2
     for check in technical:
         assert check.fixture is not None
         metadata = validate_fixture(check.fixture, check.model_id)
-        assert set(metadata.model_ids) == {"summa", "mizuroute"}
+        assert set(metadata.model_ids) == {"summa"}
         assert metadata.tolerances == {}
         assert len(check.fixture.files) == 2
         assert len(check.execution.mounts) == 2

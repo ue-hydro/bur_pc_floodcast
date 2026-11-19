@@ -210,9 +210,7 @@ def test_success_holds_lock_through_build_and_register(installation_setup):
     assert backend.calls == ["hydrology", "hydraulics"]
     assert validator.requests == []
     assert registry.snapshot().generation == 2
-    assert (
-        registry.resolve("summa", "docker").record == registry.resolve("mizuroute", "docker").record
-    )
+    assert registry.resolve("summa", "docker").record.group == "hydrology"
     assert registry.resolve("fluxos", "docker").record.group == "hydraulics"
     assert (registry.root / "attempts" / str(outcome.attempt_id) / "outcome.json").is_file()
 
@@ -392,7 +390,7 @@ def test_install_without_validator_registers_and_runs_no_tests(installation_setu
     assert result.success and result.exit_code == 0
     assert validator.requests == []
     assert [item.status for item in result.groups] == ["installed", "installed"]
-    for model in ("summa", "mizuroute", "fluxos"):
+    for model in ("summa", "fluxos"):
         selected = registry.resolve(model, "docker")
         assert selected.health == "installed"
         assert selected.validation_status == "not_tested"

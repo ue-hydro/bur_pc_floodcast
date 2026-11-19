@@ -9,8 +9,8 @@ from floodcast.data.cache.raw_forecast_cache import RawForecastCache
 from floodcast.data.catalog import S2S, SEASONAL
 from floodcast.data.data_manager import DataManager
 from floodcast.data.errors import DataError
-from floodcast.data.utils.grib_framing import count_grib_messages
-from floodcast.data.utils.io_utils import safe_file
+from floodcast.data.utils.grib import count_grib_messages
+from floodcast.data.utils.storage import safe_file
 
 
 @pytest.mark.parametrize("body", [b"", b"<html>403</html>", b"GRIB1234", b"PK1234567"])

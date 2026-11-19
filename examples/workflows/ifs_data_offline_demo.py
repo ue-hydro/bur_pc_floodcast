@@ -15,7 +15,7 @@ from pathlib import Path
 
 from floodcast.core.config import RuntimeConfig
 from floodcast.data.config import DataConfig
-from floodcast.data.utils.io_utils import file_sha256
+from floodcast.data.utils.storage import file_sha256
 from floodcast.data.workflow import compose_forecast_workflow, make_forecast_request
 from floodcast.project import Floodcast
 

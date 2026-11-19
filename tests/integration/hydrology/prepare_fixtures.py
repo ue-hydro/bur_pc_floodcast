@@ -14,7 +14,6 @@ from pathlib import Path
 
 ARCHIVES = {
     "summa": "35a66bd3fadf3e4cd3a1ba4a1fcc328b8d69c06f1264a29068751da25e23d829",
-    "mizuroute": "b65b5ab692e0c59808a93dcfd8f1ffebe4db88797cd80557dbbd228f9e90afac",
 }
 
 
@@ -30,39 +29,22 @@ def prepare(
     index: Path | None = None,
     solver: str = "itertive",
 ) -> None:
-    if solver != "itertive" and model != "summa":
-        raise ValueError("solver selection only applies to SUMMA")
     if destination.exists():
         raise FileExistsError(f"refusing to overwrite {destination}")
     if digest(archive) != ARCHIVES[model]:
         raise ValueError("source archive SHA256 mismatch")
-    if model == "summa":
-        if index is None:
-            raise ValueError("SUMMA requires the reviewed subset index")
-        records = json.loads(index.read_text())
-        selection = {}
-        for record in records:
-            path = record["path"]
-            if path.endswith("dos2unix.sh"):
-                continue
-            renamed = path.replace("settings_org/", "settings/").replace(
-                "testCases_data_org/inputData/syntheticData/celia1990/", "forcing/"
-            )
-            selection["summaTestCases_3.0/" + path] = (renamed, record["sha256"])
-    else:
-        prefix = "testCase_cameo_v3.1/"
-        selection = {
-            prefix + name: (target, None)
-            for name, target in {
-                "ancillary_data/ntopo_nhdplus_cameo_pfaf.nc": (
-                    "ancillary_data/ntopo_nhdplus_cameo_pfaf.nc"
-                ),
-                "ancillary_data/param.nml.default": "input/param.nml.default",
-                "input/RUNOFF_case1.nc": "input/RUNOFF_case1.nc",
-                "input/runoff_case1.in": "input/runoff_case1.in",
-                "settings/v3.1/testCase_cameo_case1.control": "control.txt",
-            }.items()
-        }
+    if index is None:
+        raise ValueError("SUMMA requires the reviewed subset index")
+    records = json.loads(index.read_text())
+    selection = {}
+    for record in records:
+        path = record["path"]
+        if path.endswith("dos2unix.sh"):
+            continue
+        renamed = path.replace("settings_org/", "settings/").replace(
+            "testCases_data_org/inputData/syntheticData/celia1990/", "forcing/"
+        )
+        selection["summaTestCases_3.0/" + path] = (renamed, record["sha256"])
     extracted = []
     with tarfile.open(archive) as source:
         members = {member.name.lstrip("./"): member for member in source.getmembers()}
@@ -96,15 +78,6 @@ def prepare(
             )
             .replace("<BASEDIR>/output/syntheticTestCases/celia1990/", "/output/")
         )
-    else:
-        control = destination / "control.txt"
-        text = (
-            control.read_text()
-            .replace("./ancillary_data/", "/data/ancillary_data/")
-            .replace("./input/", "/data/input/")
-            .replace("./output/", "/output/")
-            .replace("1950-12-31 12:00:00", "1950-01-03 12:00:00")
-        )
     control.write_text(text, encoding="utf-8", newline="\n")
     if model == "summa" and solver == "ida":
         decisions = (
@@ -128,11 +101,6 @@ def prepare(
             for name in ("absTolMatric", "relTolMatric"):
                 variable = dataset.createVariable(name, "f8", ("hru",))
                 variable[:] = 1e-8
-    if model == "mizuroute":
-        # Upstream defaults to PnetCDF; this image deliberately uses the serial
-        # classic NetCDF backend through PIO. This changes I/O only, not routing physics.
-        with control.open("a", encoding="utf-8", newline="\n") as stream:
-            stream.write("<pio_netcdf_type> netcdf ! explicit backend provided by this image\n")
     for record in extracted:
         record["sha256"] = digest(destination / record["path"])
     (destination / "files.json").write_text(json.dumps(extracted, indent=2) + "\n")

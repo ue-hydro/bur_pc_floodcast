@@ -34,6 +34,18 @@ forecast = [
     "tqdm>=4.66,<5",
 ]
 
+operational = [
+    "numpy>=2,<3",
+    "scipy>=1.14,<2",
+    "netCDF4>=1.7,<2",
+    "eccodes>=2.40,<3",
+    "ecmwf-opendata>=0.3.35,<0.4",
+    "geopandas>=1,<2",
+    "shapely>=2,<3",
+    "pyproj>=3.6,<4",
+    "pillow>=10,<13",
+]
+
 [project.scripts]
 floodcast = "floodcast.cli:main"
 
@@ -77,6 +89,9 @@ env = { CONDA_PREFIX = "" }
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.setuptools.package-data]
+"floodcast.operational" = ["site_assets/*", "fluxos_web/*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests/unit"]

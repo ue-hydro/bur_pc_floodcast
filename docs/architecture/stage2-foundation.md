@@ -66,7 +66,7 @@ Python API (this increment) / existing CLI (unchanged)
 ```
 
 The graph chooses order and dependencies. A manager can be used by more than one
-step. In particular, the same `ModelManager` can serve SUMMA, mizuRoute and a
+step. In particular, the same `ModelManager` can serve the coupled SUMMA-mizuRoute model and a
 conditionally selected FLUXOS step. It never evaluates flood risk.
 
 `R` is a service used by components, not a chronological workflow stage.
@@ -83,7 +83,7 @@ conditionally selected FLUXOS step. It never evaluates flood risk.
 | Model adapter | Model-specific preparation into `RunRequest` and postprocessing | Installing a model, dispatching the whole workflow, deciding flood risk |
 | Stage 1 runtime | Resolve the installed model and delegate an execution | Selecting flood scenarios or calculating exceedance probability |
 | Stage 1 executor | Process lifecycle and backend details | Basin interpretation and decision policy |
-| `StateService` | Select and check an explicit compatible physical-state package | Advancing SUMMA/mizuRoute or certifying the physical contents of a restart |
+| `StateService` | Select and check an explicit compatible physical-state package | Advancing SUMMA-mizuRoute or certifying the physical contents of a restart |
 
 Analysis, decision and reporting remain separate responsibilities. Their eventual
 manager names and class hierarchy are deliberately not fixed here. No empty
@@ -173,9 +173,9 @@ parallel execution, ensemble fan-out or HPC scheduling.
 `StateService.select()` accepts exactly one compatible package, or an explicit
 state ID when otherwise ambiguous. It does not choose an arbitrary latest file.
 Older and future states are not silently used as T0. Required models must match
-exactly; a SUMMA-only package does not satisfy requirements including mizuRoute.
+exactly; a package must carry the coupled SUMMA-mizuRoute model state the requirements name. (Historical text described separate SUMMA and mizuRoute states; the model is now coupled.)
 
-This is metadata and file-integrity validation. It does not parse a SUMMA/mizuRoute
+This is metadata and file-integrity validation. It does not parse a SUMMA-mizuRoute
 restart to prove that the declared model time, dimensions or physical variables
 are correct. Those checks must be implemented by real model adapters.
 
@@ -267,7 +267,7 @@ postprocessor unnoticed. Stage 1 `validation_status` is retained, not promoted
 by a zero exit code or successful workflow step.
 
 This seam is tested with synthetic adapters and fake runtime callables. No real
-SUMMA, mizuRoute or FLUXOS adapter, Docker execution or model coupling is delivered
+SUMMA-mizuRoute or FLUXOS adapter, Docker execution or model coupling is delivered
 in this increment. The existing external-job lifecycle still needs integration
 and reconciliation tests before operational resume can be supported.
 
@@ -296,7 +296,7 @@ The existing `floodcast` CLI is unchanged. The new facade is available from
 The next acceptance target is one real SUMMA adapter using an existing Stage 1
 reference case through this `ModelManager`, with immutable inputs, runtime
 provenance and checked outputs. That should precede claims about a coupled
-SUMMA -> mizuRoute -> FLUXOS forecast.
+coupled SUMMA-mizuRoute -> FLUXOS forecast.
 
 ## 10. Reproducing tests and the synthetic demonstration
 

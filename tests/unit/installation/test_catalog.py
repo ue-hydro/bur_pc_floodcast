@@ -21,7 +21,7 @@ def catalog_checkout(tmp_path):
     (context / "docker-compose.yaml").write_text("services: {}\n", encoding="utf-8")
     (context / ".dockerignore").write_text("**/__pycache__/\n", encoding="utf-8")
     for group, model_ids in (
-        ("hydrology", ("summa", "mizuroute")),
+        ("hydrology", ("summa",)),
         ("hydraulics", ("fluxos",)),
     ):
         directory = context / group
@@ -59,13 +59,13 @@ def catalog_checkout(tmp_path):
             encoding="utf-8",
         )
     manifest = "schema_version = 1\n"
-    for model in ("summa", "mizuroute", "fluxos"):
+    for model in ("summa", "mizuroute", "toml_f", "fluxos"):
         manifest += (
             f'\n[sources.{model}]\nurl = "https://example.org/{model}.git"\n'
             f'kind = "git"\nrevision = "{"a" * 40}"\n'
         )
     for group, sources in (
-        ("hydrology", '["summa", "mizuroute"]'),
+        ("hydrology", '["summa", "mizuroute", "toml_f"]'),
         ("hydraulics", '["fluxos"]'),
     ):
         manifest += (
@@ -140,10 +140,9 @@ def test_build_catalog_never_reads_validation_profiles(catalog_checkout):
     manifest = catalog_checkout / "containers/model-sources.toml"
     text = manifest.read_text("utf-8")
     text = text.replace(
-        'sources = ["summa", "mizuroute"]',
-        'sources = ["summa", "mizuroute"]\nmodels = ['
-        '{model_id="summa", executable="/opt/summa"},'
-        '{model_id="mizuroute", executable="/opt/mizuroute"}]',
+        'sources = ["summa", "mizuroute", "toml_f"]',
+        'sources = ["summa", "mizuroute", "toml_f"]\nmodels = ['
+        '{model_id="summa", executable="/opt/summa"}]',
     )
     manifest.write_text(text, encoding="utf-8")
     before = load_build_catalog(catalog_checkout, ("hydrology",), 1)[0]["hydrology"]

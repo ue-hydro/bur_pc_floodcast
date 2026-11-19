@@ -1,44 +1,43 @@
 schema_version = 1
 
 # Source intention is defined here; recipes receive full revisions as build args.
+# SUMMA `develop` with mizuRoute coupled internally. The two git submodules that the
+# coupled build needs (external/mizuRoute, external/toml-f) are pinned as separate sources
+# below and must equal the gitlinks recorded in the SUMMA commit; the recipe verifies this.
 [sources.summa]
 kind = "git"
 url = "https://github.com/CH-Earth/summa.git"
-revision = "22d479b9d44f769db4d2c2489bcbf19083bd6283"
+revision = "8d15bc366b3b91c7194e5bdd5514701585f1bb7b"
 
 [sources.sundials]
 kind = "git"
 url = "https://github.com/LLNL/sundials.git"
 revision = "8e17876d3b4d682b4098684b07a85b005a122f81"
 
+# Submodule of SUMMA (external/mizuRoute): mizuRoute v3.1.1, compiled into SUMMA, not standalone.
 [sources.mizuroute]
 kind = "git"
 url = "https://github.com/ESCOMP/mizuRoute.git"
-revision = "dd9b204c12ff6c6e4c52b3ccdcd8cc65c71e45f0"
+revision = "28514dea3fd28a2f820c7ecaa9014f820c1bb220"
 
-[sources.pio]
+# Submodule of SUMMA (external/toml-f): TOML reader for `summa.exe -c`.
+[sources.toml_f]
 kind = "git"
-url = "https://github.com/NCAR/ParallelIO.git"
-revision = "1d516b82768ef9d2cade524724c38ab63fbe08e4"
+url = "https://github.com/toml-f/toml-f.git"
+revision = "28f4601fe0992ed17a6b97e230a61289f56bcd8e"
 
 [sources.fluxos]
 kind = "git"
 url = "https://github.com/ue-hydro/FLUXOS_cpp.git"
 revision = "c50cc2154fe668a6b598cfd0d2dc9ce58e56e82c"
 
-[sources.pio_cmake]
-kind = "git"
-url = "https://github.com/CESM-Development/CMake_Fortran_utils.git"
-revision = "05ff8d8e4c88786e94a02c853d3ff921113d785c"
-
 [groups.hydrology]
 build_context = "checkout"
 platform = "linux/amd64"
 base_ref = "ubuntu@sha256:78d4744ead1f5b19b04d0df558ab182a5300903900755e515b2ca4d10eb2044d"
-sources = ["summa", "sundials", "mizuroute", "pio", "pio_cmake"]
+sources = ["summa", "sundials", "mizuroute", "toml_f"]
 models = [
-    { model_id = "summa", executable = "/opt/floodcast/hydrology/bin/summa_sundials.exe", allowed_environment = ["OPENBLAS_NUM_THREADS"] },
-    { model_id = "mizuroute", executable = "/opt/floodcast/hydrology/bin/route_runoff", allowed_environment = ["OPENBLAS_NUM_THREADS"] },
+    { model_id = "summa", executable = "/opt/floodcast/hydrology/bin/summa_sundials_mizuroute.exe", allowed_environment = ["OPENBLAS_NUM_THREADS"] },
 ]
 validation_profile = "../tests/integration/hydrology/validation-profile.json"
 toolchain_path = "/opt/floodcast/hydrology/toolchain.json"

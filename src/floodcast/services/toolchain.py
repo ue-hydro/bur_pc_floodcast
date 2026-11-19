@@ -46,10 +46,9 @@ def compact_toolchain(record: InstallationRecord, document: dict) -> dict:
                 "netcdf": _netcdf_version(chain.get("netcdf_c")),
                 "netcdf_fortran": _netcdf_version(chain.get("netcdf_fortran")),
                 "hdf5": packages.get("libhdf5-dev"),
-                "openmpi": packages.get("libopenmpi-dev"),
-            }
+                            }
             tools = {}
-            for name in ("summa", "mizuroute", "sundials", "pio"):
+            for name in ("summa", "mizuroute", "toml_f", "sundials"):
                 source = document["sources"][name]
                 tools[name] = {"installed": True, "commit": source["revision"]}
                 if source.get("patches"):

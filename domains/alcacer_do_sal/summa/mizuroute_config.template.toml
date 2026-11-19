@@ -1,0 +1,33 @@
+# Coupled SUMMA-mizuRoute configuration (SUMMA develop, mizuRoute v3.1.1 inside SUMMA).
+# Fill @@MIZUROUTE_PATH@@ per run (render_templates.render_mizuroute_config).
+[simulation]
+use_mizuroute = true
+
+[mizuRoute]
+namelist_path = "@@MIZUROUTE_PATH@@/"
+namelist_file = "param.nml.default"
+
+# 3 = Eulerian kinematic wave. Robust, the coupled-build default of the SUMMA docs/tests, adequate for 29 reaches
+# of 10-100 km at hourly steps. (1 = IRF and 2 = Lagrangian KWT are also available in the coupled build.)
+methods = "3"
+dt = 3600
+
+# Routed streamflow Q_reach(time, seg, method) [m3 s-1] and q_basin go into the SUMMA output file.
+write_qbasin = true
+write_Qreach = true
+
+[hydrofabric]
+hfabric_path = "@@MIZUROUTE_PATH@@/"
+hfabric_file = "topology.nc"
+
+dname_seg = "seg"
+dname_hru = "hru"
+
+varname_HRUid     = "hruId"
+varname_segId     = "segId"
+varname_hruSegId  = "hruToSegId"
+varname_downSegId = "downSegId"
+
+varname_area   = "area"
+varname_slope  = "slope"
+varname_length = "length"

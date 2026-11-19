@@ -1,0 +1,15 @@
+# HTTPS static hosting of the generated site (Caddy obtains certificates automatically).
+# Replace the host name, point DNS at the server, and serve the site_out directory.
+floodcast.example.org {
+	root * /opt/bur_pc_floodcast/site_out
+	file_server
+	encode zstd gzip
+	header {
+		X-Content-Type-Options nosniff
+		Referrer-Policy no-referrer
+		Content-Security-Policy "default-src 'self'; img-src 'self' data: https://*.tile.openstreetmap.org; style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; connect-src 'self'"
+	}
+	# The data changes every few hours; do not let CDNs/browsers hold stale warnings.
+	@json path /api/* /index.html /cycles/*
+	header @json Cache-Control "no-cache"
+}

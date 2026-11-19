@@ -14,3 +14,12 @@ dist/
 .coverage
 htmlcov/
 .pixi/
+.DS_Store
+/site_out/
+domains/*/_cache/
+.tmp_src/
+*.tmp.nc
+/run/
+node_modules/
+.dev.vars
+.wrangler/

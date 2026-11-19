@@ -7,7 +7,7 @@ from .. import DATA_REVISION
 from ..catalog import PRODUCT_WARNINGS
 from ..contracts import AcquisitionPlan, RequestPart
 from ..ecmwf_profiles import resolve_config_profiles
-from ..utils.io_utils import digest
+from ..utils.storage import digest
 
 
 class BaseAcquisitionHandler(ABC):

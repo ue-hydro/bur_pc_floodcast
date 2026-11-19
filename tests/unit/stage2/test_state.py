@@ -24,7 +24,7 @@ def state_pair(tmp_path):
             configuration_sha256="a" * 64,
             parameters_sha256="b" * 64,
         )
-        for model in ("summa", "mizuroute")
+        for model in ("summa",)
     )
     models = []
     for identity in identities:
@@ -81,14 +81,15 @@ def test_wrong_basin_geometry_stale_or_future_state_rejected(state_pair, field, 
 def test_model_identity_mismatch_rejected(state_pair, field, value):
     state, required = state_pair
     first = state.models[0].model_copy(update={field: value})
-    wrong = state.model_copy(update={"models": (first, state.models[1])})
+    wrong = state.model_copy(update={"models": (first,)})
     with pytest.raises(FloodcastError):
         StateService().validate(wrong, required)
 
 
-def test_missing_routing_state_is_not_accepted(state_pair):
+def test_missing_model_state_is_not_accepted(state_pair):
+    # The coupled SUMMA-mizuRoute restart is the single hydrological model state.
     state, required = state_pair
-    wrong = state.model_copy(update={"models": (state.models[0],)})
+    wrong = state.model_copy(update={"models": ()})
     with pytest.raises(FloodcastError):
         StateService().validate(wrong, required)
 

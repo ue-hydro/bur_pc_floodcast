@@ -1,13 +1,15 @@
 # Model integrations — planned for Stage 2
 
+There are two models: the coupled **SUMMA-mizuRoute** executable (`summa/`) and **FLUXOS**
+(`fluxos/`). There is no separate mizuRoute integration.
+
 These directories reserve the agreed model-specific structure. They contain no
 adapter implementation, default scientific settings or executable Python package.
 
 ```text
 models/
 ├── README.md
-├── summa/settings/.gitkeep
-├── mizuroute/settings/.gitkeep
+├── summa/settings/.gitkeep        # coupled SUMMA-mizuRoute (mizuRoute is compiled into SUMMA)
 └── fluxos/settings/.gitkeep
 ```
 

@@ -8,7 +8,7 @@ import xarray as xr
 from floodcast.data.catalog import IFS, S2S, SEASONAL
 from floodcast.data.data_manager import DataManager
 from floodcast.data.errors import DataError
-from floodcast.data.utils.io_utils import file_sha256
+from floodcast.data.utils.storage import file_sha256
 from floodcast.data.workflow import register_forecast_steps
 
 

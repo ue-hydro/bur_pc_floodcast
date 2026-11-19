@@ -11,8 +11,8 @@ from abc import ABC, abstractmethod
 
 from ...catalog import SEASONAL, variables
 from ...errors import DataError
-from ...utils.spatial_utils import regular_grid
-from ...utils.variable_utils import to_base_values
+from ...utils.grid import regular_grid
+from ...utils.fields import to_base_values
 from ..accumulation import interval_rates
 from ..dataset_alignment_manager import assert_same_grid
 from ..time_window_manager import validate_time

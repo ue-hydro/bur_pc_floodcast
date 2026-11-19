@@ -149,8 +149,8 @@ def _canonical_publication(forecast, target, tmp_path):
     from floodcast.data.contracts import CanonicalManifest, CanonicalVariable
     from floodcast.data.ecmwf_profiles import resolve_config_profiles
     from floodcast.data.path_manager import PathManager
-    from floodcast.data.utils.io_utils import atomic_json, file_sha256
-    from floodcast.data.utils.netcdf_utils import write_netcdf_atomic
+    from floodcast.data.utils.storage import atomic_json, file_sha256
+    from floodcast.data.utils.storage import write_netcdf_atomic
 
     config = DataConfig.model_validate(
         {

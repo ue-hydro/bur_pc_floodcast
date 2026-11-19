@@ -2,25 +2,59 @@
 
 Floodcast is a Python framework under development for reproducible hydrological and hydraulic modelling, with the longer-term goal of coordinating flood-forecasting workflows.
 
-The implementation includes **Stage 1 model infrastructure** and a **Stage 2 forecast-data workflow**. Stage 1 provides installation, execution and reference-case validation for three external scientific models:
+The implementation includes **Stage 1 model infrastructure**, a **Stage 2 forecast-data workflow** and an **operational forecasting layer** (being added, see below). Stage 1 provides installation, execution and reference-case validation for two external scientific models:
 
 | Model | Role | Docker image group |
 | --- | --- | --- |
-| [SUMMA](https://github.com/CH-Earth/summa) | Process-based simulation of land-surface water and energy balances | `hydrology` |
-| [mizuRoute](https://github.com/ESCOMP/mizuRoute) | River-network routing | `hydrology` |
+| [SUMMA-mizuRoute](https://github.com/CH-Earth/summa/tree/develop) (**coupled**) | SUMMA land-surface/subsurface simulation with [mizuRoute](https://github.com/ESCOMP/mizuRoute) river routing compiled in and run inside the same process | `hydrology` |
 | [FLUXOS](https://github.com/ue-hydro/FLUXOS_cpp) | Hydraulic simulation | `hydraulics` |
 
-SUMMA and mizuRoute are built into the same hydrology image but remain **separately executable models**. FLUXOS has its own image. The models are not yet connected into an end-to-end Floodcast workflow.
+SUMMA and mizuRoute are **not** separate executables any more. The hydrology image contains one program, `summa_sundials_mizuroute.exe`, built from the SUMMA `develop` branch with `-DUSE_SUNDIALS=ON -DUSE_MIZUROUTE=ON` (mizuRoute v3.1.1 and toml-f are pinned git submodules). It is run as `summa.exe -m <control file> -c <config.toml>`: the TOML file configures the routing, and routed streamflow (`q_reach`, m³ s⁻¹) is written into SUMMA's own NetCDF output. The coupled configuration runs on one process (no MPI, no `-g` GRU subsets). FLUXOS has its own image. The models are not yet connected into an end-to-end Floodcast workflow by the Stage 1/2 code; the operational layer does that.
 
 ## Development scope
 
 | Stage | Scope | Status |
 | --- | --- | --- |
-| **1 — Models** | Install, identify, run and validate each scientific model independently. | Implemented in code; acceptance of the newer integrated Docker images remains pending. |
-| **2 — Architecture and orchestration** | Application-scoped registries, persistent workflow, ECMWF acquisition, preprocessing, HRU remapping and SUMMA forcing preparation. | Implemented and software-tested; live IFS data traversed all four data stages. |
-| **3 — Full workflow** | Define and integrate workflow steps, connect the models and validate the complete chain. | Planned. |
+| **1 — Models** | Install, identify, run and validate each scientific model independently. | Implemented in code. **Migrated to the coupled SUMMA-mizuRoute build; the new image and its reference checks are pending re-validation.** |
+| **2 — Architecture and orchestration** | Application-scoped registries, persistent workflow, ECMWF acquisition, preprocessing, HRU remapping and SUMMA forcing preparation. | **Incomplete in this checkout:** several modules the code and tests import were never committed (see [docs/KNOWN_MISSING_MODULES.md](docs/KNOWN_MISSING_MODULES.md)). The earlier verification claims cannot be reproduced until they are restored. |
+| **3 — Full workflow** | Define and integrate workflow steps, connect the models and validate the complete chain. | In progress as the operational layer (below). |
 
-The forecast-data path preserves cycle and ensemble identity and produces one SUMMA forcing file per selected member when all required inputs are present. Live IFS verification used synthetic HRUs. Initial-state advancement, execution of a hydrological ensemble, activation policies, SUMMA → mizuRoute → FLUXOS coupling and operational flood-risk products remain separate work.
+The forecast-data path (when complete) preserves cycle and ensemble identity and produces one SUMMA forcing file per selected member. Live IFS verification reported in `docs/verification/` used synthetic HRUs and no hydrological model.
+
+## Operational forecasting (`floodcast operate`)
+
+`floodcast operate` watches ECMWF IFS Open Data for every new forecast cycle and runs the
+expensive models only when the numbers say so, for **Alcácer do Sal (Sado basin)**:
+
+1. **Precipitation screen** (cheap, control run): basin-mean 24/48/72 h rain and per-sub-catchment
+   maxima against watch/warning thresholds.
+2. **Hydrology** (if triggered): IFS ensemble → HRU forcing → coupled **SUMMA–mizuRoute**, one run
+   per member from a chained model state (with a 5-day pre-roll that fills the river channels) →
+   discharge ensemble at the Alcácer outlet.
+3. **Discharge policy**: share of members above watch/warning/alert flows → alert level.
+4. **Hydraulics** (if the flow is high): the 90th-percentile scenario drives **FLUXOS** → flood-depth
+   map of the town.
+5. **Publish**: JSON outputs ([contract](docs/operational/outputs.md)) and a static bilingual website.
+
+```bash
+python -m pip install -e ".[operational]"
+floodcast install models --docker                  # coupled SUMMA-mizuRoute and FLUXOS images
+floodcast operate spinup   --config examples/operational/alcacer_do_sal.toml   # warm the state
+floodcast operate run-once --config examples/operational/alcacer_do_sal.toml
+floodcast operate daemon   --config examples/operational/alcacer_do_sal.toml   # run forever
+floodcast operate site     --config examples/operational/alcacer_do_sal.toml   # rebuild the website
+```
+
+Full description, deployment (`deploy/`) and code map: [docs/operational/README.md](docs/operational/README.md).
+The Alcácer domain (basin, SUMMA/mizuRoute inputs, FLUXOS terrain) is in
+[domains/alcacer_do_sal/](domains/alcacer_do_sal/README.md).
+
+**Status and limitations.** The chain has run end to end on live IFS data, but: the hydrological
+parameters are reasonable placeholders (**uncalibrated, unvalidated**); the screening and discharge
+thresholds are placeholders pending a return-period analysis; the flood map uses a surface model
+without river bathymetry and overestimates flooding; the reference fixtures of Stage 1 for the
+coupled build are pending re-validation. Treat all outputs as experimental research products,
+not warnings.
 
 ## Requirements
 
@@ -117,7 +151,6 @@ Run the supplied reference cases:
 
 ```bash
 floodcast models run --model summa --config examples/reference/summa.toml
-floodcast models run --model mizuroute --config examples/reference/mizuroute.toml
 floodcast models run --model fluxos --config examples/reference/fluxos.toml
 ```
 
@@ -127,7 +160,7 @@ Run the separate validation suite:
 floodcast models validate
 ```
 
-The reference cases exercise SUMMA (Celia1990), mizuRoute (Cameo) and FLUXOS (synthetic hydraulic storage). They check individual model behaviour; they are **not** a coupled forecast, a basin calibration or evidence of operational flood-warning performance.
+The reference cases exercise SUMMA (Celia1990, land-surface solver only; fixtures date from the previous SUMMA revision and are pending re-validation on the coupled build) and FLUXOS (synthetic hydraulic storage). There is currently **no reference case for the coupled river routing**; the earlier standalone mizuRoute (Cameo) case was removed with the standalone executable. They check individual model behaviour; they are **not** a coupled forecast, a basin calibration or evidence of operational flood-warning performance.
 
 Installation availability and validation status are recorded independently. A successful build or a zero process exit code does not imply scientific validation.
 
@@ -137,7 +170,7 @@ The repository maintains **two scientific Dockerfiles** under `containers/hydrol
 
 | Target | What runs inside the image | Deployment |
 | --- | --- | --- |
-| `standalone` (default) | Scientific executable(s) only | Floodcast runs on the host and launches model containers. |
+| `standalone` (default) | Scientific executable (coupled SUMMA-mizuRoute, or FLUXOS) only | Floodcast runs on the host and launches model containers. |
 | `pip` | Floodcast installed from a wheel, plus the group's scientific executable(s) | Integrated container. |
 | `conda` | Floodcast in a Conda environment, plus the group's executable(s) | Integrated container. |
 | `source-manual` | Floodcast installed from the local source in editable mode, plus the group's executable(s) | Development-oriented integrated container. |
@@ -184,6 +217,8 @@ src/floodcast/services/ Installation, runtime, registry and validation
 src/floodcast/data/     ECMWF acquisition, normalization, HRU remapping and model forcing
 src/floodcast/project/  Persistent workflow facade, state selection and run store
 src/floodcast/models/   Model manager and SUMMA forcing adapter
+src/floodcast/operational/ Continuous operational forecasting layer (being added)
+domains/               Basin/domain assets (e.g. Alcácer do Sal)
 vendor/                Pinned SYMFLUENCE source and verified provenance
 examples/              Individual model run configurations
 tests/                 Unit, integration and scientific reference tests

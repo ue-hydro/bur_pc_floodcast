@@ -29,7 +29,8 @@ from pydantic import (
 
 from floodcast.core.errors import ErrorCode, ErrorInfo
 
-ModelId = Literal["summa", "mizuroute", "fluxos"]
+# "summa" is the coupled SUMMA-mizuRoute executable (mizuRoute is compiled into SUMMA).
+ModelId = Literal["summa", "fluxos"]
 
 
 ModelGroup = Literal["hydrology", "hydraulics"]
@@ -71,7 +72,7 @@ NonNegativeInt = Annotated[StrictInt, Field(ge=0)]
 
 
 GROUP_MODELS: dict[ModelGroup, tuple[ModelId, ...]] = {
-    "hydrology": ("summa", "mizuroute"),
+    "hydrology": ("summa",),
     "hydraulics": ("fluxos",),
 }
 

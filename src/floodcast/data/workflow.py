@@ -23,7 +23,7 @@ from . import DATA_REVISION, DATA_VERSION
 from .config import DataConfig
 from .data_manager import DataManager
 from .errors import DataError
-from .utils.io_utils import file_sha256
+from .utils.storage import file_sha256
 
 
 @dataclass(frozen=True)

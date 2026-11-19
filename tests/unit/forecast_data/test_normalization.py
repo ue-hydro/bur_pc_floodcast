@@ -10,7 +10,7 @@ from floodcast.data.preprocessing.dataset_handlers.ifs_utils import IFSHandler
 from floodcast.data.preprocessing.dataset_handlers.s2s_utils import S2SHandler
 from floodcast.data.preprocessing.dataset_handlers.seasonal_utils import SeasonalHandler
 from floodcast.data.preprocessing.forcing_resampler import apply_weights
-from floodcast.data.utils.spatial_utils import regular_grid
+from floodcast.data.utils.grid import regular_grid
 
 
 @pytest.mark.parametrize(

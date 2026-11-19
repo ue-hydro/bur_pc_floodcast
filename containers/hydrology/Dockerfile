@@ -18,19 +18,19 @@ RUN [[ "$APT_SNAPSHOT" =~ ^[0-9]{8}T[0-9]{6}Z$ ]] && \
     apt-get install --snapshot "$APT_SNAPSHOT" --no-install-recommends -y \
       ca-certificates git cmake make gcc g++ gfortran perl pkg-config \
       libnetcdf-dev libnetcdff-dev netcdf-bin libhdf5-dev libopenblas-dev \
-      libopenmpi-dev openmpi-bin python3 python3-netcdf4 && \
+      python3 python3-netcdf4 && \
     rm -rf /var/lib/apt/lists/*
 COPY scripts/build_hydrology.py /opt/floodcast/hydrology/recipe/build.py
 ARG BUILD_JOBS=1
 ARG SUNDIALS_REVISION
 RUN python3 /opt/floodcast/hydrology/recipe/build.py sundials --revision "$SUNDIALS_REVISION" --jobs "$BUILD_JOBS"
+# One executable: SUMMA with mizuRoute compiled in (summa_sundials_mizuroute.exe).
 ARG SUMMA_REVISION
-RUN python3 /opt/floodcast/hydrology/recipe/build.py summa --revision "$SUMMA_REVISION" --jobs "$BUILD_JOBS"
-ARG PIO_REVISION
-ARG PIO_CMAKE_REVISION
-RUN python3 /opt/floodcast/hydrology/recipe/build.py pio --revision "$PIO_REVISION" --helper-revision "$PIO_CMAKE_REVISION" --jobs "$BUILD_JOBS"
 ARG MIZUROUTE_REVISION
-RUN python3 /opt/floodcast/hydrology/recipe/build.py mizuroute --revision "$MIZUROUTE_REVISION" --jobs "$BUILD_JOBS"
+ARG TOML_F_REVISION
+RUN python3 /opt/floodcast/hydrology/recipe/build.py summa --revision "$SUMMA_REVISION" \
+      --mizuroute-revision "$MIZUROUTE_REVISION" --toml-f-revision "$TOML_F_REVISION" \
+      --jobs "$BUILD_JOBS"
 ARG BASE_IMAGE
 # Technical provenance only; solver tests are a separate operation.
 RUN python3 /opt/floodcast/hydrology/recipe/build.py provenance --base "$BASE_IMAGE" --snapshot "$APT_SNAPSHOT" && \
@@ -46,7 +46,7 @@ RUN [[ "$APT_SNAPSHOT" =~ ^[0-9]{8}T[0-9]{6}Z$ ]] && \
     apt-get update --snapshot "$APT_SNAPSHOT" -o APT::Update::Error-Mode=any && \
     apt-get install --snapshot "$APT_SNAPSHOT" --no-install-recommends -y \
       ca-certificates python3 python3-venv python3-netcdf4 binutils \
-      libnetcdf19t64 libnetcdff7 libopenblas0-pthread libopenmpi3t64 openmpi-bin \
+      libnetcdf19t64 libnetcdff7 libopenblas0-pthread \
       libhdf5-103-1t64 libgfortran5 libgomp1 && \
     rm -rf /var/lib/apt/lists/*
 COPY --from=hydrology-build /opt/floodcast/hydrology/bin/ /opt/floodcast/hydrology/bin/

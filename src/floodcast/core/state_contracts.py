@@ -17,7 +17,7 @@ from floodcast.core.contracts import (
 
 
 class StateModelIdentity(Contract):
-    model_id: Literal["summa", "mizuroute"]
+    model_id: Literal["summa"]
     model_revision: StrictStr = Field(min_length=1)
     configuration_sha256: Sha256
     parameters_sha256: Sha256

@@ -1,16 +1,17 @@
 # Hydrology validation
 
-This directory owns reusable SUMMA/mizuRoute validation code and its profile.
+This directory owns reusable validation code for the coupled SUMMA-mizuRoute executable and its profile.
 `containers/hydrology` owns the Dockerfile; `scripts/build_hydrology.py` compiles the models. Installing an
 image does not run these checks or copy their scripts into the image.
 
 The common validation executor reads `validation-profile.json`, verifies the
 declared hashes and mounts `check_model.py` and `validate_outputs.py` read-only at
-`/checks/`. Four technical checks share `checks/metadata.json`; they verify
-identity and loading, without claiming scientific validation. Three reference
-checks also mount their existing inputs from `tests/fixtures/` at `/data`.
-The Celia iterative, Celia IDA and Cameo inputs and numerical expectations are
-unchanged by this organization.
+`/checks/`. Two technical checks (provenance, load) share `checks/metadata.json`; they verify
+identity and loading, without claiming scientific validation. Two reference
+checks (Celia iterative and IDA) also mount their existing inputs from `tests/fixtures/` at `/data`.
+The Celia inputs and numerical expectations are unchanged; they target the
+previous SUMMA revision and are pending re-validation on the coupled build. The
+standalone mizuRoute (Cameo) reference was removed with the standalone executable.
 
 The image retains Python NetCDF support and `binutils` because the explicit
 checks use `/usr/bin/python3`, NetCDF and `strings`. Removing those dependencies

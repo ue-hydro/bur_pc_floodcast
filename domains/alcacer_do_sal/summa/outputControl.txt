@@ -1,0 +1,23 @@
+! SUMMA output control. Format: variable | output frequency in time steps (1 = every step).
+! averageRoutedRunoff (m s-1, GRU) is the runoff mizuRoute routes; the others are diagnostics for the
+! trigger policies (soil wetness, runoff partition, accumulated precipitation).
+pptrate               | 1
+airtemp               | 1
+scalarSWE             | 1
+scalarRainPlusMelt    | 1
+scalarInfiltration    | 1
+scalarSurfaceRunoff   | 1
+scalarSoilDrainage    | 1
+scalarSoilBaseflow    | 1
+scalarAquiferBaseflow | 1
+scalarAquiferStorage  | 1
+scalarTotalSoilLiq    | 1
+scalarTotalSoilWat    | 1
+scalarTotalET         | 1
+scalarTotalRunoff     | 1
+averageRoutedRunoff   | 1
+balanceVegMass        | 1
+balanceSnowMass       | 1
+balanceSoilMass       | 1
+balanceAqMass         | 1
+meanStepSize          | 1

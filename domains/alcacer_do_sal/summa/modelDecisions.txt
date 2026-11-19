@@ -1,0 +1,40 @@
+! ***********************************************************************************************************************
+! SUMMA model decisions for the Alcácer do Sal (Sado) Floodcast domain: SUMMA `develop` with the internally
+! coupled mizuRoute (revision pinned in containers/model-sources.toml). Case sensitive. Decisions not listed here
+! are populated by the SUMMA defaults ('notPopulatedYet'). REASONABLE, UNCALIBRATED choices for a Mediterranean
+! Atlantic-slope basin without snow: a robust built-in backward-Euler solver, bigBucket groundwater.
+! ***********************************************************************************************************************
+soilCatTbl                      ROSETTA         ! soil-category dataset
+vegeParTbl                      USGS            ! vegetation category dataset (USGS 24/27 classes, see hru_attributes.csv)
+soilStress                      NoahType        ! soil moisture control on stomatal resistance
+stomResist                      BallBerry       ! stomatal resistance
+num_method                      homegrown       ! numerical method: built-in backward Euler (no SUNDIALS needed at run time)
+fDerivMeth                      analytic        ! flux derivatives for the Jacobian
+LAI_method                      monTable        ! LAI/SAI from the monthly vegetation table
+f_Richards                      mixdform        ! mixed form of Richards' equation
+groundwatr                      bigBuckt        ! lumped aquifer under each HRU (baseflow)
+hc_profile                      constant        ! hydraulic conductivity profile
+bcUpprTdyn                      nrg_flux        ! upper boundary, thermodynamics
+bcLowrTdyn                      zeroFlux        ! lower boundary, thermodynamics
+bcUpprSoiH                      liq_flux        ! upper boundary, soil hydrology
+bcLowrSoiH                      drainage        ! lower boundary, soil hydrology (recharges the aquifer)
+veg_traits                      Raupach_BLM1994 ! vegetation roughness length and displacement height
+rootProfil                      powerLaw        ! rooting profile
+canopyEmis                      difTrans        ! canopy emissivity
+snowIncept                      lightSnow       ! snow interception
+windPrfile                      logBelowCanopy  ! wind profile through the canopy
+astability                      louisinv        ! atmospheric stability function
+canopySrad                      BeersLaw        ! canopy shortwave radiation
+alb_method                      conDecay        ! snow albedo
+compaction                      anderson        ! snow compaction
+snowLayers                      CLM_2010        ! snow layering rules
+thCondSnow                      jrdn1991        ! snow thermal conductivity
+thCondSoil                      funcSoilWet     ! soil thermal conductivity
+spatial_gw                      localColumn     ! separate aquifer per HRU
+subRouting                      timeDlay        ! within-GRU time-delay histogram; mizuRoute then routes the GRU runoff in the river network
+nrgConserv                      closedForm      ! temperature-based energy equations
+aquiferIni                      emptyStart      ! cold start only: start with an empty aquifer (a restart keeps its own storage)
+infRateMax                      GreenAmpt       ! maximum infiltration rate
+surfRun_SE                      homegrown_SE    ! saturation-excess surface runoff
+read_force                      readPerStep     ! forcing read per time step
+write_buff                      writePerStep    ! output written per time step

@@ -4,7 +4,7 @@
 
 """One path resolver; product, cycle and complete request identity never collapse."""
 
-from .utils.io_utils import reject_links
+from .utils.storage import reject_links
 
 
 class PathManager:

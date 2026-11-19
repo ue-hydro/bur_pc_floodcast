@@ -35,11 +35,7 @@ from floodcast.core.storage import (
 
 _MODELS = {
     "summa": (
-        "/opt/floodcast/hydrology/bin/summa_sundials.exe",
-        "/opt/floodcast/hydrology/toolchain.json",
-    ),
-    "mizuroute": (
-        "/opt/floodcast/hydrology/bin/route_runoff",
+        "/opt/floodcast/hydrology/bin/summa_sundials_mizuroute.exe",
         "/opt/floodcast/hydrology/toolchain.json",
     ),
     "fluxos": ("/opt/floodcast/bin/fluxos", "/opt/floodcast/share/hydraulics/toolchain.json"),

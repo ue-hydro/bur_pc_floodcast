@@ -144,7 +144,7 @@ def catalog_checkout(tmp_path):
     checkout = prepared_catalog.__wrapped__(tmp_path)
     manifest = checkout / "containers/model-sources.toml"
     document = manifest.read_text("utf-8")
-    for group, ids in (("hydrology", ("summa", "mizuroute")), ("hydraulics", ("fluxos",))):
+    for group, ids in (("hydrology", ("summa",)), ("hydraulics", ("fluxos",))):
         prepare_layout(checkout, group)
         models = ",".join(f'{{model_id="{model}",executable="/opt/{model}"}}' for model in ids)
         document = document.replace(
