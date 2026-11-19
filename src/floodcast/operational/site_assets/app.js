@@ -779,4 +779,51 @@
     setInterval(draw, 60000);
     new MutationObserver(draw).observe(root, { attributes: true, attributeFilter: ["data-lang"] });
   })();
+
+  // ---- hover read-out on every time-series chart: vertical line + values of each series ------
+  (function () {
+    var tip = document.createElement("div");
+    tip.className = "charttip"; tip.hidden = true; document.body.appendChild(tip);
+    var LOC = { pt: "pt-PT", en: "en-GB", es: "es-ES" };
+    function fmtNum(v, u) {
+      if (v === null || v === undefined) return "–";
+      var l = root.getAttribute("data-lang");
+      try { return v.toLocaleString(LOC[l] || "pt-PT", { maximumFractionDigits: 2 }) + (u ? " " + u : ""); } catch (e) { return v + " " + u; }
+    }
+    function attach(svg) {
+      var d; try { d = JSON.parse(svg.getAttribute("data-cursor")); } catch (e) { return; }
+      if (!d || !d.s || !d.x || d.x.length < 2) return;
+      var NS = "http://www.w3.org/2000/svg";
+      var ln = document.createElementNS(NS, "line");
+      ln.setAttribute("class", "hoverl"); ln.setAttribute("y1", d.y0); ln.setAttribute("y2", d.y1); ln.style.display = "none";
+      svg.appendChild(ln);
+      function move(ev) {
+        var m = svg.getScreenCTM(); if (!m) return;
+        var x = (ev.clientX - m.e) / m.a;
+        if (x < d.x[0] - 20 || x > d.x[d.x.length - 1] + 20) { hide(); return; }
+        var i = 0, best = Infinity;
+        for (var k = 0; k < d.x.length; k++) { var dd = Math.abs(d.x[k] - x); if (dd < best) { best = dd; i = k; } }
+        ln.setAttribute("x1", d.x[i]); ln.setAttribute("x2", d.x[i]); ln.style.display = "";
+        var l = root.getAttribute("data-lang"), when = "";
+        try { when = new Date(d.t[i] * 1000).toLocaleString(LOC[l] || "pt-PT", { timeZone: "Europe/Lisbon", weekday: "short", day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" }); } catch (e) {}
+        var rows = d.s.map(function (sr) {
+          var lab = sr.l[l] || sr.l.pt || sr.l.en || "";
+          return '<div class="ct-row"><i class="ct-k ' + sr.c + '"></i><span>' + lab + '</span><b>' + fmtNum(sr.v[i], sr.u) + "</b></div>";
+        }).join("");
+        tip.innerHTML = '<div class="ct-t">' + when + "</div>" + rows;
+        tip.hidden = false;
+        var w = tip.offsetWidth, h = tip.offsetHeight, px = ev.clientX + 14, py = ev.clientY - h - 12;
+        if (px + w > window.innerWidth - 8) px = ev.clientX - w - 14;
+        if (py < 8) py = ev.clientY + 16;
+        tip.style.left = px + "px"; tip.style.top = py + "px";
+      }
+      function hide() { ln.style.display = "none"; tip.hidden = true; }
+      svg.addEventListener("pointermove", move);
+      svg.addEventListener("pointerdown", move);
+      svg.addEventListener("pointerleave", hide);
+      svg.style.cursor = "crosshair";
+    }
+    Array.prototype.forEach.call(document.querySelectorAll("svg.chart[data-cursor]"), attach);
+    window.addEventListener("scroll", function () { tip.hidden = true; }, { passive: true });
+  })();
 })();

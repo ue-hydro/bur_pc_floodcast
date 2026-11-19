@@ -580,3 +580,16 @@ html:not([data-scn]) .imp-central,html[data-scn="central"] .imp-central,html[dat
   .viz-pair:has(>#map-card + #anim-card) #map{height:480px}
   .viz-pair:has(>#map-card + #anim-card) .webglwrap{aspect-ratio:auto;height:480px}
 }
+
+/* chart hover read-out */
+svg.chart .hoverl{stroke:var(--ink);stroke-width:1;stroke-dasharray:3 3;opacity:.7;pointer-events:none}
+.charttip{position:fixed;z-index:60;pointer-events:none;min-width:150px;max-width:280px;padding:7px 10px;border-radius:4px;
+  background:var(--surface);color:var(--ink);border:1px solid var(--line);box-shadow:0 4px 14px rgba(0,0,0,.18);font-size:.8rem;line-height:1.35}
+.charttip .ct-t{font-weight:700;margin-bottom:3px}
+.charttip .ct-row{display:flex;align-items:center;gap:6px}
+.charttip .ct-row span{flex:1;color:var(--mute)}
+.charttip .ct-row b{font-variant-numeric:tabular-nums}
+.charttip .ct-k{flex:0 0 10px;height:10px;border-radius:2px;background:var(--mute)}
+.charttip .ct-k.bar{background:var(--bar)}.charttip .ct-k.cum{background:var(--cum)}
+.charttip .ct-k.up{background:#c62828}.charttip .ct-k.ce{background:#003a70}.charttip .ct-k.lo{background:#2e7d32}
+.charttip .ct-k.tide{background:#0f6b63}

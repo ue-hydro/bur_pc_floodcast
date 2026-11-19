@@ -76,6 +76,7 @@ T: dict[str, tuple[str, str]] = {
     "lk_note": ("Muito provável: inundado mesmo no cenário inferior · Provável: no central · Possível: só no superior.",
                 "Very likely: flooded even in the lower scenario · Likely: in the central · Possible: only in the upper."),
     "tide_h": ("Nível do mar na foz do Sado (maré + sobrelevação)", "Sea level at the Sado mouth (tide + surge)"),
+    "tide_lvl": ("Nível do mar", "Sea level"),
     "tide_ref": ("relativo ao nível médio", "relative to mean sea level"),
     "tide_hw": ("preia-mar", "high tide"),
     "dec_h": ("Resumo para decisão", "Decision summary"),
@@ -510,17 +511,38 @@ def _time_labels(times, plot_x0, plot_w, n_labels=6):
     return "".join(out)
 
 
-def _cursor_attr(times, xs, y0, y1) -> str:
-    """Time->x mapping so the page can draw a moving time cursor synced with the animated maps."""
-    pts = []
-    for t, x in zip(times, xs):
+def _cursor_attr(times, xs, y0, y1, series=None) -> str:
+    """Time->x mapping so the page can draw a moving time cursor synced with the animated maps.
+    ``series`` (optional) = [{"l": {lang: label}, "u": unit, "v": values per time, "c": colour key,
+    "d": decimals}] for the hover read-out (app.js)."""
+    pts, keep = [], []
+    for i, (t, x) in enumerate(zip(times, xs)):
         dt = _parse_ts(t)
         if dt is not None:
             pts.append((int(dt.timestamp()), round(float(x), 1)))
+            keep.append(i)
     if len(pts) < 2:
         return ""
-    data = json.dumps({"t": [p[0] for p in pts], "x": [p[1] for p in pts], "y0": y0, "y1": y1})
-    return f" data-cursor='{_esc(data)}'"
+    doc = {"t": [p[0] for p in pts], "x": [p[1] for p in pts], "y0": y0, "y1": y1}
+    if series:
+        out = []
+        for sr in series:
+            v = list(sr.get("v") or [])
+            d = sr.get("d", 1)
+            vals = [None if i >= len(v) or v[i] is None else round(float(v[i]), d) for i in keep]
+            out.append({"l": sr["l"], "u": sr.get("u", ""), "c": sr.get("c", ""), "v": vals})
+        doc["s"] = out
+    return f" data-cursor='{_esc(json.dumps(doc, ensure_ascii=False))}'"
+
+
+def _sl(i18n: "_I18n", key: str) -> dict:
+    """Plain-text label of ``key`` in every site language (hover read-out)."""
+    return {lang: re.sub(r"\s*\([^)]*\)$", "", i18n.plain(key, lang)) for lang in i18n.langs}
+
+
+def _scn_series(i18n: "_I18n", vals: dict, unit: str, d: int = 1, keys=("up", "ce", "lo")) -> list:
+    names = {"lo": "scn_lower", "ce": "scn_median", "up": "scn_upper"}
+    return [{"l": _sl(i18n, names[k]), "u": unit, "v": vals[k], "c": k, "d": d} for k in keys if vals.get(k)]
 
 
 def _precip_chart(i18n: _I18n, screening: dict, ens: dict | None = None) -> str:
@@ -551,7 +573,12 @@ def _precip_chart(i18n: _I18n, screening: dict, ens: dict | None = None) -> str:
     cvals = (cumulative or []) + (band["cum_p90"] + band.get("s_upper", []) if band else [])
     cmax = _nice_max(max(cvals) * 1.05) if cvals and max(cvals) > 0 else None
     slot0 = pw / count
-    cursor = _cursor_attr(times, [x0 + slot0 * (i + 0.5) for i in range(count)], y0, y1)
+    hover = [{"l": _sl(i18n, "interval"), "u": "mm", "v": interval, "c": "bar"}]
+    if cumulative:
+        hover.append({"l": _sl(i18n, "cumul"), "u": "mm", "v": cumulative, "c": "cum"})
+    if band:
+        hover += _scn_series(i18n, {"up": band.get("s_upper"), "ce": band.get("s_central"), "lo": band.get("s_lower")}, "mm")
+    cursor = _cursor_attr(times, [x0 + slot0 * (i + 0.5) for i in range(count)], y0, y1, hover)
     parts = [
         f'<svg class="chart" viewBox="0 0 {w} {h}"{cursor} role="img" aria-label="{_esc(i18n.plain("precip_h"))} / {_esc(i18n.plain("precip_h", "en"))}">'
     ]
@@ -622,7 +649,8 @@ def _hydro_chart(i18n: _I18n, summary: dict) -> str:
     def py(v):
         return y1 - ph * min(v, ymax) / ymax
 
-    cursor = _cursor_attr(times, [px(i) for i in range(count)], y0, y1)
+    cursor = _cursor_attr(times, [px(i) for i in range(count)], y0, y1,
+                          _scn_series(i18n, {"up": series["p90"], "ce": series["p50"], "lo": series["p10"]}, "m³/s", 0))
     parts = [
         f'<svg class="chart" viewBox="0 0 {w} {h}"{cursor} role="img" aria-label="{_esc(i18n.plain("hydro_h"))} / {_esc(i18n.plain("hydro_h", "en"))}">'
     ]
@@ -1095,7 +1123,8 @@ def _anim_rain_strip(i18n: _I18n, ens: dict | None, hours: int = 72) -> str:
     pw, ph = x1 - x0, y1 - y0
     slot = pw / n
     parts = [f'<svg class="chart wide strip rainstrip" viewBox="0 0 {w} {h}"'
-             + _cursor_attr(times, [x0 + slot * (i + 1) for i in range(n)], y0, y1)
+             + _cursor_attr(times, [x0 + slot * (i + 1) for i in range(n)], y0, y1,
+                            _scn_series(i18n, {"up": rain.get("upper"), "ce": rain.get("central"), "lo": rain.get("lower")}, "mm/h"))
              + f' role="img" aria-label="{_esc(i18n.plain("anim_rain"))}">']
     for tick in _ticks(rmax, 2):
         y = y1 - ph * tick / rmax
@@ -1134,7 +1163,9 @@ def _tide_strip(i18n: _I18n, tide: dict | None) -> str:
     def py(v):
         return y1 - ph * (v - lo) / (hi - lo)
 
-    parts = [f'<svg class="chart wide strip tidestrip" viewBox="0 0 {w} {h}"' + _cursor_attr(times, [px(i) for i in range(n)], y0, y1)
+    parts = [f'<svg class="chart wide strip tidestrip" viewBox="0 0 {w} {h}"'
+             + _cursor_attr(times, [px(i) for i in range(n)], y0, y1,
+                            [{"l": _sl(i18n, "tide_lvl"), "u": "m", "v": vals, "c": "tide", "d": 2}])
              + f' role="img" aria-label="{_esc(i18n.plain("tide_h"))}">']
     for tick in (lo, 0.0, hi):
         y = py(tick)
@@ -1181,7 +1212,8 @@ def _anim_hydrograph(i18n: _I18n, forcing: dict | None, hyd: dict | None = None,
     def py(v):
         return y1 - ph * v / qmax
 
-    parts = [f'<svg class="chart wide strip" viewBox="0 0 {w} {h}"' + _cursor_attr(times, [px(i) for i in range(n)], y0, y1)
+    parts = [f'<svg class="chart wide strip" viewBox="0 0 {w} {h}"'
+             + _cursor_attr(times, [px(i) for i in range(n)], y0, y1, _scn_series(i18n, series, "m³/s", 0))
              + f' role="img" aria-label="{_esc(i18n.plain("anim_hyd"))}">']
     # FLUXOS simulated window
     if forcing and forcing.get("sim_start_utc") and forcing.get("inflow"):

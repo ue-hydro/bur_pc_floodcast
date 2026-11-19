@@ -196,6 +196,7 @@ ES = {
     "lk_note": "Muy probable: inundado incluso en el escenario inferior · Probable: en el central · Posible: solo en el superior.",
     "t_max": "máximo",
     "t_max_btn": "Profundidad máxima",
+    "tide_lvl": "Nivel del mar",
     "tide_h": "Nivel del mar en la desembocadura del Sado (marea + sobreelevación)",
     "tide_ref": "respecto al nivel medio", "tide_hw": "pleamar",
     "dec_h": "Resumen para la decisión", "dec_central": "Escenario central", "dec_upper": "Peor escenario plausible",
