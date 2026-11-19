@@ -241,6 +241,8 @@ class FluxosEngine:
         modset["INFLOW_FILE"]["DISCHARGE_LOCATION"]["X_COORDINATE"] = float(self.info["inflow_x"])
         modset["INFLOW_FILE"]["DISCHARGE_LOCATION"]["Y_COORDINATE"] = float(self.info["inflow_y"])
         modset["OUTPUT"]["OUTPUT_FOLDER"] = self._p(workdir, "out")
+        if hs.manning_n is not None:
+            modset["MANNING_N"] = float(hs.manning_n)
         tide_info = None
         edges = self.domain.fluxos.get("tide_edges")
         if hs.tide_boundary and edges:
@@ -270,6 +272,7 @@ class FluxosEngine:
         summary = self._postprocess(workdir / "out", outdir, scenario)
         summary["warmup_hours"] = warm_h
         summary["tide_boundary"] = tide_info
+        summary["manning_n"] = hs.manning_n
         try:  # exposure of buildings, roads and key facilities (OpenStreetMap)
             from . import impacts
 

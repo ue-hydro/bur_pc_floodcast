@@ -110,6 +110,9 @@ class HydraulicsSettings(_Model):
     tide_lag_h: float = Field(default=0.0, ge=0, le=12)
     # Added to the sea level (m) to convert MSL to the DEM datum; 0 if the DEM is in MSL (PT DTM: Cascais).
     tide_offset_m: float = 0.0
+    # Manning bed friction (s m^-1/3) for the regular-mesh FLUXOS; None = key not written (no friction,
+    # the FLUXOS default). Needs FLUXOS_cpp e7638ff or later (MANNING_N); CUDA builds refuse it.
+    manning_n: float | None = Field(default=None, gt=0, le=1)
 
 
 class ModelSettings(_Model):
