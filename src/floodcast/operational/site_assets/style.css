@@ -715,3 +715,12 @@ svg.chart .hoverl{stroke:var(--ink);stroke-width:1;stroke-dasharray:3 3;opacity:
 
 /* hint sits above the viewer's own "Controlos" tab (bottom-left inside the 3-D view) */
 .wg-hint{bottom:54px}
+
+/* map furniture layout: time top-right on every map; nothing overlapping */
+.leaflet-top.leaflet-right .clockbadge{margin-top:10px;margin-right:10px}
+.leaflet-bottom.leaflet-right .reftoggles{margin-bottom:4px;margin-right:10px}
+.webglwrap .clockbadge.wg{top:10px;bottom:auto;right:10px}
+.webglwrap .viewctl{max-width:calc(100% - 210px)}
+.webglwrap .wg-hint{bottom:54px;max-width:calc(100% - 30px)}
+.outsim{bottom:14px}
+@media (max-width:640px){.webglwrap .viewctl{max-width:calc(100% - 20px);top:52px}}

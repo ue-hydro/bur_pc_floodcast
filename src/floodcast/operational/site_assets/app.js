@@ -504,9 +504,11 @@
     for (var i = 0; i < els.length; i++) els[i].textContent = "🕒 " + txt;
   }
   function addClockBadge(map) {
-    var L = window.L, c = L.control({ position: "bottomleft" });
+    var L = window.L, c = L.control({ position: "topright" });
     c.onAdd = function () { return L.DomUtil.create("div", "clockbadge"); };
     c.addTo(map); CB_LAST = null;
+    var el = c.getContainer(), corner = el.parentNode;   // first in the top-right corner, above the layer button
+    if (corner && corner.firstChild !== el) corner.insertBefore(el, corner.firstChild);
     if (FC.epoch != null) clockBadges(FC.epoch);   // fill straight away, not only on the next tick
   }
   function fcTick(now) {
@@ -604,7 +606,7 @@
   }
   function refLayers(map, geoSrc, show, onBasin) {
     var L = window.L, base = geoSrc.replace(/[^\/]*$/, ""), keys = ["basin", "basins", "rivers"];
-    var box = L.control({ position: "topright" });   // under the basemap button, right side
+    var box = L.control({ position: "bottomright" });   // right side, above the map credits
     box.onAdd = function () {
       var div = L.DomUtil.create("div", "reftoggles");
       div.innerHTML = keys.map(function (k) {
