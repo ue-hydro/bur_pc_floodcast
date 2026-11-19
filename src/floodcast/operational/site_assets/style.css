@@ -599,13 +599,16 @@ svg.chart .hoverl{stroke:var(--ink);stroke-width:1;stroke-dasharray:3 3;opacity:
 .charttip .ct-k.up{background:#c62828}.charttip .ct-k.ce{background:#003a70}.charttip .ct-k.lo{background:#2e7d32}
 .charttip .ct-k.tide{background:#0f6b63}
 
-/* animation speed (sticky section bar, right end) */
-.jb-speed{margin-left:auto;display:flex;align-items:center;gap:2px;flex:none;padding:4px 0 4px 12px}
-.jb-sp-l{font-size:.82rem;font-weight:600;color:var(--mute);margin-right:4px}
-.jb-speed button{border:1px solid var(--line);background:var(--surface);color:var(--ink);font:600 .82rem/1 system-ui,sans-serif;
-  padding:6px 8px;min-width:34px;border-radius:2px;cursor:pointer}
-.jb-speed button:hover{border-color:var(--accent)}
-.jb-speed button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+/* animation speed (own block between "how it was made" and section 1) */
+.fc-speed{display:flex;flex-wrap:wrap;align-items:center;gap:8px 18px;margin:20px 0;padding:12px 18px;background:var(--surface);
+  border:1px solid var(--line);border-left:4px solid var(--accent);border-radius:2px}
+.fc-speed-btns{display:flex;align-items:center;gap:3px;flex:none}
+.fc-speed-btns strong{margin-right:6px;font-size:.95rem}
+.fc-speed button{border:1px solid var(--line);background:var(--surface);color:var(--ink);font:600 .88rem/1 system-ui,sans-serif;
+  padding:7px 10px;min-width:40px;border-radius:2px;cursor:pointer}
+.fc-speed button:hover{border-color:var(--accent)}
+.fc-speed button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.fc-speed p{flex:1 1 320px;margin:0;color:var(--mute);font-size:.86rem;line-height:1.45}
 
 .maplegend .ln-river{display:inline-block;width:18px;height:0;border-top:2px solid #1565c0;margin-right:6px;vertical-align:middle}
 .maplegend>span{margin-right:10px;white-space:nowrap}

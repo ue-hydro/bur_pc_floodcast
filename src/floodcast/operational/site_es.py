@@ -9,6 +9,9 @@ ES = {
     "j_flow": "Caudal",
     "speed_l": "Velocidad",
     "speed_pause": "Pausa",
+    "speed_p": ("Los gráficos, los mapas y la animación 3D de abajo muestran las próximas 72 h en movimiento, todos sincronizados en el mismo "
+                "instante (la línea vertical). Estos botones cambian la velocidad de esa animación: ❚❚ pausa, ½× más despacio, 1× normal "
+                "(72 h en 30 s), 2× y 4× más rápido. Para ir a un instante concreto, pulse sobre un gráfico y arrastre hacia delante o hacia atrás."),
     "j_flood": "Áreas inundadas",
     "j_anim": "Animación 3D",
     "j_official": "Fuentes oficiales",

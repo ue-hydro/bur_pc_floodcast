@@ -57,14 +57,14 @@
 
   // animation speed for every chart, map and the 3-D view (one shared clock); remembered per visitor
   (function () {
-    var btns = document.querySelectorAll(".jb-speed button[data-speed]");
+    var btns = document.querySelectorAll(".fc-speed button[data-speed]");
     if (!btns.length) return;
     function pick(v) {
       FC.speed = parseFloat(v) || 0;
       Array.prototype.forEach.call(btns, function (b) { b.setAttribute("aria-pressed", b.getAttribute("data-speed") === v ? "true" : "false"); });
     }
     var v0 = "1";
-    try { var st = localStorage.getItem("fc-speed"); if (st !== null && document.querySelector('.jb-speed button[data-speed="' + st + '"]')) v0 = st; } catch (e) {}
+    try { var st = localStorage.getItem("fc-speed"); if (st !== null && document.querySelector('.fc-speed button[data-speed="' + st + '"]')) v0 = st; } catch (e) {}
     pick(v0);
     Array.prototype.forEach.call(btns, function (b) {
       b.addEventListener("click", function () {
