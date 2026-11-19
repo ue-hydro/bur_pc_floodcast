@@ -482,6 +482,24 @@
   function fcApply() {
     for (var i = 0; i < FC.subs.length; i++) { try { FC.subs[i].set(FC.epoch); } catch (e) {} }
     cursorAll(FC.epoch);
+    clockBadges(FC.epoch);
+  }
+  // date + time of the shown moment on every map and on the 3-D view (Lisbon time)
+  var CB_LAST = null;
+  function clockBadges(epoch) {
+    var key = Math.floor(epoch / 60000) + root.getAttribute("data-lang");   // update once per minute of forecast time
+    if (key === CB_LAST) return;
+    CB_LAST = key;
+    var l = root.getAttribute("data-lang"), txt = "";
+    try { txt = new Date(epoch).toLocaleString(LOCALE[l] || "pt-PT", { timeZone: "Europe/Lisbon", weekday: "short", day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }); } catch (e) {}
+    var els = document.querySelectorAll(".clockbadge");
+    for (var i = 0; i < els.length; i++) els[i].textContent = "🕒 " + txt;
+  }
+  function addClockBadge(map) {
+    var L = window.L, c = L.control({ position: "bottomleft" });
+    c.onAdd = function () { return L.DomUtil.create("div", "clockbadge"); };
+    c.addTo(map); CB_LAST = null;
+    if (FC.epoch != null) clockBadges(FC.epoch);   // fill straight away, not only on the next tick
   }
   function fcTick(now) {
     var dt = FC.last ? Math.min(250, now - FC.last) : 0; FC.last = now;
@@ -665,6 +683,7 @@
                          function (b) { home1 = b; fitClear(map, home1, refBox); });
       fitClear(map, home1, refBox);
       addRecenter(map, function () { fitClear(map, home1, refBox); });
+      addClockBadge(map);
       if (window.ResizeObserver) new ResizeObserver(function () { map.invalidateSize(); fitClear(map, home1, refBox); }).observe(el);
       slider.max = String(hours.length - 1);
       function draw() {
@@ -706,6 +725,7 @@
                        function (b) { home0 = b; fitClear(map, home0, refBox); });
     fitClear(map, home0, refBox);
     addRecenter(map, function () { fitClear(map, home0, refBox); });
+    addClockBadge(map);
     if (window.ResizeObserver) new ResizeObserver(function () { map.invalidateSize(); fitClear(map, home0, refBox); }).observe(el);
     var t = 0;
     slider.max = String(T - 1);
@@ -771,6 +791,7 @@
       slider.value = String(Math.max(0, frame));
     }
     addRecenter(map, function () { if (current) map.fitBounds(current); });
+    addClockBadge(map);
     var lkBtn = card.querySelector(".lkbtn");
     function select(id) {
       if (lkBtn) lkBtn.setAttribute("aria-pressed", id === "likelihood" ? "true" : "false");
