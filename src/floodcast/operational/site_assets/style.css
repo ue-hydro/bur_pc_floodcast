@@ -690,3 +690,7 @@ svg.chart .hoverl{stroke:var(--ink);stroke-width:1;stroke-dasharray:3 3;opacity:
 .raintoggle[aria-pressed="true"] .sw i{left:16px}
 .raintoggle[aria-pressed="false"] svg{color:#7cc0ec}
 .raintoggle[aria-pressed="false"]{background:rgba(0,58,112,.92)}
+
+/* "outside the period simulated by FLUXOS": small label at the bottom, not over the scene */
+.outsim{left:50%;top:auto;bottom:10px;transform:translateX(-50%);padding:4px 10px;font-size:.78rem;font-weight:600;
+  background:rgba(29,35,41,.6);border-radius:12px;white-space:nowrap}
