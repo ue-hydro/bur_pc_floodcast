@@ -64,6 +64,8 @@ T: dict[str, tuple[str, str]] = {
     "kpi_range": ("intervalo {lo}–{hi} {u}", "range {lo}–{hi} {u}"),
     "kpi_worst": ("Cenário superior (pior plausível)", "Upper scenario (plausible worst)"),
     "ens_band": ("Conjunto multi-fonte P10–P90 (acumulada)", "Multi-source ensemble P10–P90 (cumulative)"),
+    "scn_sel": ("Cenário selecionado", "Selected scenario"),
+    "scn_oth": ("Outros cenários", "Other scenarios"),
     "scn_lower": ("Inferior", "Lower"),
     "scn_central": ("Central", "Central"),
     "scn_median": ("Mediana", "Median"),
@@ -686,8 +688,8 @@ def _precip_chart(i18n: _I18n, screening: dict, ens: dict | None = None) -> str:
         f'<p class="legend"><span><i style="background:var(--bar)"></i>{i18n.raw("interval")}</span>'
         + (f'<span><i style="background:var(--cum)"></i>{i18n.raw("cumul")}</span>' if cmax else "")
         + (f'<span><i style="background:var(--band)"></i>{i18n.raw("ens_band")}</span>'
-           f'<span><i class="ln lo"></i>{i18n.raw("scn_lower")}</span><span><i class="ln ce"></i>{i18n.raw("scn_central")}</span>'
-           f'<span><i class="ln up"></i>{i18n.raw("scn_upper")}</span>' if band else "")
+           f'<span><i class="ln selc"></i>{i18n.raw("scn_sel")}</span><span><i class="ln othc"></i>{i18n.raw("scn_oth")}</span>'
+           if band else "")
         + "</p>"
     )
     return "".join(parts) + legend
@@ -737,6 +739,9 @@ def _hydro_chart(i18n: _I18n, summary: dict) -> str:
             parts.append(f'<polyline class="ext" points="{pts}"/>')
     pts = " ".join(f"{px(i):.1f},{py(v):.1f}" for i, v in enumerate(series["p50"]))
     parts.append(f'<polyline class="med" points="{pts}"/>')
+    for key, cls in (("p10", "lo"), ("p50", "ce"), ("p90", "up")):   # scenario lines: the selected one turns red
+        pts = " ".join(f"{px(i):.1f},{py(v):.1f}" for i, v in enumerate(series[key]))
+        parts.append(f'<polyline class="scn {cls}" points="{pts}"/>')
     for name, value in sorted(thresholds.items(), key=lambda kv: kv[1]):
         if value <= ymax:
             y = py(value)
@@ -750,6 +755,7 @@ def _hydro_chart(i18n: _I18n, summary: dict) -> str:
     parts.append("</svg>")
     legend = (
         f'<p class="legend"><span><i style="background:var(--band)"></i>{i18n.raw("band")}</span>'
+        f'<span><i class="ln selc"></i>{i18n.raw("scn_sel")}</span><span><i class="ln othc"></i>{i18n.raw("scn_oth")}</span>'
         f'<span><i style="background:var(--median)"></i>{i18n.raw("median")}</span>'
         f'<span><i style="background:transparent;border-top:1px dashed var(--mute);height:0"></i>{i18n.raw("minmax")}</span></p>'
     )
@@ -908,7 +914,7 @@ def _anim_map(i18n: _I18n, kind: str, data_src: str | None, geo_src: str, title_
     if not data_src:
         return ""
     return (
-        f'<div class="animmap"><h3>{i18n.raw(title_key)}</h3>{_scn_buttons(i18n) if scenarios else ""}'
+        f'<div class="animmap"><div class="am-head"><h3>{i18n.raw(title_key)}</h3>{_scn_buttons(i18n) if scenarios else ""}</div>'
         f'<div class="amap" id="{kind}-map" data-kind="{kind}" data-src="{_esc(data_src)}" data-geo="{_esc(geo_src)}" '
         f'role="region" aria-label="{_esc(i18n.plain(title_key))}"></div>'
         f'<div class="animctl">'

@@ -787,3 +787,18 @@ svg.chart .hoverl{stroke:var(--ink);stroke-width:1;stroke-dasharray:3 3;opacity:
 @media (max-width:900px){.mapside{grid-template-columns:minmax(0,1fr)}.ms-below .scnlist{columns:1}}
 .mapside .ms-map .animmap{padding:0;border:0;background:transparent;margin:0}
 .mapside .ms-map .amap{width:100%}
+
+/* map header: title on the left, scenario buttons right after it */
+.am-head{display:flex;flex-wrap:wrap;align-items:center;justify-content:flex-start;gap:6px 14px;margin:0 0 8px;text-align:left}
+.am-head h3{margin:0;font-size:1rem}
+.am-head .scnsw{margin:0}
+/* sections 1-2 charts: scenario lines thin; the selected scenario (page-wide switch) in red */
+.wide-chart .chart .scn{fill:none;stroke-width:1.2;opacity:.55}
+.wide-chart .chart .scn.lo{stroke:#2e7d32;stroke-dasharray:5 4}.wide-chart .chart .scn.ce{stroke:#003a70}.wide-chart .chart .scn.up{stroke:#c62828;stroke-dasharray:5 4}
+html:not([data-scn]) .wide-chart .chart .scn.ce,html[data-scn="central"] .wide-chart .chart .scn.ce,
+html[data-scn="lower"] .wide-chart .chart .scn.lo,html[data-scn="upper"] .wide-chart .chart .scn.up{stroke:#e53935;stroke-width:3.4;opacity:1;stroke-dasharray:none}
+
+.wide-chart .chart .scn.lo,.wide-chart .chart .scn.ce,.wide-chart .chart .scn.up{stroke:#90a4ae;stroke-dasharray:none}
+html:not([data-scn]) .wide-chart .chart .scn.ce,html[data-scn="central"] .wide-chart .chart .scn.ce,
+html[data-scn="lower"] .wide-chart .chart .scn.lo,html[data-scn="upper"] .wide-chart .chart .scn.up{stroke:#e53935;stroke-width:3.4;opacity:1}
+.legend i.ln.selc{border-top:3px solid #e53935}.legend i.ln.othc{border-top:1.5px solid #90a4ae}

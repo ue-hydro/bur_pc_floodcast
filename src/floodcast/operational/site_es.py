@@ -221,6 +221,7 @@ ES = {
     "tide_h": "Nivel del mar en la desembocadura del Sado (marea + sobreelevación)",
     "tide_ref": "respecto al nivel medio", "tide_hw": "pleamar",
     "dec_h": "Resumen para la decisión", "dec_central": "Escenario central", "dec_upper": "Peor escenario plausible",
+    "scn_sel": "Escenario seleccionado", "scn_oth": "Otros escenarios",
     "dec_lower": "Escenario inferior",
     "dec_same": "Todos los escenarios (inferior, central y superior)",
     "dec_why_start": "<b>Por qué son iguales:</b> el caudal máximo ({q} m³/s) se produce justo al inicio de la previsión ({t}) — el río aún viene crecido por la lluvia anterior y está bajando. La lluvia prevista es poca ({lo}–{hi} mm en 72 h, según el escenario) y solo sube ligeramente el caudal más tarde, sin llegar a ese valor. Como los mapas y los impactos usan el agua más alta de las 72 h, los tres escenarios dan la misma inundación.",
