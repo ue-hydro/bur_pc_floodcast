@@ -32,3 +32,17 @@ Clone the repo on a Linux server with Docker, copy `run/laptop.toml` to a server
 `npx wrangler login` once (or a Cloudflare API token in `CLOUDFLARE_API_TOKEN`), and run
 `run/start.sh` there (or the systemd unit in `deploy/`). The site can stay on Cloudflare (resilient under
 load during a flood) or be served by the university with `deploy/Caddyfile`.
+
+## Current pipeline (since 2026-11-19)
+
+laptop loop → `deploy/publish.sh` → force-push (single commit) to the PRIVATE repo
+`ue-hydro/bur_pc_floodcast_site` → Cloudflare Workers Builds (Worker `floodcast-alcacer`, branch `main`,
+deploy command `npx wrangler deploy`) → https://floodcast.diogocosta.org (email-code login, only
+`diogo.costa@uevora.pt`).
+
+Laptop markers in `run/` (git-ignored):
+- `.access_confirmed` — publishing allowed at all.
+- `.cloudflare_builds_connected` — Cloudflare builds from GitHub, so no direct `wrangler deploy` from the laptop.
+  Delete it to fall back to direct uploads.
+The code repo `ue-hydro/bur_pc_floodcast` is PUBLIC: results never go there. `publish.sh` refuses to push
+if the site repo is not private.
