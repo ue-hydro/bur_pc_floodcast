@@ -155,6 +155,10 @@ T: dict[str, tuple[str, str]] = {
         "The system could not produce a reliable forecast. Do not assume there is no risk: check the official sources.",
     ),
     "updated": ("Última atualização", "Last update"),
+    "fc_last": ("<strong>Previsão de chuva usada:</strong> corrida de {t} (ECMWF IFS + {s} fontes, {n} previsões).",
+                "<strong>Rain forecast used:</strong> {t} run (ECMWF IFS + {s} sources, {n} forecasts)."),
+    "fc_next": ("<strong>Próxima previsão:</strong> corrida de {t}; publicação esperada por volta de {p}, resultados atualizados cerca de {r}.",
+                "<strong>Next forecast:</strong> {t} run; expected to be published around {p}, updated results around {r}."),
     "cycle": ("Ciclo de previsão (ECMWF)", "Forecast cycle (ECMWF)"),
     "stale": (
         "A previsão está desatualizada (mais de 18 horas). Não a use para decisões; consulte as fontes oficiais.",
@@ -395,7 +399,7 @@ class _I18n:
         for lang in self.langs:
             text = values.get(lang) or values.get("en") or values.get("pt") or ""
             if kw:
-                text = text.format(**{k: _esc(v) for k, v in kw.items()})
+                text = text.format(**{k: v if isinstance(v, _Html) else _esc(v) for k, v in kw.items()})
             out.append(f'<span lang="{lang}">{text}</span>')
         return "".join(out)
 
@@ -427,6 +431,10 @@ def _parse_ts(value):
 def _fmt_ts(value) -> str:
     ts = _parse_ts(value)
     return ts.strftime("%d-%m-%Y %H:%M UTC") if ts else ""
+
+
+class _Html(str):
+    """Trusted HTML passed as a value into a translated template (not escaped)."""
 
 
 def _time_tag(value) -> str:
@@ -682,6 +690,31 @@ def _banner(i18n: _I18n, latest: dict | None, status: dict | None, *, show_h1=Tr
         f'<div class="b-actions"><a class="btn" href="https://www.prociv.gov.pt" rel="noopener">{i18n.raw("official_btn")} ↗</a>'
         f'<span class="b-112">112</span></div></div>'
     )
+
+
+# ECMWF open data appears ~6-7 h after the run time (00/06/12/18 UTC); the whole chain then takes
+# ~1.5 h on the laptop (rain sources, 3 hydrology runs, 3 FLUXOS runs). Estimates shown on the page.
+ECMWF_PUBLISH_DELAY_H = 7.0
+CHAIN_TYPICAL_H = 1.5
+CYCLE_STEP_H = 6
+
+
+def _forecast_timing(i18n: _I18n, data: dict) -> str:
+    """Which rain forecast the page shows, and when the next one is expected."""
+    from datetime import timedelta as _td
+
+    c0 = _parse_ts((data.get("status") or {}).get("cycle"))
+    if c0 is None:
+        return ""
+    ens = data.get("precip_ens") or {}
+    srcs = [k for k, v in (ens.get("sources") or {}).items() if not str(v).startswith("failed")]
+    others = max(0, len(srcs) - 1)
+    last = i18n.raw("fc_last", t=_Html(_time_tag(c0.isoformat())), s=others, n=ens.get("members_total") or "?")
+    nxt = c0 + _td(hours=CYCLE_STEP_H)
+    pub = nxt + _td(hours=ECMWF_PUBLISH_DELAY_H)
+    nxt_html = i18n.raw("fc_next", t=_Html(_time_tag(nxt.isoformat())), p=_Html(_time_tag(pub.isoformat())),
+                        r=_Html(_time_tag((pub + _td(hours=CHAIN_TYPICAL_H)).isoformat())))
+    return f'<div class="fctiming"><p>{last}</p><p>{nxt_html}</p></div>'
 
 
 def _stages(i18n: _I18n, status: dict) -> str:
@@ -1399,6 +1432,8 @@ def _cycle_content(i18n: _I18n, latest, data: dict, prefix: str, data_rel: str, 
         )
     out.append('<section id="summary" class="hero">')
     out.append(_banner(i18n, latest if is_latest else None, status))
+    if is_latest:
+        out.append(_forecast_timing(i18n, data))
     out.append(f'<div id="progress" class="progress" data-src="{prefix}api/progress.json" hidden></div>')
     out.append(_decision_block(i18n, data))
     out.append(_kpis(i18n, data))

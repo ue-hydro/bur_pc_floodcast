@@ -421,8 +421,17 @@ def idle_status(store, wait_s: float, processed: int) -> None:
     nxt = (datetime.now() + timedelta(seconds=wait_s)).strftime("%H:%M")
     shown = latest.get("cycle", "none yet").replace("T", " ").replace(":00:00Z", " UTC")
     if processed == 0:
-        log.info("waiting: no new ECMWF forecast yet | on the site: %s (level %s) | next check %s",
-                 shown, latest.get("level", "?"), nxt)
+        from floodcast.operational.site import ECMWF_PUBLISH_DELAY_H, CYCLE_STEP_H
+
+        exp = ""
+        try:
+            c = datetime.fromisoformat(latest["cycle"].replace("Z", "+00:00")) + timedelta(hours=CYCLE_STEP_H)
+            exp = (f" | next run {c:%H} UTC expected ~"
+                   f"{(c + timedelta(hours=ECMWF_PUBLISH_DELAY_H)).astimezone():%H:%M}")
+        except (KeyError, ValueError):
+            pass
+        log.info("waiting: no new ECMWF forecast yet | on the site: %s (level %s)%s | next check %s",
+                 shown, latest.get("level", "?"), exp, nxt)
 
 
 def git_update_available(repo: Path) -> bool:

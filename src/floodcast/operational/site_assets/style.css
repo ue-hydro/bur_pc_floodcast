@@ -542,3 +542,8 @@ html:not([data-scn]) .imp-central,html[data-scn="central"] .imp-central,html[dat
 .chart .tide{fill:none;stroke:#0f6b63;stroke-width:1.8}
 .chart .hw{fill:#0f6b63}
 .disc .wrap{display:block}.d-icon{margin-right:4px}
+
+/* which rain forecast is shown, and when the next one comes */
+.fctiming { margin: 10px 0 0; padding: 10px 14px; border: 1px solid var(--line); border-left: 4px solid var(--accent);
+  background: var(--surface); color: var(--ink); border-radius: 4px; font-size: .92rem; line-height: 1.45; }
+.fctiming p { margin: 2px 0; }

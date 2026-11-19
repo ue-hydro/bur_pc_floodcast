@@ -44,6 +44,8 @@ ES = {
     "lvl_alert_d": "La previsión indica un riesgo de inundación elevado. Siga de inmediato las indicaciones de Protección Civil.",
     "lvl_unknown_d": "El sistema no pudo producir una previsión fiable. No suponga que no hay riesgo: consulte las fuentes oficiales.",
     "updated": "Última actualización",
+    "fc_last": "<strong>Previsión de lluvia usada:</strong> pasada de {t} (ECMWF IFS + {s} fuentes, {n} previsiones).",
+    "fc_next": "<strong>Próxima previsión:</strong> pasada de {t}; publicación prevista hacia {p}, resultados actualizados hacia {r}.",
     "cycle": "Ciclo de previsión (ECMWF)",
     "stale": "Esta previsión está desactualizada (más de 18 horas). No la use para tomar decisiones; consulte las fuentes oficiales.",
     "noscript": "Active JavaScript para ver el mapa, el selector de idioma y el aviso de previsión desactualizada.",
