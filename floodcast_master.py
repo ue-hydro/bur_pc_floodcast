@@ -313,7 +313,7 @@ def handle_cycle(cfg: OperationalConfig, p: CycleProcessor, cycle: datetime, *, 
 
                     prog.start("hydraulics")
                     watcher = FluxosWatcher(prog, [cache / "fluxos" / s_ for s_ in cfg.hydraulics.scenarios],
-                                            cfg.hydraulics.simulated_hours)
+                                            cfg.hydraulics.simulated_hours + cfg.hydraulics.warmup_hours)  # warm-up snapshots count too
                     watcher.start()
                 try:
                     from concurrent.futures import ThreadPoolExecutor
