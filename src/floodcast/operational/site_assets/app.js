@@ -179,11 +179,14 @@
       entries.forEach(function (e) {
         if (e.isIntersecting) {
           for (var k in byId) byId[k].classList.remove("active");
-          var a = byId[e.target.id]; if (a) { a.classList.add("active"); if (a.scrollIntoView && a.parentNode.scrollWidth > a.parentNode.clientWidth) a.parentNode.scrollLeft = a.offsetLeft - 40; }
+          var a = byId[e.target.id] || byId[e.target.getAttribute("data-jump")]; if (a) { a.classList.add("active"); if (a.scrollIntoView && a.parentNode.scrollWidth > a.parentNode.clientWidth) a.parentNode.scrollLeft = a.offsetLeft - 40; }
         }
       });
     }, { rootMargin: "-45% 0px -50% 0px" });
     for (var id in byId) { var sec = document.getElementById(id); if (sec) io.observe(sec); }
+    if (byId["flood-group"]) ["map-card", "anim-card"].forEach(function (sid) {   // 3.1 / 3.2 belong to section 3
+      var el = document.getElementById(sid); if (el) { el.setAttribute("data-jump", "flood-group"); io.observe(el); }
+    });
   }
 
 

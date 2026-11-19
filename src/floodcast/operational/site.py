@@ -44,7 +44,7 @@ T: dict[str, tuple[str, str]] = {
     "j_summary": ("Resumo", "Summary"),
     "j_rain": ("Chuva", "Rainfall"),
     "j_flow": ("Caudal", "River flow"),
-    "j_flood": ("Inundação", "Flooding"),
+    "j_flood": ("Áreas inundadas", "Flooded areas"),
     "j_anim": ("Animação 3D", "3-D animation"),
     "j_official": ("Fontes oficiais", "Official sources"),
     "j_data": ("Dados", "Data"),
@@ -1445,10 +1445,9 @@ def _jumpbar(i18n: _I18n, data: dict) -> str:
     links = [("summary", "j_summary"), ("precip", "j_rain")]
     if data.get("hydrology"):
         links.append(("hydrology", "j_flow"))
-    if data.get("scenarios"):
-        links.append(("map-card", "j_flood"))
-        if any(sc.get("webgl") for sc in data["scenarios"]):
-            links.append(("anim-card", "j_anim"))
+    if data.get("scenarios"):   # section 3 groups the flood map (3.1) and the 3-D animation (3.2)
+        has_anim = any(sc.get("webgl") for sc in data["scenarios"])
+        links.append(("flood-group" if has_anim else "map-card", "j_flood"))
     links += [("official", "j_official"), ("opendata", "j_data")]
     items = "".join(f'<a href="#{a}" data-target="{a}">{i18n.raw(k)}</a>' for a, k in links)
     return f'<nav class="jumpbar" aria-label="{_esc(i18n.plain("jump"))}"><div class="wrap">{items}</div></nav>'
