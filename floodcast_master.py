@@ -395,15 +395,33 @@ def handle_cycle(cfg: OperationalConfig, p: CycleProcessor, cycle: datetime, *, 
     return status
 
 
-def publish_site(cfg: OperationalConfig, store) -> None:
-    """Rebuild the static website; optionally push it (``[publish] post_command``)."""
+def forecast_complete(status: dict | None) -> bool:
+    """True when the cycle produced a full, up-to-date set of results: rain screening done, and the
+    flow (hydrology) and flood (hydraulics) stages done whenever they were triggered; nothing failed."""
+    if not status or status.get("retry_pending") or status.get("errors"):
+        return False
+    st = status.get("stages") or {}
+    scr, hyd, hdr = st.get("screening") or {}, st.get("hydrology") or {}, st.get("hydraulics") or {}
+    if scr.get("state") != "done":
+        return False
+    if scr.get("triggered_hydrology") and hyd.get("state") != "done":
+        return False
+    if hyd.get("triggered_hydraulics") and hdr.get("state") != "done":
+        return False
+    return True
+
+
+def publish_site(cfg: OperationalConfig, store, push: bool = False) -> None:
+    """Rebuild the static website (local copy, always). ``push`` = also run ``[publish]
+    post_command`` (GitHub -> Cloudflare): only after a complete forecast, so the public page never
+    shows a half-updated set of results."""
     if cfg.publish.output_dir is None:
         return
     from floodcast.operational.site import build_site
 
     build_site(store.root, cfg.publish.output_dir, site_title=cfg.publish.site_title,
                base_url=cfg.publish.base_url, chat_endpoint=cfg.publish.chat_endpoint)
-    if cfg.publish.post_command:
+    if push and cfg.publish.post_command:
         import subprocess
 
         try:
@@ -538,10 +556,17 @@ def main() -> int:
                         publish_site(cfg, store)
                     except Exception:
                         log.exception("site refresh failed")
+                    status = None
                     try:
-                        handle_cycle(cfg, p, cycle, newest=(i == len(cycles) - 1))
+                        status = handle_cycle(cfg, p, cycle, newest=(i == len(cycles) - 1))
                     except Exception:  # one bad cycle must never kill the service
                         log.exception("cycle %s crashed", iso(cycle))
+                    newest = i == len(cycles) - 1
+                    if newest and forecast_complete(status):
+                        log.info("forecast %s complete (rain, flow, flood): publishing online", iso(cycle))
+                        publish_site(cfg, store, push=True)
+                    elif newest:
+                        log.info("forecast %s not complete: online page left unchanged", iso(cycle))
                 publish_site(cfg, store)
                 write_json(store.root / "health.json",
                            {"state": "idle", "time": iso(now_utc()), "processed": len(cycles)})
