@@ -209,7 +209,7 @@ def handle_cycle(cfg: OperationalConfig, p: CycleProcessor, cycle: datetime, *, 
     def fail(stage: str, exc: Exception) -> None:
         log.error("%s failed: %s\n%s", stage, exc, traceback.format_exc())
         status["errors"].append({"stage": stage, "type": type(exc).__name__, "message": str(exc)[:500]})
-        status["stages"].setdefault(stage, {})["state"] = "failed"
+        status["stages"].setdefault(stage, {}).update(state="failed", finished_at=iso(now_utc()))
 
     prog = PROG
     if prog:
@@ -246,7 +246,8 @@ def handle_cycle(cfg: OperationalConfig, p: CycleProcessor, cycle: datetime, *, 
             log.warning("precip_grid.json not written: %s", exc)
         rain_trigger = screen["decision"]["outcome"] == "activate"
         unsure = screen["decision"]["outcome"] == "indeterminate"
-        status["stages"]["screening"] = {"state": "done", "triggered_hydrology": rain_trigger,
+        status["stages"]["screening"] = {"state": "done", "finished_at": iso(now_utc()),
+                                         "triggered_hydrology": rain_trigger,
                                          "reasons": screen["decision"]["reasons"]}
         try:  # bookkeeping: keep the hydrological state chain advancing every cycle
             p.hydrology.advance_state(cycle, control, weights)
@@ -261,6 +262,7 @@ def handle_cycle(cfg: OperationalConfig, p: CycleProcessor, cycle: datetime, *, 
     if newest and (rain_trigger or unsure):
         try:
             members = p._ensemble_fields(cycle, cache, bbox)      # lower / central / upper rain
+            status["stages"]["screening"]["finished_at"] = iso(now_utc())   # all rain sources collected
             if prog:
                 prog.finish("precip")
                 prog.start("hydrology")
@@ -288,7 +290,8 @@ def handle_cycle(cfg: OperationalConfig, p: CycleProcessor, cycle: datetime, *, 
             p._write_discharge_csv(out / "hydrology" / "discharge.csv", cycle, hours, q)
             level = summary["decision"]["level"]
             flow_trigger = policies.hydraulics_triggered(level, cfg.hydrology)
-            status["stages"]["hydrology"] = {"state": "done", "triggered_hydraulics": flow_trigger,
+            status["stages"]["hydrology"] = {"state": "done", "finished_at": iso(now_utc()),
+                                             "triggered_hydraulics": flow_trigger,
                                              "reasons": summary["decision"]["reasons"]}
 
             # ---- IF 3: flow is high enough -> hydraulics (FLUXOS flood map) ----------------
@@ -339,7 +342,8 @@ def handle_cycle(cfg: OperationalConfig, p: CycleProcessor, cycle: datetime, *, 
                         raise errors_h[0]
                     for exc in errors_h:
                         fail("hydraulics", exc)
-                    status["stages"]["hydraulics"] = {"state": "done", "scenarios": done}
+                    status["stages"]["hydraulics"] = {"state": "done", "scenarios": done,
+                                                      "finished_at": iso(now_utc())}
                     try:
                         from floodcast.operational.hydraulics import likelihood_map
 

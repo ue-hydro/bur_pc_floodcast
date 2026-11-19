@@ -543,7 +543,26 @@ html:not([data-scn]) .imp-central,html[data-scn="central"] .imp-central,html[dat
 .chart .hw{fill:#0f6b63}
 .disc .wrap{display:block}.d-icon{margin-right:4px}
 
-/* which rain forecast is shown, and when the next one comes */
-.fctiming { margin: 10px 0 0; padding: 10px 14px; border: 1px solid var(--line); border-left: 4px solid var(--accent);
-  background: var(--surface); color: var(--ink); border-radius: 4px; font-size: .92rem; line-height: 1.45; }
-.fctiming p { margin: 2px 0; }
+/* forecast-updates time bar */
+.fctiming { margin: 10px 0 0; padding: 12px 14px 10px; border: 1px solid var(--line); border-left: 4px solid var(--accent);
+  background: var(--surface); color: var(--ink); border-radius: 4px; font-size: .92rem; line-height: 1.4; }
+.fctiming .tl-head { margin-bottom: 26px; }
+.tl-bar { position: relative; height: 8px; margin: 0 12px 18px; border-radius: 4px;
+  background: repeating-linear-gradient(90deg, var(--line) 0 6px, transparent 6px 10px); }
+.tl-past { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 4px; background: var(--accent); opacity: .55; }
+.tl-mark { position: absolute; top: 50%; width: 22px; height: 22px; margin: -11px 0 0 -11px; border-radius: 50%;
+  background: var(--accent); color: var(--accent-ink); font: 700 12px/22px system-ui, sans-serif; text-align: center;
+  box-shadow: 0 0 0 2px var(--surface); }
+.tl-mark.is-future { background: var(--surface); color: var(--accent); border: 2px dashed var(--accent); line-height: 18px; }
+.tl-now { position: absolute; top: -20px; bottom: -6px; width: 0; border-left: 2px solid #c0392b; }
+.tl-now span { position: absolute; bottom: 100%; left: 0; transform: translateX(-50%); white-space: nowrap;
+  font-size: .78rem; font-weight: 700; color: #c0392b; }
+.tl-legend { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 8px 14px; }
+.tl-legend li { display: flex; gap: 8px; align-items: flex-start; }
+.tl-legend .tl-n { flex: 0 0 20px; height: 20px; border-radius: 50%; background: var(--accent); color: var(--accent-ink);
+  font: 700 11px/20px system-ui, sans-serif; text-align: center; margin-top: 1px; }
+.tl-legend li.is-future .tl-n { background: transparent; color: var(--accent); border: 2px dashed var(--accent); line-height: 16px; }
+.tl-legend strong { display: block; font-size: .88rem; }
+.tl-when { display: block; color: var(--mute); font-size: .84rem; }
+.tl-legend li.is-late .tl-when { color: #b9770e; font-weight: 600; }
+.tl-detail { margin: 10px 0 0; color: var(--mute); font-size: .82rem; }

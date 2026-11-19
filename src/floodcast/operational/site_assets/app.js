@@ -725,4 +725,51 @@
     if (window.ResizeObserver) new ResizeObserver(refit).observe(document.getElementById("map"));
     select((cfg.scenarios.filter(function (x) { return x.id === "p50"; })[0] || cfg.scenarios[0]).id);  // default: median
   }
+
+  // ---- forecast-updates time bar: run used -> results -> NOW -> next run -> new results ----------
+  (function () {
+    var box = document.querySelector(".fctiming");
+    if (!box) return;
+    var items = [].slice.call(box.querySelectorAll(".tl-legend li[data-t]"));
+    var bar = box.querySelector(".tl-bar"), past = box.querySelector(".tl-past"), nowEl = box.querySelector(".tl-now");
+    var W = {
+      pt: { ago: "há ", in: "daqui a ", now: "agora", late: "atrasada: esperada há ", h: " h", m: " min" },
+      en: { ago: "", agoS: " ago", in: "in ", now: "now", late: "late: expected ", lateS: " ago", h: " h", m: " min" },
+      es: { ago: "hace ", in: "dentro de ", now: "ahora", late: "con retraso: prevista hace ", h: " h", m: " min" }
+    };
+    var LOC = { pt: "pt-PT", en: "en-GB", es: "es-ES" };
+    items.forEach(function (li) {   // markers on the bar
+      var d = document.createElement("span"); d.className = "tl-mark " + li.className; d.textContent = li.getAttribute("data-n");
+      li._mark = d; bar.appendChild(d);
+    });
+    function dur(ms, w) {
+      var min = Math.round(Math.abs(ms) / 60000), h = Math.floor(min / 60), m = min % 60;
+      return h ? h + w.h + (m && h < 10 ? " " + m + w.m : "") : m + w.m;
+    }
+    function draw() {
+      var l = root.getAttribute("data-lang"); var w = W[l] || W.pt;
+      var now = Date.now(), ts = items.map(function (li) { return Date.parse(li.getAttribute("data-t")); });
+      var t0 = Math.min.apply(null, ts.concat([now])), t1 = Math.max.apply(null, ts.concat([now + 30 * 60000]));
+      var pos = function (t) { return (100 * (t - t0) / (t1 - t0)).toFixed(2) + "%"; };
+      items.forEach(function (li, i) {
+        var t = ts[i], diff = t - now, future = diff > 0, expected = li.className.indexOf("next") >= 0;
+        li._mark.style.left = pos(t);
+        li.classList.toggle("is-future", future); li._mark.classList.toggle("is-future", future);
+        var clock = "";
+        try { clock = new Date(t).toLocaleString(LOC[l] || "pt-PT", { timeZone: "Europe/Lisbon", weekday: "short", day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" }); } catch (e) {}
+        var rel = future ? w.in + dur(diff, w)
+                : (expected ? w.late + dur(diff, w) + (w.lateS || "") : w.ago + dur(diff, w) + (w.agoS || ""));
+        li.classList.toggle("is-late", !future && expected);
+        li.querySelector(".tl-when").textContent = (expected ? "≈ " : "") + clock + " · " + rel;
+      });
+      past.style.width = pos(now);
+      nowEl.style.left = pos(now);
+      var nowClock = "";
+      try { nowClock = new Date(now).toLocaleTimeString(LOC[l] || "pt-PT", { timeZone: "Europe/Lisbon", hour: "2-digit", minute: "2-digit" }); } catch (e) {}
+      nowEl.querySelector("span").textContent = w.now + " " + nowClock;
+    }
+    draw();
+    setInterval(draw, 60000);
+    new MutationObserver(draw).observe(root, { attributes: true, attributeFilter: ["data-lang"] });
+  })();
 })();

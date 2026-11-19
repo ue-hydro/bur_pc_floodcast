@@ -155,6 +155,11 @@ T: dict[str, tuple[str, str]] = {
         "The system could not produce a reliable forecast. Do not assume there is no risk: check the official sources.",
     ),
     "updated": ("Última atualização", "Last update"),
+    "tl_h": ("Atualizações da previsão", "Forecast updates"),
+    "tl_run": ("Corrida meteorológica usada ({h} UTC)", "Weather run used ({h} UTC)"),
+    "tl_done": ("Resultados publicados", "Results published"),
+    "tl_nextpub": ("Próxima corrida disponível ({h} UTC)", "Next run available ({h} UTC)"),
+    "tl_nextres": ("Novos resultados", "New results"),
     "fc_last": ("<strong>Previsão de chuva usada:</strong> corrida de {t} (ECMWF IFS + {s} fontes, {n} previsões).",
                 "<strong>Rain forecast used:</strong> {t} run (ECMWF IFS + {s} sources, {n} forecasts)."),
     "fc_next": ("<strong>Próxima previsão:</strong> corrida de {t}; publicação esperada por volta de {p}, resultados atualizados cerca de {r}.",
@@ -700,21 +705,35 @@ CYCLE_STEP_H = 6
 
 
 def _forecast_timing(i18n: _I18n, data: dict) -> str:
-    """Which rain forecast the page shows, and when the next one is expected."""
+    """Time bar: run used -> results published -> NOW -> next run available -> new results.
+    Positions and the "x h ago / in x h" labels are drawn live by app.js (static page)."""
     from datetime import timedelta as _td
 
-    c0 = _parse_ts((data.get("status") or {}).get("cycle"))
+    status = data.get("status") or {}
+    c0 = _parse_ts(status.get("cycle"))
     if c0 is None:
         return ""
     ens = data.get("precip_ens") or {}
     srcs = [k for k, v in (ens.get("sources") or {}).items() if not str(v).startswith("failed")]
     others = max(0, len(srcs) - 1)
-    last = i18n.raw("fc_last", t=_Html(_time_tag(c0.isoformat())), s=others, n=ens.get("members_total") or "?")
+    done = _parse_ts(status.get("finished_at"))
     nxt = c0 + _td(hours=CYCLE_STEP_H)
     pub = nxt + _td(hours=ECMWF_PUBLISH_DELAY_H)
+    res = pub + _td(hours=CHAIN_TYPICAL_H)
+    last = i18n.raw("fc_last", t=_Html(_time_tag(c0.isoformat())), s=others, n=ens.get("members_total") or "?")
     nxt_html = i18n.raw("fc_next", t=_Html(_time_tag(nxt.isoformat())), p=_Html(_time_tag(pub.isoformat())),
-                        r=_Html(_time_tag((pub + _td(hours=CHAIN_TYPICAL_H)).isoformat())))
-    return f'<div class="fctiming"><p>{last}</p><p>{nxt_html}</p></div>'
+                        r=_Html(_time_tag(res.isoformat())))
+    events = [("run", c0, "tl_run", {"h": f"{c0:%H}"}), ("done", done, "tl_done", {}),
+              ("nextpub", pub, "tl_nextpub", {"h": f"{nxt:%H}"}), ("nextres", res, "tl_nextres", {})]
+    legend = []
+    for i, (key, t, label, kw) in enumerate([e for e in events if e[1] is not None], start=1):
+        legend.append(f'<li class="tl-{key}" data-t="{t.isoformat()}" data-n="{i}"><span class="tl-n">{i}</span>'
+                      f'<span><strong>{i18n.raw(label, **kw)}</strong><span class="tl-when"></span></span></li>')
+    return (f'<div class="fctiming" aria-label="{_esc(i18n.plain("tl_h"))}">'
+            f'<div class="tl-head"><strong>{i18n.raw("tl_h")}</strong></div>'
+            f'<div class="tl-bar" aria-hidden="true"><div class="tl-past"></div><div class="tl-now"><span></span></div></div>'
+            f'<ol class="tl-legend">{"".join(legend)}</ol>'
+            f'<p class="tl-detail">{last}<br>{nxt_html}</p></div>')
 
 
 def _stages(i18n: _I18n, status: dict) -> str:
@@ -1320,8 +1339,33 @@ _GH = ('<svg class="gh" viewBox="0 0 16 16" aria-hidden="true"><path fill="curre
        '1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>')
 
 
-def _stepper(i18n: _I18n, status: dict) -> str:
+def _stage_times(status: dict, cdir: Path | None) -> dict:
+    """When each step finished: recorded in status.json (since 2026-11-19); for older cycles the time
+    of the step's output file, never later than the cycle's overall finish."""
+    from datetime import datetime as _dt, timezone as _tz
+
     stages = status.get("stages") or {}
+    out = {k: (stages.get(k) or {}).get("finished_at") for k in ("screening", "hydrology", "hydraulics")}
+    if cdir is None:
+        return out
+    end = _parse_ts(status.get("finished_at"))
+    files = {"screening": [cdir / "screening.json"], "hydrology": [cdir / "hydrology" / "summary.json"],
+             "hydraulics": sorted(cdir.glob("hydraulics/*/summary.json"))}
+    for k, fs in files.items():
+        if out[k] or (stages.get(k) or {}).get("state") != "done":
+            continue
+        ts = [f.stat().st_mtime for f in fs if f.is_file()]
+        if ts:
+            t = _dt.fromtimestamp(max(ts), _tz.utc)
+            if end is not None and t > end:
+                t = end
+            out[k] = t.isoformat()
+    return out
+
+
+def _stepper(i18n: _I18n, status: dict, cdir: Path | None = None) -> str:
+    stages = status.get("stages") or {}
+    when = _stage_times(status, cdir)
     marks = {"done": "✓", "failed": "!", "skipped": "–"}
     code = {
         1: [("ECMWF Open Data", "https://github.com/ecmwf/ecmwf-opendata")],
@@ -1335,7 +1379,8 @@ def _stepper(i18n: _I18n, status: dict) -> str:
         items.append(
             f'<li class="step s-{_esc(state)}"><span class="dot" aria-hidden="true">{marks.get(state, "?")}</span>'
             f'<span class="st"><strong>{n}. {i18n.raw(f"step{n}_t")}</strong>'
-            f'<span>{i18n.raw(f"step{n}_d")}</span><em>{_state_label(i18n, state)}</em>'
+            f'<span>{i18n.raw(f"step{n}_d")}</span><em>{_state_label(i18n, state)}'
+            f'{(" · " + _time_tag(when[key])) if when.get(key) else ""}</em>'
             f'<span class="code">{links}</span></span></li>'
         )
     return (f'<section class="card how" aria-labelledby="how-h"><h2 id="how-h">{i18n.raw("how_h")}</h2>'
@@ -1402,6 +1447,7 @@ def _load_cycle(op: Path, rel: str) -> dict:
     return {
         "health": _read_json(op / "health.json"),
         "tide": _read_json(cdir / "tide.json"),
+        "_cdir": cdir,
         "precip_ens": _with(_read_json(cdir / "hydrology" / "precip_ensemble.json"),
                             _scn_file=(cdir / "precip_scenarios.json").is_file()),
         "likelihood": _read_json(cdir / "hydraulics" / "likelihood.json"),
@@ -1439,7 +1485,7 @@ def _cycle_content(i18n: _I18n, latest, data: dict, prefix: str, data_rel: str, 
     out.append(_kpis(i18n, data))
     out.append(_uncal_block(i18n, latest))
     out.append("</section>")
-    out.append(_stepper(i18n, status))
+    out.append(_stepper(i18n, status, data.get("_cdir")))
     base = f"{prefix}{data_rel}/"
     geo = f"{prefix}geometry/"
     out.append(_screening_block(i18n, data["screening"],
