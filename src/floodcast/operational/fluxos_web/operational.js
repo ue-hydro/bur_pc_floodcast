@@ -54,6 +54,13 @@
     return t >= r[0].t_s ? r[i].mm_h : 0;
   }
 
+  // template overlays not used in the forecast view: FPS / key-help box and the flow-speed colour bars
+  (function () {
+    var st = document.createElement("style");
+    st.textContent = "#info,#colorbar-wrap,#conc-colorbar-wrap{display:none!important}";
+    (document.head || document.documentElement).appendChild(st);
+  })();
+
   function trimControls() {
     var panel = document.getElementById("controls"), tab = document.getElementById("controls-tab");
     if (panel && tab) { panel.dataset.collapsed = "true"; panel.style.transform = ""; tab.hidden = false; }

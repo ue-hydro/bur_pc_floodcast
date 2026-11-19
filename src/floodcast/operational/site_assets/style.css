@@ -712,3 +712,6 @@ svg.chart .hoverl{stroke:var(--ink);stroke-width:1;stroke-dasharray:3 3;opacity:
 .flood-ctl{display:flex;flex-wrap:wrap;align-items:center;gap:8px 10px;margin:14px 0 2px;padding:10px 12px;background:var(--bg);border:1px solid var(--line)}
 .flood-ctl .fc-l{font-weight:700;font-size:.9rem;margin-right:4px}
 .flood-ctl .segs{margin:0}
+
+/* hint sits above the viewer's own "Controlos" tab (bottom-left inside the 3-D view) */
+.wg-hint{bottom:54px}
