@@ -183,6 +183,9 @@
   }
 
   function start() {
+    // bluer water: mostly the clear palette with a little river sediment (template default 0.55)
+    viewer.turbidity = 0.2;
+    var st = document.getElementById("sl-turbidity"); if (st) st.value = "20";
     trimControls();
     realClock();
     if (CTRL) followPageClock();
