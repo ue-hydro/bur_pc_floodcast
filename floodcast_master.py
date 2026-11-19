@@ -420,6 +420,19 @@ def prune_series(store, keep: int = SERIES_KEEP_CYCLES) -> None:
             f.unlink(missing_ok=True)
 
 
+def compact_cache(store, p, cycle: datetime) -> None:
+    """Crop this forecast's ECMWF downloads to the basin (GB -> MB), keeping them reusable."""
+    from floodcast.operational.cache_compact import compact_cycle
+
+    try:
+        res = compact_cycle(store.root / "cache" / f"{cycle:%Y%m%d%H}", p.domain.bbox_tuple())
+        if "before_mb" in res:
+            log.info("download cache of %s cropped to the basin: %.0f MB -> %.0f MB",
+                     iso(cycle), res["before_mb"], res["after_mb"])
+    except Exception as exc:  # never fatal
+        log.warning("cache compaction of %s skipped: %s", iso(cycle), exc)
+
+
 def forecast_complete(status: dict | None) -> bool:
     """True when the cycle produced a full, up-to-date set of results: rain screening done, and the
     flow (hydrology) and flood (hydraulics) stages done whenever they were triggered; nothing failed."""
@@ -594,6 +607,8 @@ def main() -> int:
                     if newest and forecast_complete(status):
                         log.info("forecast %s complete (rain, flow, flood): publishing online", iso(cycle))
                         publish_site(cfg, store, push=True)
+                    if status and not status.get("retry_pending"):
+                        compact_cache(store, p, cycle)
                     elif newest:
                         log.info("forecast %s not complete: online page left unchanged", iso(cycle))
                 publish_site(cfg, store)
