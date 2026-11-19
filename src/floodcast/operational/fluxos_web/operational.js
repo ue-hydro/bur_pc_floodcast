@@ -166,8 +166,18 @@
     var m = viewer.meta, n = m.n_timesteps;
     viewer.playing = false;
     hide(document.getElementById("btn-play"));
-    viewer.frameCacheMax = Math.max(viewer.frameCacheMax || 30, Math.min(n + 2, 400));
-    for (var i = 0; i < Math.min(n, 400); i++) viewer.loadVelFrame(i);   // decode all up front → smooth loop
+    // Keep up to ~160 frames on the GPU and fill the cache gradually (3 at a time): decoding every
+    // frame at once (289-480 for 72-120 h runs) exhausted GPU memory and crashed the tab.
+    var CAP = Math.min(n + 2, 160);
+    viewer.frameCacheMax = Math.max(viewer.frameCacheMax || 30, CAP);
+    var next = 0, busy = 0;
+    function pump() {
+      while (busy < 3 && next < Math.min(n, CAP)) {
+        var k = next++; busy++;
+        Promise.resolve(viewer.loadVelFrame(k)).catch(function () {}).then(function () { busy--; setTimeout(pump, 30); });
+      }
+    }
+    pump();
     window.addEventListener("message", function (ev) {
       var d = ev.data;
       if (!d || d.type !== "fluxos-set-time" || ev.source !== CTRL) return;
@@ -177,7 +187,7 @@
       var span = (ts[i + 1] - ts[i]) || 1, frac = Math.max(0, Math.min(1, (t - ts[i]) / span));
       viewer.playing = false;
       if (viewer.frameCache.has(i)) { viewer.currentFrame = i; viewer.timeFrac = frac; }
-      else viewer.loadVelFrame(i);
+      else { viewer.loadVelFrame(i); if (i + 1 < n) viewer.loadVelFrame(i + 1); }
     });
   }
 

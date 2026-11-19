@@ -2699,6 +2699,10 @@ def export_webgl(dem, meta, results, mesh_type, variable, clim,
                 r["points"], r["cells"], r["cell_data"],
                 h_min, nrows, ncols,
                 meta["xllcorner"], meta["yllcorner"], cs)
+        # FLUXOS can leave NaN velocities in nearly-dry wet cells: zero them so the
+        # ranges stay finite (metadata.json must be strict JSON) and the PNGs decode.
+        gvx, gvy, grid_h, grid_conc = (np.nan_to_num(a, nan=0.0, posinf=0.0, neginf=0.0)
+                                       for a in (gvx, gvy, grid_h, grid_conc))
         if np.any(wet):
             all_vx.append(gvx[wet])
             all_vy.append(gvy[wet])
@@ -2720,10 +2724,10 @@ def export_webgl(dem, meta, results, mesh_type, variable, clim,
         gvx_min, gvx_max = -0.1, 0.1
         gvy_min, gvy_max = -0.1, 0.1
 
-    # Ensure non-zero range
-    if gvx_max - gvx_min < 1e-9:
+    # Ensure finite, non-zero range
+    if not np.isfinite([gvx_min, gvx_max]).all() or gvx_max - gvx_min < 1e-9:
         gvx_min, gvx_max = -0.1, 0.1
-    if gvy_max - gvy_min < 1e-9:
+    if not np.isfinite([gvy_min, gvy_max]).all() or gvy_max - gvy_min < 1e-9:
         gvy_min, gvy_max = -0.1, 0.1
 
     # Use 99.9th percentile for h_max to avoid outlier artefacts
@@ -2732,7 +2736,7 @@ def export_webgl(dem, meta, results, mesh_type, variable, clim,
         gh_max = float(np.percentile(all_h, 99.9))
     else:
         gh_max = 1.0
-    if gh_max < 1e-6:
+    if not np.isfinite(gh_max) or gh_max < 1e-6:
         gh_max = 1.0
 
     # Concentration max: use 95th percentile of significant values
@@ -2780,6 +2784,10 @@ def export_webgl(dem, meta, results, mesh_type, variable, clim,
                 r["points"], r["cells"], r["cell_data"],
                 h_min, nrows, ncols,
                 meta["xllcorner"], meta["yllcorner"], cs)
+        # FLUXOS can leave NaN velocities in nearly-dry wet cells: zero them so the
+        # ranges stay finite (metadata.json must be strict JSON) and the PNGs decode.
+        gvx, gvy, grid_h, grid_conc = (np.nan_to_num(a, nan=0.0, posinf=0.0, neginf=0.0)
+                                       for a in (gvx, gvy, grid_h, grid_conc))
 
         # Encode vx → R, vy → G, depth → B, wet → A
         r_ch = ((gvx - gvx_min) / (gvx_max - gvx_min) * 255.0
@@ -2907,7 +2915,7 @@ def export_webgl(dem, meta, results, mesh_type, variable, clim,
         metadata["sat_resolution"] = sat_resolution
     meta_path = os.path.join(data_dir, "metadata.json")
     with open(meta_path, "w") as f:
-        _json.dump(metadata, f, indent=2)
+        _json.dump(metadata, f, indent=2, allow_nan=False)
 
     # ── Generate HTML viewer ──────────────────────────────────
     print("  Generating WebGL viewer...")

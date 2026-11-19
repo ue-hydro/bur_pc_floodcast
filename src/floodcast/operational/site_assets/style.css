@@ -813,9 +813,24 @@ html[data-scn="lower"] .wide-chart .chart .scn.lo,html[data-scn="upper"] .wide-c
 .s12 .wide-chart svg.chart{width:100%;height:auto;aspect-ratio:640/380}
 .s12 .animmap{padding:0;border:0;background:transparent;margin-top:10px}
 .s12 .amap{height:auto;aspect-ratio:640/380;width:100%}
+@media (max-width:640px){ .s12 .amap{aspect-ratio:auto;height:340px} }   /* phones: room for zoom, clock, layers and reference tick boxes */
 .s12 .am-head{min-height:34px}
 .s12 details.s12-more{margin-top:10px}
 .s12 .scnlist{columns:1}
 .maplegend>span.muted{white-space:normal}
 .s12 .wide-chart .legend{min-height:3.4em;margin-bottom:4px}
 @media (min-width:1100px){ .s12 .animmap{margin-top:auto;padding-top:10px} }
+
+/* one scenario switch for sections 1 + 2, above both charts */
+.s12-ctl{grid-column:1/-1;display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;margin:18px 0 -6px;padding:8px 12px;
+  background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--accent)}
+.s12-ctl .fc-l{font-weight:700;font-size:.9rem}
+.s12-ctl .scnsw{margin:0}
+/* selected scenario: red dashed */
+html:not([data-scn]) .wide-chart .chart .scn.ce,html[data-scn="central"] .wide-chart .chart .scn.ce,
+html[data-scn="lower"] .wide-chart .chart .scn.lo,html[data-scn="upper"] .wide-chart .chart .scn.up{stroke:#e53935;stroke-width:3.2;stroke-dasharray:9 6;opacity:1}
+.legend i.ln.selc{border-top:3px dashed #e53935}
+/* time badge on the charts too */
+.wide-chart{position:relative}
+.wide-chart{padding-top:30px}
+.wide-chart .chartclock{position:absolute;top:0;right:6px;z-index:2;font-size:12px;padding:3px 8px}

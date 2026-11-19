@@ -11,7 +11,7 @@ from pathlib import Path
 
 import numpy as np
 
-from . import policies
+from . import impacts, policies
 from .config import OperationalConfig
 from .domain import Domain
 from .runners import ModelRunner, Mount
@@ -461,10 +461,14 @@ class FluxosEngine:
             raise RuntimeError("FLUXOS wrote no output files")
         keep_t, keep_h, keep_v = [], [], []
         t_s = 0
+        # the river itself (carved channel + bank margin) is water at any flow: shown on the depth
+        # maps, but not counted as flooding (area, arrival, duration, hazard, impacts)
+        river = impacts.permanent_water(self.domain.root)
+        land = ~river if river is not None and river.shape == (ny, nx) else np.ones((ny, nx), bool)
         for k, (t_s, g, gv) in enumerate(steps):
             if files:   # keep a compact copy so the post-processing can be redone later
                 keep_t.append(t_s); keep_h.append(g.astype("float16")); keep_v.append(gv.astype("float16"))
-            wet = g >= MIN_FLOODED_DEPTH_M
+            wet = (g >= MIN_FLOODED_DEPTH_M) & land
             t_peak[(g > maxh) & wet] = float(t_s)
             np.maximum(maxh, g, out=maxh)
             last_wet[wet] = float(t_s)
@@ -510,7 +514,7 @@ class FluxosEngine:
         tf = Transformer.from_crs(self.domain.fluxos.get("crs", "EPSG:32629"), 4326, always_xy=True)
         west, south = tf.transform(xll, yll)
         east, north = tf.transform(xll + nx * cs, yll + ny * cs)
-        flooded = maxh >= MIN_FLOODED_DEPTH_M
+        flooded = (maxh >= MIN_FLOODED_DEPTH_M) & land
         haz_area = {f"H{k}": round(float((hazard == k).sum() * cs * cs / 1e6), 3) for k in range(1, 7)}
         return {
             "frames": frames,
@@ -523,6 +527,7 @@ class FluxosEngine:
             "bounds_wgs84": {"west": west, "south": south, "east": east, "north": north},
             "crs": self.domain.fluxos.get("crs", "EPSG:32629"),
             "max_depth_m": round(float(maxh.max()), 2),
+            "max_flood_depth_m": round(float(maxh[land].max()) if land.any() else 0.0, 2),   # outside the river
             "flooded_area_km2": round(float(flooded.sum() * cs * cs / 1e6), 3),
             "image": "max_depth.png",
             "caveats": [

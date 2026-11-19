@@ -19,6 +19,40 @@ IMPASSABLE_M = 0.30   # roads unsafe for ordinary vehicles (ARR H2 limit is 0.3 
 DEEP_M = 0.50
 
 
+RIVER_MARGIN_CELLS = 1   # bank cells next to the carved channel are partly river at 20 m resolution
+
+
+def permanent_water(domain_root: Path, margin_cells: int = RIVER_MARGIN_CELLS) -> np.ndarray | None:
+    """Cells that are river at any flow (rows south-first, like the result rasters): the Sado channel
+    carved into ``fluxos/dem_channel.asc`` by burn_channel.py, plus ``margin_cells`` of bank.
+
+    Water there is the river itself, not flooding: it is shown on the depth maps but left out of the
+    flooded area, arrival/duration/hazard classes and the impact counts (otherwise a riverside street
+    sampled on a 20 m grid "floods" at any flow). None when the domain has no carved channel."""
+    fl = Path(domain_root) / "fluxos"
+    src, burnt = fl / "dem.asc", fl / "dem_channel.asc"
+    if not (src.is_file() and burnt.is_file()):
+        return None
+    key = (str(burnt), burnt.stat().st_mtime, margin_cells)
+    if key in _PW_CACHE:
+        return _PW_CACHE[key]
+    a = np.loadtxt(src, skiprows=6)
+    b = np.loadtxt(burnt, skiprows=6)
+    if a.shape != b.shape:
+        return None
+    diff = b - a
+    river = np.flipud(diff < np.median(diff) - 0.05)   # carved cells sit below the datum-shifted terrain
+    if margin_cells > 0:
+        from scipy.ndimage import binary_dilation
+
+        river = binary_dilation(river, iterations=margin_cells)
+    _PW_CACHE[key] = river
+    return river
+
+
+_PW_CACHE: dict = {}
+
+
 def _sampler(info: dict, crs: str):
     from pyproj import Transformer
 
@@ -57,6 +91,9 @@ def compute(scn_dir: Path, domain_root: Path, info: dict, crs: str, sim_start: d
     if not (imp / "osm_buildings.geojson").is_file() or not (scn_dir / "max_depth.npy").is_file():
         return None
     depth = np.load(scn_dir / "max_depth.npy")
+    river = permanent_water(domain_root)
+    if river is not None and river.shape == depth.shape:
+        depth = np.where(river, 0.0, depth)   # the river itself is not flooding a street or a building
 
     def opt(name):
         return np.load(scn_dir / name) if (scn_dir / name).is_file() else None

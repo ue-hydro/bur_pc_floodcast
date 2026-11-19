@@ -73,6 +73,9 @@ class HydrologySettings(_Model):
     probability_to_declare: float = Field(default=0.2, gt=0, le=1)
     # Hydraulics runs when this level (or higher) is declared.
     hydraulics_from_level: Literal["watch", "warning", "alert"] = "warning"
+    # Run the flow (SUMMA-mizuRoute) and flood (FLUXOS) stages on every forecast, whatever the
+    # rain/flow levels: the levels then only grade the warning, they no longer gate the models.
+    always_run: bool = False
     spinup_days: int = Field(default=60, ge=7)
     # Replay this many days of stored forcing before every forecast: the coupled build has no
     # mizuRoute restart, so river channels start empty and need ~5 days to fill.

@@ -77,6 +77,7 @@ T: dict[str, tuple[str, str]] = {
     "hydro_p_scn": ("Caudal simulado com três cenários de chuva — inferior (P10), central (P50) e superior (P90) da chuva acumulada de todas as previsões disponíveis.",
                     "Flow simulated with three rainfall scenarios — lower (P10), central (P50) and upper (P90) of the cumulative rain of all available forecasts."),
     "src_tbl_h": ("Estado de cada fonte de previsão de chuva", "Status of each rainfall forecast source"),
+    "s12_ctl": ("Cenário mostrado nos gráficos e mapas 1 e 2:", "Scenario shown in charts and maps 1 and 2:"),
     "peak_more": ("Pico previsto e caudal de ponta por cenário", "Forecast peak and peak flow by scenario"),
     "src_h": ("Previsões de chuva utilizadas", "Rainfall forecasts used"),
     "src_p": ("{n} previsões de vários centros meteorológicos, ordenadas pela chuva acumulada na bacia. Os três cenários são previsões reais:",
@@ -743,10 +744,14 @@ def _hydro_chart(i18n: _I18n, summary: dict) -> str:
     for key, cls in (("p10", "lo"), ("p50", "ce"), ("p90", "up")):   # scenario lines: the selected one turns red
         pts = " ".join(f"{px(i):.1f},{py(v):.1f}" for i, v in enumerate(series[key]))
         parts.append(f'<polyline class="scn {cls}" points="{pts}"/>')
+    last_label_y = None
     for name, value in sorted(thresholds.items(), key=lambda kv: kv[1]):
         if value <= ymax:
             y = py(value)
             parts.append(f'<line class="thr thr-{name}" x1="{x0}" x2="{x1}" y1="{y:.1f}" y2="{y:.1f}"/>')
+            if last_label_y is not None and last_label_y - y < 14:
+                continue   # lines too close: label only the lower one rather than overprint
+            last_label_y = y
             label = i18n.level_label(name).replace("<span ", "<tspan ").replace("</span>", "</tspan>")
             parts.append(
                 f'<text class="thr-t" x="{x1 - 4}" y="{y - 4:.1f}" text-anchor="end">{label}<tspan> {value:g}</tspan></text>'
@@ -915,7 +920,7 @@ def _anim_map(i18n: _I18n, kind: str, data_src: str | None, geo_src: str, title_
     if not data_src:
         return ""
     return (
-        f'<div class="animmap"><div class="am-head"><h3>{i18n.raw(title_key)}</h3>{_scn_buttons(i18n) if scenarios else ""}</div>'
+        f'<div class="animmap"><div class="am-head"><h3>{i18n.raw(title_key)}</h3></div>'
         f'<div class="amap" id="{kind}-map" data-kind="{kind}" data-src="{_esc(data_src)}" data-geo="{_esc(geo_src)}" '
         f'role="region" aria-label="{_esc(i18n.plain(title_key))}"></div>'
         f'<div class="animctl">'
@@ -932,7 +937,7 @@ def _wide_layout(chart: str, map_html: str, side: str, side_title: str = "") -> 
     forecast list / peaks table collapsed."""
     folded = (f'<details class="tech s12-more"><summary>{side_title}</summary>{side}</details>'
               if side and side_title else side)
-    return f'<div class="wide-chart">{chart}</div>{map_html or ""}{folded}'
+    return f'<div class="wide-chart"><div class="clockbadge chartclock"></div>{chart}</div>{map_html or ""}{folded}'
 
 
 def _split(left: str, right: str) -> str:
@@ -1222,6 +1227,16 @@ def _hydraulics_block(i18n: _I18n, scenarios: list[dict], status: dict, prefix: 
 STRIP_W, STRIP_H = 1200, 72   # rain / flow / sea-level strips: full page width, stacked, short
 
 
+def _strip_tick(x0, x1, y, y_axis, text, labelled=True):
+    """Grid line of a short strip; only the top and bottom values are labelled (a 36-px tall plot has
+    no room for more), and a label on the axis sits just above it, clear of the time labels."""
+    out = f'<line class="gridl" x1="{x0}" x2="{x1}" y1="{y:.1f}" y2="{y:.1f}"/>'
+    if labelled:
+        ty = y_axis - 1 if y >= y_axis - 1 else y + 4
+        out += f'<text x="{x0 - 6}" y="{ty:.1f}" text-anchor="end">{text}</text>'
+    return out
+
+
 def _anim_rain_strip(i18n: _I18n, ens: dict | None, hours: int = 72) -> str:
     """Compact hourly basin-rain strip of the three rainfall scenarios (selected one shown)."""
     from datetime import timedelta
@@ -1247,10 +1262,8 @@ def _anim_rain_strip(i18n: _I18n, ens: dict | None, hours: int = 72) -> str:
              + _cursor_attr(times, [x0 + slot * (i + 1) for i in range(n)], y0, y1,
                             _scn_series(i18n, {"up": rain.get("upper"), "ce": rain.get("central"), "lo": rain.get("lower")}, "mm/h"))
              + f' role="img" aria-label="{_esc(i18n.plain("anim_rain"))}">']
-    for tick in _ticks(rmax, 2):
-        y = y1 - ph * tick / rmax
-        parts.append(f'<line class="gridl" x1="{x0}" x2="{x1}" y1="{y:.1f}" y2="{y:.1f}"/>'
-                     f'<text x="{x0 - 6}" y="{y + 4:.1f}" text-anchor="end">{tick:g}</text>')
+    for k, tick in enumerate(_ticks(rmax, 2)):
+        parts.append(_strip_tick(x0, x1, y1 - ph * tick / rmax, y1, f"{tick:g}", k in (0, 2)))
     cls = {"lower": "lo", "central": "ce", "upper": "up"}
     for name, vals in rain.items():
         bars = "".join(f'<rect x="{x0 + slot * i + 0.5:.1f}" y="{y1 - ph * v / rmax:.1f}" width="{max(0.8, slot - 1):.1f}" '
@@ -1293,9 +1306,7 @@ def _tide_strip(i18n: _I18n, tide: dict | None, hours: int = 72) -> str:
                             [{"l": _sl(i18n, "tide_lvl"), "u": "m", "v": vals, "c": "tide", "d": 2}])
              + f' role="img" aria-label="{_esc(i18n.plain("tide_h"))}">']
     for tick in (lo, 0.0, hi):
-        y = py(tick)
-        parts.append(f'<line class="gridl" x1="{x0}" x2="{x1}" y1="{y:.1f}" y2="{y:.1f}"/>'
-                     f'<text x="{x0 - 6}" y="{y + 4:.1f}" text-anchor="end">{tick:+.1f}</text>')
+        parts.append(_strip_tick(x0, x1, py(tick), y1, f"{tick:+.1f}", tick != 0.0))
     pts = " ".join(f"{px(i):.1f},{py(v):.1f}" for i, v in pts_ok)
     parts.append(f'<polyline class="tide" points="{pts}"/>')
     for ht in tide.get("high_tides") or []:
@@ -1350,10 +1361,8 @@ def _anim_hydrograph(i18n: _I18n, forcing: dict | None, hyd: dict | None = None,
         if xb > xa:
             parts.append(f'<rect class="simwin" x="{xa:.1f}" y="{y0}" width="{xb - xa:.1f}" height="{ph}"/>'
                          f'<text class="simwin-t" x="{xa + 4:.1f}" y="{y0 + 11}">FLUXOS</text>')
-    for tick in _ticks(qmax, 3):
-        y = py(tick)
-        parts.append(f'<line class="gridl" x1="{x0}" x2="{x1}" y1="{y:.1f}" y2="{y:.1f}"/>'
-                     f'<text x="{x0 - 6}" y="{y + 4:.1f}" text-anchor="end">{tick:g}</text>')
+    for k, tick in enumerate(_ticks(qmax, 3)):
+        parts.append(_strip_tick(x0, x1, py(tick), y1, f"{tick:g}", k in (0, 3)))
     for k in ("lo", "up", "ce"):
         if k in series:
             pts = " ".join(f"{px(i):.1f},{py(v):.1f}" for i, v in enumerate(series[k]))
@@ -1702,7 +1711,9 @@ def _cycle_content(i18n: _I18n, latest, data: dict, prefix: str, data_rel: str, 
                           geo, data.get("precip_ens"))
     s2 = _hydrology_block(i18n, data["hydrology"],
                           base + "hydrology/reach_flow.json" if data.get("flow_file") else None, geo)
-    out.append(f'<div class="s12">{s1}{s2}</div>')   # rain (1) and flow (2) side by side on wide screens
+    s12_ctl = (f'<div class="s12-ctl"><span class="fc-l">{i18n.raw("s12_ctl")}</span>{_scn_buttons(i18n, "s12-scn")}</div>'
+               if data.get("precip_ens") or data.get("hydrology") else "")
+    out.append(f'<div class="s12">{s12_ctl}{s1}{s2}</div>')   # rain (1) and flow (2) side by side on wide screens
     # flood map (3) and 3-D animation (4) side by side on wide screens (same clock and scenario)
     strips: list = []
     ctl: list = []

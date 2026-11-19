@@ -257,7 +257,7 @@ def handle_cycle(cfg: OperationalConfig, p: CycleProcessor, cycle: datetime, *, 
         rain_trigger = screen["decision"]["outcome"] == "activate"
         unsure = screen["decision"]["outcome"] == "indeterminate"
         status["stages"]["screening"] = {"state": "done", "finished_at": iso(now_utc()),
-                                         "triggered_hydrology": rain_trigger,
+                                         "triggered_hydrology": rain_trigger or cfg.hydrology.always_run,
                                          "reasons": screen["decision"]["reasons"]}
         try:  # bookkeeping: keep the hydrological state chain advancing every cycle
             p.hydrology.advance_state(cycle, control, weights)
@@ -269,7 +269,7 @@ def handle_cycle(cfg: OperationalConfig, p: CycleProcessor, cycle: datetime, *, 
 
     # ---- IF 2: rain is high enough -> hydrology (only for the newest forecast) ------------
     q = hours = None
-    if newest and (rain_trigger or unsure):
+    if newest and (rain_trigger or unsure or cfg.hydrology.always_run):
         try:
             members = p._ensemble_fields(cycle, cache, bbox)      # lower / central / upper rain
             status["stages"]["screening"]["finished_at"] = iso(now_utc())   # all rain sources collected
@@ -300,7 +300,7 @@ def handle_cycle(cfg: OperationalConfig, p: CycleProcessor, cycle: datetime, *, 
                 write_json(out / "hydrology" / "reach_flow.json", {"cycle": iso(cycle), **reach})
             p._write_discharge_csv(out / "hydrology" / "discharge.csv", cycle, hours, q)
             level = summary["decision"]["level"]
-            flow_trigger = policies.hydraulics_triggered(level, cfg.hydrology)
+            flow_trigger = cfg.hydrology.always_run or policies.hydraulics_triggered(level, cfg.hydrology)
             status["stages"]["hydrology"] = {"state": "done", "finished_at": iso(now_utc()),
                                              "triggered_hydraulics": flow_trigger,
                                              "reasons": summary["decision"]["reasons"]}
