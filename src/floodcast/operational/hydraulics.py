@@ -55,6 +55,40 @@ def write_inflow(path: Path, t_s: np.ndarray, q: np.ndarray) -> Path:
     return path
 
 
+def tide_series(tide: dict, run_start: datetime, run_hours: float, lag_h: float = 0.0,
+                offset_m: float = 0.0, step_s: int = 900) -> tuple[np.ndarray, np.ndarray] | None:
+    """Sea level (m, DEM datum) every ``step_s`` on the FLUXOS clock (t = 0 at ``run_start``).
+
+    ``tide`` is the ``tide.fetch`` document (hourly UTC times + sea_level_m). The series is delayed
+    by ``lag_h`` (mouth -> domain edge). Returns None unless it covers the whole run (no
+    extrapolation of a tide)."""
+    times = [datetime.fromisoformat(t.replace("Z", "+00:00")) for t in tide.get("times_utc", [])]
+    vals = tide.get("sea_level_m", [])
+    pts = [((t - run_start).total_seconds() + lag_h * 3600.0, float(v)) for t, v in zip(times, vals) if v is not None]
+    if len(pts) < 2:
+        return None
+    ts, lv = np.array([p[0] for p in pts]), np.array([p[1] for p in pts])
+    end = run_hours * 3600.0
+    if ts[0] > 0 or ts[-1] < end:
+        return None
+    t = np.arange(0.0, end + step_s, step_s)
+    return t, np.interp(t, ts, lv) + offset_m
+
+
+def _tide_balance(out: Path) -> dict | None:
+    """Net volume exchanged through the water-level boundary (FLUXOS water_level_bc_balance.csv)."""
+    f = out / "water_level_bc_balance.csv"
+    if not f.is_file():
+        return None
+    try:
+        a = np.genfromtxt(f, delimiter=",", names=True)
+        return {"net_volume_m3": round(float(np.atleast_1d(a["vol_net_m3"])[-1]), 1),
+                "level_min_m": round(float(np.min(a["level_m"])), 2),
+                "level_max_m": round(float(np.max(a["level_m"])), 2)}
+    except Exception:  # diagnostics only
+        return None
+
+
 def _drop_warmup(out: Path, warm_s: int) -> None:
     """Delete the warm-up snapshots and shift the rest so t = 0 is the forecast window start."""
     if warm_s <= 0:
@@ -178,7 +212,7 @@ class FluxosEngine:
         return f"/run/{name}" if self.in_container else str(host / name)
 
     def run(self, cycle: datetime, scenario: str, hours: np.ndarray, q: np.ndarray,
-            workdir: Path, outdir: Path, member: int | None = None) -> dict:
+            workdir: Path, outdir: Path, member: int | None = None, tide: dict | None = None) -> dict:
         hs = self.config.hydraulics
         if member is None:
             member = policies.select_scenario(q, scenario)
@@ -207,15 +241,35 @@ class FluxosEngine:
         modset["INFLOW_FILE"]["DISCHARGE_LOCATION"]["X_COORDINATE"] = float(self.info["inflow_x"])
         modset["INFLOW_FILE"]["DISCHARGE_LOCATION"]["Y_COORDINATE"] = float(self.info["inflow_y"])
         modset["OUTPUT"]["OUTPUT_FOLDER"] = self._p(workdir, "out")
+        tide_info = None
+        edges = self.domain.fluxos.get("tide_edges")
+        if hs.tide_boundary and edges:
+            run_start = sim_start - timedelta(hours=warm_h)
+            ser = tide_series(tide, run_start, warm_h + float(t_h[-1]), hs.tide_lag_h, hs.tide_offset_m) if tide else None
+            if ser is None:
+                log.warning("tide boundary off for %s: no sea-level forecast covering the run", scenario)
+            else:
+                t_s, lev = ser
+                (workdir / "tide_level.csv").write_text(
+                    "t_seconds,level_m\n" + "".join(f"{int(a)},{b:.3f}\n" for a, b in zip(t_s, lev)))
+                modset.setdefault("BOUNDARY_CONDITIONS", {})["WATER_LEVEL"] = {
+                    "STATUS": True, "FILENAME": self._p(workdir, "tide_level.csv"),
+                    "EDGE": [dict(e) for e in edges], "VELOCITY": "zero_gradient",
+                    "COMMENT": "sea level at the Sado mouth (Open-Meteo marine), floodcast"}
+                tide_info = {"edges": [dict(e) for e in edges], "lag_h": hs.tide_lag_h, "offset_m": hs.tide_offset_m,
+                             "source": tide.get("source", "")}
         (workdir / "modset.json").write_text(json.dumps(modset, indent=2))
         self.runner.run(
             "fluxos", [self._p(workdir, "modset.json")], [Mount(workdir, "/run", "rw")],
             workdir=self._p(workdir, ""), log_path=workdir / "fluxos.log",
             timeout_s=hs.timeout_s, env={"OMP_NUM_THREADS": "2"},
         )
+        if tide_info is not None:
+            tide_info.update(_tide_balance(workdir / "out") or {})
         _drop_warmup(workdir / "out", int(round(warm_h * 3600)))
         summary = self._postprocess(workdir / "out", outdir, scenario)
         summary["warmup_hours"] = warm_h
+        summary["tide_boundary"] = tide_info
         try:  # exposure of buildings, roads and key facilities (OpenStreetMap)
             from . import impacts
 

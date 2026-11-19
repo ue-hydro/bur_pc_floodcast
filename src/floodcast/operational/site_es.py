@@ -162,7 +162,7 @@ ES = {
         "El terreno del modelo hidráulico procede de un modelo digital de superficie; la batimetría del río y las estructuras "
         "(puentes, diques) no se representan con precisión.",
         "Los mapas muestran profundidades máximas simuladas, no el momento de llegada del agua, y no indican lugares seguros.",
-        "Es posible que no se representen las mareas ni la influencia del estuario del Sado.",
+        "La marea y la influencia del estuario del Sado se representan de forma simplificada (nivel del mar previsto en la desembocadura, sin calibrar) o pueden no estar representadas.",
         "Los fallos de datos o de los modelos pueden provocar previsiones ausentes o desactualizadas; en ese caso el sitio "
         "muestra «Sin datos fiables».",
     ),
@@ -194,6 +194,7 @@ ES = {
     "dec_line": "{b} edificios con agua y {r} km de carretera intransitable.",
     "dec_roads": "Cortes: {roads}.", "dec_from": "Primera inundación: {t}.",
     "dec_tide": "Pleamar en la desembocadura del Sado: {t}. En pleamar, el estuario dificulta el desagüe del río en Alcácer.",
+    "dec_note_tide": "Indicativo: modelo no calibrado; el nivel del mar previsto en la desembocadura del Sado entra en el modelo hidrodinámico en el límite del estuario, sin retardo ni amplificación hasta Alcácer. Siga siempre a Protección Civil.",
     "dec_note": "Indicativo: modelo no calibrado; la marea aún no entra en el modelo hidrodinámico. Siga siempre a Protección Civil.",
     "imp_h": "Impactos previstos (escenario seleccionado)",
     "imp_p": "Edificios, carreteras y equipamientos de OpenStreetMap en la zona simulada. Indicativo: modelo no calibrado.",

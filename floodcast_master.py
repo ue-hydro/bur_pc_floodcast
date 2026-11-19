@@ -305,10 +305,21 @@ def handle_cycle(cfg: OperationalConfig, p: CycleProcessor, cycle: datetime, *, 
                 try:
                     from concurrent.futures import ThreadPoolExecutor
 
+                    tide_bc = None
+                    if cfg.hydraulics.tide_boundary:  # sea level from before the warm-up to the end of the run
+                        try:
+                            from floodcast.operational import tide as _tide
+
+                            back = int(cfg.hydraulics.warmup_hours + cfg.hydraulics.tide_lag_h) + 6
+                            tide_bc = _tide.fetch(cycle - timedelta(hours=back),
+                                                  back + cfg.hydraulics.simulated_hours + 24, cache / "tide_bc.json")
+                        except Exception as exc:
+                            log.warning("tide boundary series unavailable: %s", exc)
+
                     def run_one(scenario):
                         res = p.hydraulics.run(cycle, scenario, hours, q, cache / "fluxos" / scenario,
                                                out / "hydraulics" / scenario,
-                                               member={"p10": 0, "p50": 1, "p90": 2}.get(scenario))
+                                               member={"p10": 0, "p50": 1, "p90": 2}.get(scenario), tide=tide_bc)
                         write_json(out / "hydraulics" / scenario / "summary.json", res)
                         add_rain_to_forcing(out / "hydraulics" / scenario, control.get("tp"), cycle, p.domain,
                                             scenario_rain=scenario_rain(p, scenario))

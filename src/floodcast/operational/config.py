@@ -102,6 +102,14 @@ class HydraulicsSettings(_Model):
     window: Literal["forecast_start", "peak"] = "forecast_start"
     timeout_s: int = Field(default=7200, ge=60)
     base_flow_m3s: float = Field(default=0.0, ge=0)
+    # Tide / sea level at the Sado mouth (Open-Meteo marine) imposed by FLUXOS as a water-level
+    # boundary on the domain's estuary edge ([fluxos] tide_edges in domain.toml). Needs a FLUXOS build
+    # with BOUNDARY_CONDITIONS.WATER_LEVEL (FLUXOS_cpp feature/water-level-bc, afb60f4 or later).
+    tide_boundary: bool = False
+    # Delay of the tide from the mouth to the domain edge (h). Not calibrated: 0 = mouth series as is.
+    tide_lag_h: float = Field(default=0.0, ge=0, le=12)
+    # Added to the sea level (m) to convert MSL to the DEM datum; 0 if the DEM is in MSL (PT DTM: Cascais).
+    tide_offset_m: float = 0.0
 
 
 class ModelSettings(_Model):

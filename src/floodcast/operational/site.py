@@ -87,6 +87,8 @@ T: dict[str, tuple[str, str]] = {
     "dec_from": ("Primeira inundação: {t}.", "First flooding: {t}."),
     "dec_tide": ("Preia-mar na foz do Sado: {t}. Na preia-mar, o estuário dificulta o escoamento do rio em Alcácer.",
                  "High tide at the Sado mouth: {t}. At high tide the estuary slows the river's drainage at Alcácer."),
+    "dec_note_tide": ("Indicativo: modelo não calibrado; a maré prevista na foz do Sado entra no modelo hidrodinâmico como nível do mar no limite do estuário, sem atraso nem amplificação até Alcácer. Siga sempre a Proteção Civil.",
+                      "Indicative: uncalibrated model; the forecast sea level at the Sado mouth enters the hydrodynamic model at the estuary edge, with no delay or amplification up to Alcácer. Always follow Civil Protection."),
     "dec_note": ("Indicativo: modelo não calibrado; a maré ainda não entra no modelo hidrodinâmico. Siga sempre a Proteção Civil.",
                  "Indicative: uncalibrated model; the tide is not yet in the hydrodynamic model. Always follow Civil Protection."),
     "imp_h": ("Impactos previstos (cenário selecionado)", "Expected impacts (selected scenario)"),
@@ -329,7 +331,7 @@ T: dict[str, tuple[str, str]] = {
             "A previsão meteorológica tem incerteza, sobretudo para chuva intensa e local, e a resolução (0,25°, cerca de 25 km) é grosseira.",
             "O terreno do modelo hidráulico vem de um modelo digital de superfície; a batimetria do rio e as estruturas (pontes, diques) não estão representadas com rigor.",
             "Os mapas mostram profundidades máximas simuladas, não o momento nem o tempo de chegada da água, e não indicam locais seguros.",
-            "As marés e a influência do estuário do Sado podem não estar representadas.",
+            "A maré e a influência do estuário do Sado estão representadas de forma simplificada (nível do mar previsto na foz, sem calibração) ou podem não estar representadas.",
             "Falhas de dados ou de modelos podem levar a previsões em falta ou desatualizadas; neste caso o sítio mostra «Sem dados fiáveis».",
         ),
         (
@@ -337,7 +339,7 @@ T: dict[str, tuple[str, str]] = {
             "Weather forecasts are uncertain, especially for intense, local rainfall, and the resolution (0.25°, about 25 km) is coarse.",
             "The hydraulic model terrain comes from a digital surface model; river bathymetry and structures (bridges, dikes) are not represented accurately.",
             "Maps show simulated maximum depths, not timing or arrival time of the water, and do not indicate safe places.",
-            "Tides and the influence of the Sado estuary may not be represented.",
+            "The tide and the influence of the Sado estuary are represented in a simplified way (forecast sea level at the mouth, uncalibrated) or may not be represented.",
             "Data or model failures can lead to missing or outdated forecasts; in that case the site shows “No reliable data”.",
         ),
     ),
@@ -1211,11 +1213,12 @@ def _decision_block(i18n: _I18n, data: dict) -> str:
         if first:
             txt += " " + i18n.raw("dec_from", t=first)
         lines.append(f"<li><strong>{i18n.raw(key)}:</strong> {txt}</li>")
+    tide_bc = any(sc.get("tide_boundary") for sc in data.get("scenarios") or [])
     tide = data.get("tide") or {}
     hw = ", ".join(_fmt_ts(h["time_utc"]) for h in (tide.get("high_tides") or [])[:4])
     tide_html = f'<p class="muted">{i18n.raw("dec_tide", t=hw)}</p>' if hw else ""
     return (f'<div class="decision"><h2>{i18n.raw("dec_h")}</h2><ul>{"".join(lines)}</ul>{tide_html}'
-            f'<p class="muted small">{i18n.raw("dec_note")}</p></div>')
+            f'<p class="muted small">{i18n.raw("dec_note_tide" if tide_bc else "dec_note")}</p></div>')
 
 
 def _first_utc(sc: dict) -> str | None:

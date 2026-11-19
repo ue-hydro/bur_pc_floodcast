@@ -1,0 +1,28 @@
+# LOCAL TEST BUILD: replace the FLUXOS executable of an installed hydraulics image with one built from
+# a local, already-patched FLUXOS source tree (e.g. an unpushed feature branch). Not the reviewed,
+# reproducible recipe (containers/hydraulics/Dockerfile pins a GitHub commit) - use it only to try
+# a FLUXOS change before that commit is pushed and pinned in containers/model-sources.toml.
+#
+#   git -C ../FLUXOS_cpp archive <commit> CMakeLists.txt src | tar -x -C <ctx>
+#   .venv/bin/python scripts/patch_fluxos.py <ctx> <ctx>/patches.json
+#   docker build --platform linux/amd64 -f containers/hydraulics/Dockerfile.local-source \
+#       --build-arg BASE_RUNTIME=<installed image> --build-arg FLUXOS_COMMIT=<commit> -t <tag> <ctx>
+ARG BASE_IMAGE=ubuntu@sha256:78d4744ead1f5b19b04d0df558ab182a5300903900755e515b2ca4d10eb2044d
+ARG BASE_RUNTIME
+
+FROM ${BASE_IMAGE} AS build
+ENV DEBIAN_FRONTEND=noninteractive
+RUN apt-get update && apt-get install -y --no-install-recommends \
+      build-essential cmake libarmadillo-dev libhdf5-dev && rm -rf /var/lib/apt/lists/*
+COPY . /src
+RUN cmake -S /src -B /build -DMODE_release=ON -DUSE_MPI=OFF -DUSE_CUDA=OFF \
+      -DCMAKE_RUNTIME_OUTPUT_DIRECTORY=/out && \
+    cmake --build /build --parallel 4 && \
+    ldd /out/fluxos | tee /out/ldd.txt && \
+    ! grep -Eq 'not found|libarmadillo|libhdf5|libmpi|libcuda' /out/ldd.txt
+
+FROM ${BASE_RUNTIME}
+ARG FLUXOS_COMMIT=unknown
+COPY --from=build /out/fluxos /opt/floodcast/bin/fluxos
+COPY patches.json /opt/floodcast/share/hydraulics/local-source-patches.json
+LABEL org.floodcast.fluxos.local_source_commit=${FLUXOS_COMMIT}
