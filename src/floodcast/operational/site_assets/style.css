@@ -176,6 +176,7 @@ code,.mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font
 .mapctl{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center;margin:0 0 10px}
 .mapctl select{font:inherit;padding:4px 8px;border-radius:6px;border:1px solid var(--line);background:var(--surface);color:var(--ink)}
 .depthlegend{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:.85rem;margin:10px 0}
+.depthlegend[hidden]{display:none}
 .depthlegend i{display:inline-block;width:16px;height:12px;border-radius:2px;margin-right:6px;vertical-align:-2px;border:1px solid var(--line)}
 .fallbackimg{max-width:100%;height:auto;border:1px solid var(--line);border-radius:8px}
 .webglwrap{position:relative;width:100%;aspect-ratio:16/9;min-height:380px;border-radius:10px;overflow:hidden;background:#0a0a12}

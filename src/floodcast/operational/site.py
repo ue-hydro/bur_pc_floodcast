@@ -1100,7 +1100,8 @@ def _hydraulics_block(i18n: _I18n, scenarios: list[dict], status: dict, prefix: 
         f'<span class="tlabel"></span>'
         f'<button type="button" class="maxbtn" aria-pressed="false">{i18n.raw("t_max_btn")}</button></div>'
         f'<script type="application/json" id="map-data">{mapdata}</script>'
-        f'<div class="depthlegend dp">{_legend_html(i18n)}</div>{lk_legend}{_layer_legends(i18n)}'
+        f'<div class="depthlegend dp">{_legend_html(i18n)}</div>{lk_legend}'
+        f'{_layer_legends(i18n) if any(e.get("layers") for e in cfg["scenarios"]) else ""}'
         f'{_impacts_block(i18n, scenarios)}'
         f'{_details(i18n, "<h3>" + i18n.raw("caveats") + "</h3><ul>" + "".join(caveats) + "</ul>")}</section>'
     )
