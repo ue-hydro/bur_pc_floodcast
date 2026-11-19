@@ -10,7 +10,7 @@
  */
 (function () {
   "use strict";
-  var forcing = null, rainOn = true, lastPost = 0;
+  var forcing = null, rainOn = true, lastPost = 0, pageT = null;   // pageT: forecast second set by the page clock
   // Who owns the clock: the page embedding us (iframe) or the page that opened us (pop-up window).
   var CTRL = window.parent !== window ? window.parent : (window.opener || null);
   var lang = (location.hash.match(/lang=(pt|en|es)/) || [0, "pt"])[1];  // the site passes #lang=pt|en|es
@@ -57,7 +57,8 @@
   function trimControls() {
     var panel = document.getElementById("controls"), tab = document.getElementById("controls-tab");
     if (panel && tab) { panel.dataset.collapsed = "true"; panel.style.transform = ""; tab.hidden = false; }
-    ["sl-trail", "sl-exag", "sl-foam", "sl-turbidity", "sl-suntime", "sl-rain"].forEach(function (id) { hide(rowOf(id)); });
+    // "sl-speed": playback speed is set once for the whole page (charts, maps and this view)
+    ["sl-trail", "sl-exag", "sl-foam", "sl-turbidity", "sl-suntime", "sl-rain", "sl-speed"].forEach(function (id) { hide(rowOf(id)); });
     ["btn-reset", "btn-rec", "btn-particles"].forEach(function (id) { hide(document.getElementById(id)); });
     hide(rowOf("sl-particles"));               // no particles in the operational view
     viewer.showParticles = false;
@@ -71,11 +72,17 @@
     if (flyPanel) hide(flyPanel.closest("div[id], section, aside") || flyPanel.parentElement);
     var v3d = document.getElementById("cam-3d");
     if (v3d) v3d.click();
-    // closer initial view (about 60 % of the template's 3-D preset distance), same centre and angle
-    // (applied after the 3-D preset's camera transition has finished)
-    var zoomed = false;
-    function zoomIn() { if (zoomed) return; try { viewer.camera.distance *= 0.6; zoomed = true; } catch (e) {} }
-    setTimeout(zoomIn, 1500);
+    // default view = the "3D" preset. The template sets its own cinematic camera once the data has
+    // loaded, so click the preset again after that (twice, to be safe on slow machines).
+    function view3d() {   // set the "3D" preset camera directly (no animation) and mark its button
+      try {
+        var c = viewer.camera;
+        c._anim = null; c.theta = -0.5; c.phi = 0.65; c.distance = 1.5;
+        if (c.target && c.target.length === 3) { c.target[0] = 0; c.target[1] = 0; c.target[2] = 0; }
+      } catch (e) {}
+      Array.prototype.forEach.call(document.querySelectorAll('[id^="cam-"]'), function (b) { b.classList.toggle("active", b.id === "cam-3d"); });
+    }
+    setTimeout(view3d, 1200); setTimeout(view3d, 3000);
     var title = document.getElementById("controls-title");
     if (title) title.textContent = txt("Controlos", "Controls", "Controles");
     var tabLabel = tab && tab.querySelector("span");
@@ -136,7 +143,7 @@
   function tick(now) {
     var t = viewer._simSeconds ? viewer._simSeconds() : 0;
     if (rainOn) {
-      var mm = rainAt(t);
+      var mm = rainAt(pageT != null ? pageT : t);   // the page's time, so rain shows even after the flood run ends
       // any measurable rain is visible; 8 mm/h ~ heavy downpour
       viewer.rainAmount = mm >= 0.1 ? Math.min(1, Math.max(0.25, Math.sqrt(mm / 8))) : 0;
     }
@@ -157,6 +164,7 @@
     window.addEventListener("message", function (ev) {
       var d = ev.data;
       if (!d || d.type !== "fluxos-set-time" || ev.source !== CTRL) return;
+      pageT = d.t;
       var ts = m.times, t = d.t, i = 0;
       while (i < n - 2 && ts[i + 1] <= t) i++;
       var span = (ts[i + 1] - ts[i]) || 1, frac = Math.max(0, Math.min(1, (t - ts[i]) / span));
