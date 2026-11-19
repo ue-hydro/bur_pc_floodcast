@@ -774,3 +774,8 @@ svg.chart .hoverl{stroke:var(--ink);stroke-width:1;stroke-dasharray:3 3;opacity:
   .wide-chart svg.chart{min-width:760px}
   .flood3 .strip3 .chart.strip{min-width:760px}
 }
+/* sections 1 and 2: chart (+ panel under it) | map, side by side */
+.mapside{grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:22px}
+.ms-left .ms-side{margin-top:6px}
+.mapside .amap{height:clamp(320px,48vh,520px)}
+@media (max-width:760px){ .wide-chart svg.chart{min-width:0} .wide-chart{overflow-x:visible} }
