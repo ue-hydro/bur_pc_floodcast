@@ -1,11 +1,28 @@
-# Floodcast public site, served as static assets by a Cloudflare Worker (free: static requests are
-# unlimited). PRIVATE while testing: protect the workers.dev URL with Cloudflare Access.
-# Deploy:  npx wrangler deploy --config deploy/site-worker/wrangler.toml   (assets = directory below)
+# Floodcast site: static files behind the lectures/exams email-code login (src/login.js).
+# PRIVATE while testing: only ALLOWED_EMAILS can get a code. Assets default to ./placeholder;
+# deploy/publish.sh deploys the real site with --assets <repo>/run/site.
 name = "floodcast-alcacer"
+main = "src/index.js"
 compatibility_date = "2026-10-01"
-workers_dev = true
-preview_urls = false   # preview URLs would bypass Cloudflare Access
+workers_dev = false   # only the custom domain below
+routes = [{ pattern = "floodcast.diogocosta.org", custom_domain = true }]
+preview_urls = false   # no unprotected preview URLs
 
 [assets]
 directory = "./placeholder"
-not_found_handling = "404-page"
+binding = "ASSETS"
+run_worker_first = true   # every request passes the login check first
+
+# codes and sessions: the same D1 database as the exams and lectures sites
+[[d1_databases]]
+binding = "LOGIN_DB"
+database_name = "exames"
+database_id = "74f5d71e-e471-4a20-9b9e-6f9ecebfe98c"
+
+# sending the codes (Cloudflare Email Service, domain acesso.diogocosta.org — same as the lectures)
+[[send_email]]
+name = "EMAIL"
+
+[vars]
+ALLOWED_EMAILS = "diogo.costa@uevora.pt"
+LOGIN_FROM = "codigo@acesso.diogocosta.org"

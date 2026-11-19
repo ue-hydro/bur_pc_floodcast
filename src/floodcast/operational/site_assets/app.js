@@ -489,7 +489,7 @@
     "Topográfico / Topographic": ["https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png",
       { maxZoom: 17, attribution: "&copy; OpenStreetMap contributors, SRTM | &copy; OpenTopoMap (CC-BY-SA)" }]
   };
-  var BASE_MAPS = [];
+  var BASE_MAPS = [], BASE_SYNC = { busy: false };
   function addBasemaps(map) {
     var L = window.L, layers = {}, chosen = "OpenStreetMap";
     try { chosen = sessionStorage.getItem("fc-basemap") || chosen; } catch (e) {}
@@ -497,12 +497,16 @@
     (layers[chosen] || layers.OpenStreetMap).addTo(map);
     L.control.layers(layers, null, { position: "topright", collapsed: true }).addTo(map);
     map.on("baselayerchange", function (ev) {   // the same basemap on every map of the page
-      try { sessionStorage.setItem("fc-basemap", ev.name); } catch (e) {}
-      BASE_MAPS.forEach(function (o) {
-        if (o.map === map) return;
-        Object.keys(o.layers).forEach(function (k) { if (o.map.hasLayer(o.layers[k])) o.map.removeLayer(o.layers[k]); });
-        o.layers[ev.name].addTo(o.map);
-      });
+      if (BASE_SYNC.busy) return;   // our own changes below fire this event again on the other maps
+      BASE_SYNC.busy = true;
+      try {
+        try { sessionStorage.setItem("fc-basemap", ev.name); } catch (e) {}
+        BASE_MAPS.forEach(function (o) {
+          if (o.map === map || o.map.hasLayer(o.layers[ev.name])) return;
+          Object.keys(o.layers).forEach(function (k) { if (o.map.hasLayer(o.layers[k])) o.map.removeLayer(o.layers[k]); });
+          o.layers[ev.name].addTo(o.map);
+        });
+      } finally { BASE_SYNC.busy = false; }
     });
     BASE_MAPS.push({ map: map, layers: layers });
   }
@@ -572,7 +576,7 @@
       slider.addEventListener("input", function () { fcSeek(ep[+slider.value]); });
       fcRegister(ep[0], ep[ep.length - 1], function (e) { var n = nearest(ep, e); if (n !== t || !box._drawn) { t = n; box._drawn = 1; draw(); } });
       if (kind === "flow" && d.scenarios) scnSwitch(box, function (k) { if (d.scenarios[k]) { vals = d.scenarios[k].q_median; draw(); } });
-    }).catch(function () { box.style.display = "none"; });
+    }).catch(function (e) { console.error("map failed:", e); box.style.display = "none"; });
   }
 
   // Rain on the native forecast grid; sub-basin outlines drawn on top for orientation.
