@@ -410,7 +410,6 @@ footer.site{background:#1d2329;color:#c3c9d0;border-top:4px solid var(--navy)}
 .chat-panel.docked.intro header{animation:none}
 
 /* 3-D view lock */
-.webglwrap.locked iframe{pointer-events:none}
 .viewlock{position:absolute;top:10px;left:10px;z-index:3;display:inline-flex;align-items:center;gap:8px;padding:8px 12px;border:1px solid rgba(255,255,255,.35);border-radius:2px;background:rgba(0,58,112,.92);color:#fff;font:inherit;font-weight:600;font-size:.85rem;cursor:pointer}
 .viewlock:hover{background:#00529b}
 .viewlock svg{width:16px;height:16px}
@@ -419,7 +418,6 @@ footer.site{background:#1d2329;color:#c3c9d0;border-top:4px solid var(--navy)}
 .webglwrap:not(.locked) .viewlock .lk-open{display:inline}
 .webglwrap:not(.locked) .viewlock .lk-t-open{display:inline}
 .webglwrap:not(.locked) .viewlock{background:rgba(29,35,41,.85)}
-.webglwrap.locked::after{content:"";position:absolute;inset:0;cursor:default}
 
 /* ---- theme: light by default whatever the OS says; dark only when the visitor chooses it ---- */
 :root{--chat:#0f6b63;--chat2:#14857a;--chat-soft:#e3f2ef;--chat-line:#9ccfc6}
@@ -566,3 +564,19 @@ html:not([data-scn]) .imp-central,html[data-scn="central"] .imp-central,html[dat
 .tl-when { display: block; color: var(--mute); font-size: .84rem; }
 .tl-legend li.is-late .tl-when { color: #b9770e; font-weight: 600; }
 .tl-detail { margin: 10px 0 0; color: var(--mute); font-size: .82rem; }
+
+/* flood map (3) + 3-D animation (4): shared time strips on top, then the two side by side (wide)
+   or map, strips, animation stacked (narrow) */
+.viz-strips{background:var(--surface);border:1px solid var(--line);border-radius:2px;padding:14px 20px;margin:20px 0}
+.viz-strips-h{margin:0 0 6px}
+.viz-pair{display:flex;flex-direction:column}
+.viz-pair>#map-card{order:1}.viz-pair>.viz-strips{order:2}.viz-pair>#anim-card{order:3}
+.viz-outer{container-type:inline-size}
+/* side by side when the content column (not the window: the chat may be docked) is wide enough */
+@container (min-width:1000px){
+  .viz-pair:has(>#map-card + #anim-card){display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:0 16px;align-items:start}
+  .viz-pair:has(>#map-card + #anim-card)>.viz-strips{grid-column:1/-1;order:0;margin-bottom:0}
+  .viz-pair:has(>#map-card + #anim-card)>section.card{margin:16px 0;padding:16px 18px}
+  .viz-pair:has(>#map-card + #anim-card) #map{height:480px}
+  .viz-pair:has(>#map-card + #anim-card) .webglwrap{aspect-ratio:auto;height:480px}
+}

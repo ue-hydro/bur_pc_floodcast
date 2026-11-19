@@ -297,8 +297,15 @@
       var locked = !wrap.classList.contains("locked");
       wrap.classList.toggle("locked", locked);
       b.setAttribute("aria-pressed", locked ? "true" : "false");
+      sendLock(wrap);
     });
+    var fr = wrap.querySelector("iframe");   // the viewer blocks only camera input while locked; its own controls stay usable
+    if (fr) fr.addEventListener("load", function () { setTimeout(function () { sendLock(wrap); }, 300); });
   });
+  function sendLock(wrap) {
+    var fr = wrap.querySelector("iframe");
+    try { if (fr && fr.contentWindow) fr.contentWindow.postMessage({ type: "fluxos-lock", locked: wrap.classList.contains("locked") }, "*"); } catch (e) {}
+  }
 
   // ---- sun button on the 3-D viewer: on = sun follows the simulation time, off = full daylight
   var SUN = false;   // default: full daylight; on = real local light at the forecast time
@@ -330,7 +337,7 @@
     var fEl = animCard.querySelector(".anim-forcing"), forc = null, views = null;
     try { var vEl = animCard.querySelector(".anim-views"); views = vEl ? JSON.parse(vEl.textContent) : null; } catch (e) { views = null; }
     try { forc = fEl ? JSON.parse(fEl.textContent) : null; } catch (e) { forc = null; }
-    var frame = animCard.querySelector("iframe"), nowEl = animCard.querySelector(".an-val");
+    var frame = animCard.querySelector("iframe"), nowEl = document.querySelector(".an-val");
     if (views && frame) scnSwitch(animCard, function (k) {
       var v = views[k]; if (!v) return;
       frame.dataset.loaded = "";

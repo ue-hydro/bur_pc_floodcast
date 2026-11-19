@@ -155,15 +155,18 @@ T: dict[str, tuple[str, str]] = {
         "The system could not produce a reliable forecast. Do not assume there is no risk: check the official sources.",
     ),
     "updated": ("Última atualização", "Last update"),
+    "strips_h": ("Chuva, caudal e maré nas próximas 72 h", "Rain, river flow and tide over the next 72 h"),
+    "strips_p": ("— a linha vertical marca o instante mostrado no mapa e na animação.",
+                 "— the vertical line marks the moment shown on the map and in the animation."),
     "tl_h": ("Atualizações da previsão", "Forecast updates"),
-    "tl_run": ("Corrida meteorológica usada ({h} UTC)", "Weather run used ({h} UTC)"),
+    "tl_run": ("Previsão meteorológica usada ({h} UTC)", "Weather forecast used ({h} UTC)"),
     "tl_done": ("Resultados publicados", "Results published"),
-    "tl_nextpub": ("Próxima corrida disponível ({h} UTC)", "Next run available ({h} UTC)"),
+    "tl_nextpub": ("Próxima previsão disponível ({h} UTC)", "Next forecast available ({h} UTC)"),
     "tl_nextres": ("Novos resultados", "New results"),
-    "fc_last": ("<strong>Previsão de chuva usada:</strong> corrida de {t} (ECMWF IFS + {s} fontes, {n} previsões).",
-                "<strong>Rain forecast used:</strong> {t} run (ECMWF IFS + {s} sources, {n} forecasts)."),
-    "fc_next": ("<strong>Próxima previsão:</strong> corrida de {t}; publicação esperada por volta de {p}, resultados atualizados cerca de {r}.",
-                "<strong>Next forecast:</strong> {t} run; expected to be published around {p}, updated results around {r}."),
+    "fc_last": ("<strong>Previsão de chuva usada:</strong> previsão das {t} (ECMWF IFS + {s} fontes, {n} previsões).",
+                "<strong>Rain forecast used:</strong> {t} forecast (ECMWF IFS + {s} sources, {n} forecasts)."),
+    "fc_next": ("<strong>Próxima previsão:</strong> previsão das {t}; publicação esperada por volta de {p}, resultados atualizados cerca de {r}.",
+                "<strong>Next forecast:</strong> {t} forecast; expected to be published around {p}, updated results around {r}."),
     "cycle": ("Ciclo de previsão (ECMWF)", "Forecast cycle (ECMWF)"),
     "stale": (
         "A previsão está desatualizada (mais de 18 horas). Não a use para decisões; consulte as fontes oficiais.",
@@ -1211,7 +1214,7 @@ def _anim_hydrograph(i18n: _I18n, forcing: dict | None, hyd: dict | None = None,
 
 
 def _animation_block(i18n: _I18n, scenarios: list[dict], prefix: str, data_rel: str, hyd: dict | None = None,
-                     ens: dict | None = None, tide: dict | None = None) -> str:
+                     ens: dict | None = None, tide: dict | None = None, strips_out: list | None = None) -> str:
     byname = {sc.get("scenario"): sc for sc in scenarios if sc.get("webgl")}
     if not byname:
         return ""
@@ -1222,10 +1225,14 @@ def _animation_block(i18n: _I18n, scenarios: list[dict], prefix: str, data_rel: 
     src = f'{prefix}{data_rel}/hydraulics/{first["scenario"]}/{first["webgl"]}#lang={i18n.langs[0]}'
     switch = _scn_buttons(i18n, "anim-scn", available=set(views))
     data = json.dumps(views).replace("</", "<\\/")
+    # rain / flow / sea-level strips on the shared clock; the caller may place them above map + animation
+    strips = f'{_anim_rain_strip(i18n, ens)}{_anim_hydrograph(i18n, first.get("_forcing"), hyd)}{_tide_strip(i18n, tide)}'
+    if strips_out is not None:
+        strips_out.append(strips)
     return (
         f'<section class="card" id="anim-card"><h2><span class="num">4</span>{i18n.raw("anim_h")}</h2><p class="muted">{i18n.raw("anim_p")}</p>'
         f'{switch}<script type="application/json" class="anim-views">{data}</script>'
-        f'{_anim_rain_strip(i18n, ens)}{_anim_hydrograph(i18n, first.get("_forcing"), hyd)}{_tide_strip(i18n, tide)}'
+        f'{"" if strips_out is not None else strips}'
         f'<script type="application/json" class="anim-forcing">{json.dumps({"start": (first.get("_forcing") or {}).get("sim_start_utc"), "inflow": (first.get("_forcing") or {}).get("inflow", []), "rain": (first.get("_forcing") or {}).get("rain", [])}).replace("</", "<\\/")}</script>'
         f'<div class="webglwrap locked"><div class="outsim" hidden>{i18n.raw("out_sim")}</div><iframe src="{_esc(src)}" title="{_esc(i18n.plain("anim_h"))}" loading="lazy" '
         f'allowfullscreen></iframe>'
@@ -1493,9 +1500,14 @@ def _cycle_content(i18n: _I18n, latest, data: dict, prefix: str, data_rel: str, 
                                 data.get("precip_ens")))
     out.append(_hydrology_block(i18n, data["hydrology"],
                                 base + "hydrology/reach_flow.json" if data.get("flow_file") else None, geo))
-    out.append(_hydraulics_block(i18n, data["scenarios"], status, prefix, data_rel, data.get("likelihood")))
-    out.append(_animation_block(i18n, data["scenarios"], prefix, data_rel, data.get("hydrology"),
-                                data.get("precip_ens"), data.get("tide")))
+    # flood map (3) and 3-D animation (4) side by side on wide screens (same clock and scenario)
+    strips: list = []
+    hyd_html = _hydraulics_block(i18n, data["scenarios"], status, prefix, data_rel, data.get("likelihood"))
+    anim_html = _animation_block(i18n, data["scenarios"], prefix, data_rel, data.get("hydrology"),
+                                 data.get("precip_ens"), data.get("tide"), strips_out=strips)
+    strips_html = (f'<div class="viz-strips"><p class="viz-strips-h"><strong>{i18n.raw("strips_h")}</strong> '
+                   f'<span class="muted">{i18n.raw("strips_p")}</span></p>{strips[0]}</div>') if strips and anim_html else ""
+    out.append(f'<div class="viz-outer"><div class="viz-pair">{strips_html}{hyd_html}{anim_html}</div></div>')
     out.append(_emergency_block(i18n))
     api = f'{prefix}api/{data_rel}/'
     out.append(

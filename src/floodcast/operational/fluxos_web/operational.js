@@ -14,6 +14,24 @@
   // Who owns the clock: the page embedding us (iframe) or the page that opened us (pop-up window).
   var CTRL = window.parent !== window ? window.parent : (window.opener || null);
   var lang = (location.hash.match(/lang=(pt|en|es)/) || [0, "pt"])[1];  // the site passes #lang=pt|en|es
+  // View lock (page button "Vista bloqueada"): while locked, mouse/touch/keys on the 3-D canvas do not
+  // move the camera (the page scrolls instead), but the viewer's own controls panel keeps working.
+  var LOCKED = window.parent !== window;   // embedded: locked until the page says otherwise
+  ["mousedown", "wheel", "touchstart", "touchmove", "dblclick", "contextmenu"].forEach(function (ev) {
+    window.addEventListener(ev, function (e) {
+      if (LOCKED && e.target && e.target.tagName === "CANVAS") e.stopImmediatePropagation();
+    }, { capture: true, passive: true });
+  });
+  ["keydown", "keyup"].forEach(function (ev) {
+    window.addEventListener(ev, function (e) {
+      var tag = (e.target && e.target.tagName) || "";
+      if (LOCKED && tag !== "INPUT" && tag !== "SELECT" && tag !== "TEXTAREA") e.stopImmediatePropagation();
+    }, { capture: true });
+  });
+  window.addEventListener("message", function (ev) {
+    var d = ev.data;
+    if (d && d.type === "fluxos-lock" && (!CTRL || ev.source === CTRL)) LOCKED = !!d.locked;
+  });
 
   function txt(ptS, enS, esS) { return lang === "en" ? enS : (lang === "es" ? (esS || enS) : ptS); }
   function hide(el) { if (el) el.style.display = "none"; }
