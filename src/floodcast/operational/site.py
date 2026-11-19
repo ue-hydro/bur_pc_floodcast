@@ -297,8 +297,8 @@ T: dict[str, tuple[str, str]] = {
     "rainmap_h": ("Precipitação prevista, grelha ECMWF IFS 0,25° (72 h)", "Forecast rainfall, ECMWF IFS 0.25° grid (72 h)"),
     "rainmap_scn_h": ("Chuva prevista por cenário, células de 0,25° (72 h)", "Forecast rain by scenario, 0.25° cells (72 h)"),
     "lg_rivers": ("Rede hidrográfica do modelo (troços do mizuRoute)", "Model river network (mizuRoute reaches)"),
-    "lg_toggle": ("— ligar/desligar nas caixas do canto inferior esquerdo do mapa.",
-                  "— switch on/off with the tick boxes at the bottom left of the map."),
+    "lg_toggle": ("Camadas de referência (bacia, sub-bacias, rede hidrográfica): caixas no canto inferior esquerdo do mapa · ⌖ recentra o mapa · fundo: botão de camadas (satélite por omissão).",
+                  "Reference layers (basin, sub-basins, river network): tick boxes at the bottom left of the map · ⌖ recentres the map · background: layer button (satellite by default)."),
     "lg_basins": ("Limites das sub-bacias do modelo hidrológico (SUMMA–mizuRoute)", "Sub-basin boundaries of the hydrological model (SUMMA–mizuRoute)"),
     "rainmap_unit": ("mm por intervalo de 3 h", "mm per 3-hour interval"),
     "flowmap_h": ("Caudal previsto nos troços do rio (mediana do conjunto)", "Forecast flow along the river reaches (ensemble median)"),
@@ -897,9 +897,7 @@ def _anim_map(i18n: _I18n, kind: str, data_src: str | None, geo_src: str, title_
         f'<input type="range" class="slider" min="0" max="0" value="0" aria-label="time">'
         f'<span class="tlabel"></span></div>'
         f'<div class="ramp" data-unit="{_esc(i18n.plain(unit_key))}"></div>'
-        + (f'<p class="maplegend"><span><i class="ln-basin"></i>{i18n.raw("lg_basins")}</span> '
-           f'<span><i class="ln-river"></i>{i18n.raw("lg_rivers")}</span> <span class="muted">{i18n.raw("lg_toggle")}</span></p>'
-           if kind == "rain" else "")
+        + f'<p class="maplegend"><span class="muted">{i18n.raw("lg_toggle")}</span></p>'
         + '</div>'
     )
 

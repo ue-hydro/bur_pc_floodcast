@@ -514,10 +514,10 @@
   };
   var BASE_MAPS = [], BASE_SYNC = { busy: false };
   function addBasemaps(map) {
-    var L = window.L, layers = {}, chosen = "OpenStreetMap";
+    var L = window.L, layers = {}, chosen = "Satélite / Satellite";   // satellite by default
     try { chosen = sessionStorage.getItem("fc-basemap") || chosen; } catch (e) {}
     Object.keys(BASEMAPS).forEach(function (k) { layers[k] = L.tileLayer(BASEMAPS[k][0], BASEMAPS[k][1]); });
-    (layers[chosen] || layers.OpenStreetMap).addTo(map);
+    (layers[chosen] || layers["Satélite / Satellite"]).addTo(map);
     var ctl = L.control.layers(layers, null, { position: "topright", collapsed: true }).addTo(map);
     map.on("baselayerchange", function (ev) {   // the same basemap on every map of the page
       if (BASE_SYNC.busy) return;   // our own changes below fire this event again on the other maps
@@ -540,36 +540,54 @@
   }
   // Reference layers shared by the rain and flow maps: sub-basin limits and the model river network
   // (dashed), switched with tick boxes that are always visible on the map (bottom left).
-  var REF_STYLE = {
-    basins: { color: "#263238", weight: 0.8, opacity: 0.55, fill: false },
-    rivers: { color: "#0d47a1", weight: 1.3, opacity: 0.9, dashArray: "5 4", lineCap: "butt" }
+  var REF_STYLE = {   // readable on the satellite default and on the street basemaps
+    basin: { color: "#ffd54f", weight: 2.4, opacity: 0.95, fill: false },
+    basins: { color: "#ffffff", weight: 0.9, opacity: 0.75, fill: false },
+    rivers: { color: "#4fc3f7", weight: 1.6, opacity: 0.95, dashArray: "5 4", lineCap: "butt" }
   };
+  var REF_FILE = { basin: "basin.geojson", basins: "hrus.geojson", rivers: "rivers.geojson" };
+  var REF_LABEL = {
+    basin: ["Bacia hidrográfica", "Cuenca hidrográfica", "River basin"],
+    basins: ["Sub-bacias", "Subcuencas", "Sub-basins"],
+    rivers: ["Rede hidrográfica", "Red hidrográfica", "River network"]
+  };
+  // ⌖ button under the zoom buttons: back to the area of interest
+  function addRecenter(map, home) {
+    var L = window.L, c = L.control({ position: "topleft" });
+    c.onAdd = function () {
+      var b = L.DomUtil.create("a", "leaflet-bar recenter");
+      b.href = "#"; b.setAttribute("role", "button"); b.innerHTML = "⌖";
+      b.title = { pt: "Recentrar na área", en: "Recentre on the area", es: "Recentrar en el área" }[root.getAttribute("data-lang")] || "Recentrar";
+      L.DomEvent.on(b, "click", function (e) { L.DomEvent.stop(e); home(); });
+      return b;
+    };
+    c.addTo(map);
+  }
   function refLayers(map, geoSrc, show) {
-    var L = window.L, base = geoSrc.replace(/[^\/]*$/, "");
+    var L = window.L, base = geoSrc.replace(/[^\/]*$/, ""), keys = ["basin", "basins", "rivers"];
     var box = L.control({ position: "bottomleft" });
     box.onAdd = function () {
       var div = L.DomUtil.create("div", "reftoggles");
-      div.innerHTML =
-        '<label><input type="checkbox" data-ref="basins"' + (show.basins ? " checked" : "") + '><i class="rt-basin"></i>' +
-        tri("Sub-bacias", "Subcuencas", "Sub-basins") + "</label>" +
-        '<label><input type="checkbox" data-ref="rivers"' + (show.rivers ? " checked" : "") + '><i class="rt-river"></i>' +
-        tri("Rede hidrográfica", "Red hidrográfica", "River network") + "</label>";
+      div.innerHTML = keys.map(function (k) {
+        return '<label><input type="checkbox" data-ref="' + k + '"' + (show[k] ? " checked" : "") + '><i class="rt-' + k + '"></i>' +
+          tri(REF_LABEL[k][0], REF_LABEL[k][1], REF_LABEL[k][2]) + "</label>";
+      }).join("");
       L.DomEvent.disableClickPropagation(div); L.DomEvent.disableScrollPropagation(div);
       return div;
     };
     box.addTo(map);
-    var layers = {};
-    ["basins", "rivers"].forEach(function (k) {
-      fetch(base + (k === "basins" ? "hrus.geojson" : "rivers.geojson")).then(function (r) { return r.ok ? r.json() : null; })
+    keys.forEach(function (k) {
+      fetch(base + REF_FILE[k]).then(function (r) { return r.ok ? r.json() : null; })
         .then(function (g) {
-          if (!g) return;
-          layers[k] = L.geoJSON(g, { style: REF_STYLE[k], interactive: false });
           var cb = box.getContainer().querySelector('input[data-ref="' + k + '"]');
-          if (cb.checked) layers[k].addTo(map);
-          cb.addEventListener("change", function () { if (cb.checked) layers[k].addTo(map); else map.removeLayer(layers[k]); });
+          if (!g) { cb.parentNode.style.display = "none"; return; }
+          var lyr = L.geoJSON(g, { style: REF_STYLE[k], interactive: false });
+          if (cb.checked) lyr.addTo(map);
+          cb.addEventListener("change", function () { if (cb.checked) lyr.addTo(map); else map.removeLayer(lyr); });
         }).catch(function () {});
     });
   }
+
 
   // ONE scenario for the whole page: every Lower / Median / Upper switch is linked, and every map,
   // chart and the 3-D viewer follows the chosen scenario.
@@ -622,7 +640,8 @@
         }
       }).addTo(map);
       map.fitBounds(layer.getBounds(), { padding: [6, 6] });
-      refLayers(map, el.getAttribute("data-geo"), { basins: kind === "rain", rivers: true });
+      refLayers(map, el.getAttribute("data-geo"), { basin: true, basins: false, rivers: false });
+      addRecenter(map, function () { map.fitBounds(layer.getBounds(), { padding: [6, 6] }); });
       if (window.ResizeObserver) new ResizeObserver(function () { map.invalidateSize(); }).observe(el);
       slider.max = String(hours.length - 1);
       function draw() {
@@ -659,7 +678,9 @@
       cells.push([y, x, r]);
     }
     map.fitBounds(L.geoJSON(geo).getBounds(), { padding: [6, 6] });
-    refLayers(map, el.getAttribute("data-geo"), { basins: true, rivers: true });
+    refLayers(map, el.getAttribute("data-geo"), { basin: true, basins: false, rivers: false });
+    var home0 = L.geoJSON(geo).getBounds();
+    addRecenter(map, function () { map.fitBounds(home0, { padding: [6, 6] }); });
     if (window.ResizeObserver) new ResizeObserver(function () { map.invalidateSize(); }).observe(el);
     var t = 0;
     slider.max = String(T - 1);
@@ -724,6 +745,7 @@
       label.textContent = stamp(f.t, 0) + (f.km2 != null ? " · " + f.km2 + " km²" : "");
       slider.value = String(Math.max(0, frame));
     }
+    addRecenter(map, function () { if (current) map.fitBounds(current); });
     var lkBtn = card.querySelector(".lkbtn");
     function select(id) {
       if (lkBtn) lkBtn.setAttribute("aria-pressed", id === "likelihood" ? "true" : "false");
@@ -918,6 +940,7 @@
       L.tileLayer(BASEMAPS["Satélite / Satellite"] ? BASEMAPS["Satélite / Satellite"][0] : "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
                   BASEMAPS["Satélite / Satellite"] ? BASEMAPS["Satélite / Satellite"][1] : { maxZoom: 19, attribution: "Tiles © Esri" }).addTo(map);
       try { L.imageOverlay(b.getAttribute("data-img"), JSON.parse(b.getAttribute("data-bounds")), { opacity: 0.75 }).addTo(map); } catch (e) {}
+      addRecenter(map, function () { map.setView([lat, lon], 17); });
       L.circleMarker([lat, lon], { radius: 7, color: "#fff", weight: 2, fillColor: "#c62828", fillOpacity: 1 }).addTo(map)
         .bindTooltip(b.getAttribute("data-name"), { permanent: true, direction: "top", offset: [0, -8] });
       setTimeout(function () { map.invalidateSize(); }, 50);

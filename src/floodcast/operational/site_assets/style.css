@@ -619,8 +619,6 @@ svg.chart .hoverl{stroke:var(--ink);stroke-width:1;stroke-dasharray:3 3;opacity:
 .reftoggles label{display:flex;align-items:center;gap:6px;cursor:pointer;white-space:nowrap}
 .reftoggles input{margin:0;accent-color:#0e5a8a}
 .reftoggles i{display:inline-block;width:18px;height:0}
-.reftoggles .rt-basin{border-top:1.5px solid #263238;opacity:.7}
-.reftoggles .rt-river{border-top:2px dashed #0d47a1}
 .maplegend .ln-river{border-top-style:dashed!important}
 
 /* section 4: impacts table + snapshot mini-maps */
@@ -653,3 +651,19 @@ svg.chart .hoverl{stroke:var(--ink);stroke-width:1;stroke-dasharray:3 3;opacity:
 .beta{display:inline-block;margin-left:6px;padding:1px 6px;border-radius:3px;background:#f6b73c;color:#1d2329;font:800 .62rem/1.5 system-ui,sans-serif;letter-spacing:.06em;vertical-align:3px}
 .f-contact{margin:0 0 6px;line-height:1.5}.f-contact a{color:#fff}
 .f-contact-note{font-size:.8rem;opacity:.85;margin:0}
+
+/* reference-layer swatches (match REF_STYLE in app.js) + recentre button */
+.reftoggles .rt-basin{border-top:3px solid #ffd54f;box-shadow:0 0 0 1px rgba(0,0,0,.25)}
+.reftoggles .rt-basins{border-top:1.5px solid #9aa5b1}
+.reftoggles .rt-rivers{border-top:2px dashed #29a8e0}
+.leaflet-bar.recenter{display:block;width:30px;height:30px;line-height:28px;text-align:center;font-size:18px;font-weight:700;background:#fff;color:#1d2329;text-decoration:none;cursor:pointer}
+.leaflet-bar.recenter:hover{background:#f4f4f4}
+
+/* research-prototype disclaimer: red, larger, slowly pulsing (≈1 Hz, safe; off with reduced motion) */
+.disc{background:#b71c1c;color:#fff;font-size:1rem;font-weight:600;animation:discpulse 2s ease-in-out infinite}
+.disc .wrap{padding-top:9px;padding-bottom:9px}
+.disc a,.disc b{color:#fff;text-decoration:underline}
+.disc .d-icon{color:#ffeb3b;font-size:1.15rem}
+@keyframes discpulse{0%,100%{background:#b71c1c}50%{background:#e53935}}
+@media (prefers-reduced-motion:reduce){.disc{animation:none}}
+@media (max-width:720px){.disc{font-size:.9rem}}

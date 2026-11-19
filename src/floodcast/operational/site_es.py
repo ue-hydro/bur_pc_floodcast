@@ -198,7 +198,7 @@ ES = {
     "ens_band": "Conjunto multifuente P10–P90 (acumulada)",
     "scn_lower": "Inferior", "scn_central": "Central", "scn_upper": "Superior", "scn_median": "Mediana",
     "lg_rivers": "Red hidrográfica del modelo (tramos de mizuRoute)",
-    "lg_toggle": "— activar/desactivar con las casillas de la esquina inferior izquierda del mapa.",
+    "lg_toggle": "Capas de referencia (cuenca, subcuencas, red hidrográfica): casillas en la esquina inferior izquierda del mapa · ⌖ recentra el mapa · fondo: botón de capas (satélite por defecto).",
     "lg_basins": "Límites de las subcuencas del modelo hidrológico (SUMMA–mizuRoute)",
     "rainmap_scn_h": "Lluvia prevista por escenario, celdas de 0,25° (72 h)",
     "flowmap_scn_h": "Caudal previsto en los tramos del río, por escenario",

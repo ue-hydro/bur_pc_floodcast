@@ -77,6 +77,16 @@ def export_map_geometry(domain, dest: Path) -> None:
         import re
         text = re.sub(r"(-?\d+\.\d{5})\d+", r"\1", text)  # ~1 m precision is plenty
         (dest / out).write_text(text)
+    # whole-basin outline (all sub-basins merged) for the default reference layer on the maps
+    if domain.hrus_geojson.is_file():
+        from shapely.ops import unary_union
+
+        polys = [shape(f["geometry"]).buffer(0) for f in json.loads(domain.hrus_geojson.read_text())["features"]]
+        basin = unary_union(polys).buffer(0.0003).buffer(-0.0003).simplify(0.001, preserve_topology=True)
+        doc = {"type": "FeatureCollection", "features": [
+            {"type": "Feature", "properties": {"name": getattr(domain, "name", "basin")}, "geometry": mapping(basin)}]}
+        import re
+        (dest / "basin.geojson").write_text(re.sub(r"(-?\d+\.\d{5})\d+", r"\1", json.dumps(doc, separators=(",", ":"))))
 
 
 def precip_grid(tp, cycle: datetime, max_h: float = 72.0) -> dict:
