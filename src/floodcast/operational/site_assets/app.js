@@ -466,6 +466,7 @@
     var home = function () { map.setView([lat + 0.003, lon - 0.004], 13.75); };
     addRecenter(map, home);
     setTimeout(function () { map.invalidateSize(); }, 80);
+    if (window.ResizeObserver) new ResizeObserver(function () { map.invalidateSize(); home(); }).observe(el);
   }
 
   var leafletQueue;  // (hoisted; must not be re-initialised after the first loadLeaflet call)
@@ -674,10 +675,14 @@
     var w = el ? el.offsetWidth : 160, h = el ? el.offsetHeight : 70;
     var att = map.attributionControl && map.attributionControl.getContainer();
     var cr = (att ? att.offsetHeight : 18) + 8, tl = [46, 40];
-    var right = [w + 14, cr], below = [14, cr + h + 6];
-    var zr = map.getBoundsZoom(bounds, false, L.point(tl[0] + right[0], tl[1] + right[1]));
-    var zb = map.getBoundsZoom(bounds, false, L.point(tl[0] + below[0], tl[1] + below[1]));
-    map.fitBounds(bounds, { paddingTopLeft: tl, paddingBottomRight: zb > zr ? below : right, animate: false });
+    var size = map.getSize(), opts = [];
+    [[w + 14, cr], [14, cr + h + 6]].forEach(function (br) {   // panel on the right / at the bottom
+      var aw = size.x - tl[0] - br[0], ah = size.y - tl[1] - br[1];
+      if (aw > 40 && ah > 40) opts.push({ br: br, z: map.getBoundsZoom(bounds, false, L.point(tl[0] + br[0], tl[1] + br[1])) });
+    });
+    opts.sort(function (a, b) { return b.z - a.z; });
+    if (opts.length) map.fitBounds(bounds, { paddingTopLeft: tl, paddingBottomRight: opts[0].br, animate: false });
+    else map.fitBounds(bounds, { padding: [6, 6], animate: false });   // tiny map: the whole basin first
   }
 
 
