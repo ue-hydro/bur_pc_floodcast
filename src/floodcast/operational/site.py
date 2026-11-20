@@ -111,7 +111,7 @@ T: dict[str, tuple[str, str]] = {
                   "Since the forecast start ({n} h with measurements): mean error {b} m, mean absolute error {m} m. "
                   "Measured range {o0} to {o1} m; forecast {p0} to {p1} m."),
     "lvl_more": ("Estação, conversão e método", "Gauge, conversion and method"),
-    "lvl_map_h": ("Onde se compara: estação da APA e células do modelo", "Where it is compared: APA gauge and model cells"),
+    "lvl_map_h": ("Estação da APA e células do modelo", "APA gauge and model cells"),
     "lvl_map_st": ("Estação APA {name} ({code})", "APA gauge {name} ({code})"),
     "lvl_map_lst": ("Estação da APA (medido)", "APA gauge (measured)"),
     "lvl_map_lcell": ("Células do rio no modelo (previsto)", "Model river cells (forecast)"),
@@ -1225,7 +1225,7 @@ def _gauge_block(i18n: _I18n, doc: dict | None) -> str:
         return ""
     g = doc.get("gauge") or {}
     chart = _gauge_chart(i18n, doc)
-    stats = []
+    stats, tech = [], []
     for scn, cls in (("p10", "lower"), ("p50", "central"), ("p90", "upper")):
         cmp_ = comparison(doc, scn)
         if cmp_ is None:
@@ -1237,10 +1237,11 @@ def _gauge_block(i18n: _I18n, doc: dict | None) -> str:
             body = (f'<p><strong>{i18n.raw("lvl_last")}</strong> — '
                     + i18n.raw("lvl_last_txt", t=_Html(_short_t(last["time_utc"])), o=f'{last["obs_m"]:.2f}',
                                p=f'{last["pred_m"]:.2f}', d=sgn(last["pred_m"] - last["obs_m"]))
-                    + "</p>"
-                    + f'<p class="muted">' + i18n.raw("lvl_stats", n=cmp_["n"], b=sgn(cmp_["bias_m"]), m=f'{cmp_["mae_m"]:.2f}',
-                                                     o0=f'{cmp_["obs_range_m"][0]:.2f}', o1=f'{cmp_["obs_range_m"][1]:.2f}',
-                                                     p0=f'{cmp_["pred_range_m"][0]:.2f}', p1=f'{cmp_["pred_range_m"][1]:.2f}') + "</p>")
+                    + "</p>")
+            tech.append(f'<p class="gstat imp-{cls}">' + i18n.raw(
+                "lvl_stats", n=cmp_["n"], b=sgn(cmp_["bias_m"]), m=f'{cmp_["mae_m"]:.2f}',
+                o0=f'{cmp_["obs_range_m"][0]:.2f}', o1=f'{cmp_["obs_range_m"][1]:.2f}',
+                p0=f'{cmp_["pred_range_m"][0]:.2f}', p1=f'{cmp_["pred_range_m"][1]:.2f}') + "</p>")
         stats.append(f'<div class="gstat imp-{cls}">{body}</div>')
     cal = doc.get("tide_calibration") or {}
     method = "<ul>" + "".join(f"<li>{x}</li>" for x in (
@@ -1266,8 +1267,8 @@ def _gauge_block(i18n: _I18n, doc: dict | None) -> str:
     return (f'<section class="card" id="riverlevel"><h2><span class="num">3</span>{i18n.raw("lvl_h")}</h2>'
             f'<p class="muted">{i18n.raw("lvl_p", code=g.get("code", ""))}</p>'
             f'<div class="wide-chart"><div class="clockbadge chartclock"></div>{chart}</div>'
-            f'<div class="gstats">{"".join(stats)}</div>{gmap}'
-            f'<details class="tech s12-more"><summary>{i18n.raw("lvl_more")}</summary>{method}</details></section>')
+            f'{gmap}<div class="gstats">{"".join(stats)}</div>'   # map first: lines up with maps 1 and 2
+            f'<details class="tech s12-more"><summary>{i18n.raw("lvl_more")}</summary>{"".join(tech)}{method}</details></section>')
 
 
 def _legend_html(i18n: _I18n) -> str:

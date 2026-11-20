@@ -235,7 +235,7 @@ ES = {
     "lvl_stats": ("Desde el inicio de la previsión ({n} h con medición): error medio {b} m, error absoluto medio {m} m. "
                   "Variación medida {o0} a {o1} m; prevista {p0} a {p1} m."),
     "lvl_more": "Estación, conversión y método",
-    "lvl_map_h": "Dónde se compara: estación de la APA y celdas del modelo",
+    "lvl_map_h": "Estación de la APA y celdas del modelo",
     "lvl_map_st": "Estación APA {name} ({code})",
     "lvl_map_lst": "Estación de la APA (medido)",
     "lvl_map_lcell": "Celdas del río en el modelo (previsto)",
