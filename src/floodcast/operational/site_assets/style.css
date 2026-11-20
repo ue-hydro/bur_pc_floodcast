@@ -835,7 +835,7 @@ html[data-scn="lower"] .wide-chart .chart .scn.lo,html[data-scn="upper"] .wide-c
 @media (min-width:700px){
   .s12.s123{grid-template-columns:repeat(3,minmax(0,1fr));column-gap:14px;
     width:min(calc(100vw - 24px),114rem);margin-left:calc((100% - min(calc(100vw - 24px),114rem)) / 2)}
-  .s12.s123>section.card{display:grid;grid-template-rows:subgrid;grid-row:span 6;align-content:start;
+  .s12.s123>section.card{display:grid;grid-template-rows:subgrid;grid-row:span 8;align-content:start;
     margin:20px 0;min-width:0}
   .s12.s123>section.card>p.muted{min-height:0}
   .s12.s123 .wide-chart .legend{min-height:0}
@@ -932,8 +932,17 @@ html[data-scn="lower"] .wide-chart .chart .scn.lo,html[data-scn="upper"] .wide-c
 .webcam.wc-off img{opacity:.35}
 .webcam .wc-meta{font-size:.75rem;margin:4px 0 0}
 .webcam .wc-frame{position:relative}
-.webcam .wcmap{position:absolute;right:6px;bottom:6px;width:36%;aspect-ratio:1/1;z-index:2;
+.webcam .wcmap{position:absolute;right:6px;top:6px;width:26%;aspect-ratio:1/1;z-index:2;
   border:2px solid #fff;box-shadow:0 1px 6px rgba(0,0,0,.45);border-radius:3px}
 .webcam .wcmap .leaflet-control-attribution{display:none}   /* inset: credits shown on the large maps */
 .webcam .wc-dot{color:#c62828}
 .webcam .wcmap .leaflet-control-layers{display:none}   /* inset: no basemap switch */
+
+/* section 2: upstream check against measured flow (APA) */
+.fcheckwrap{margin-top:12px;padding-top:10px;border-top:1px solid var(--line)}
+.fcheckwrap h3{font-size:.95rem;margin:0 0 4px}
+.fcheckwrap>p.muted{font-size:.8rem;margin:0 0 6px}
+.chart.fcheck{width:100%;height:auto}
+.chart .obsbar{fill:var(--obs);opacity:.85}
+.legend i.obsq{background:var(--obs)}
+.webcam figcaption .wc-time{font-weight:700;white-space:nowrap}

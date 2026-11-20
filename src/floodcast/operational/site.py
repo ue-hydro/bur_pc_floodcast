@@ -91,6 +91,15 @@ T: dict[str, tuple[str, str]] = {
     "tide_h": ("Nível do mar na foz do Sado (maré + sobrelevação)", "Sea level at the Sado mouth (tide + surge)"),
     "tide_lvl": ("Nível do mar", "Sea level"),
     "j_level": ("Nível do rio", "River level"),
+    "fck_h": ("Verificação a montante: caudal medido em {name}", "Upstream check: measured flow at {name}"),
+    "fck_p": ("Em Alcácer não há medição de caudal (o nível do rio é dominado pela maré). Comparamos o caudal do modelo com o "
+             "caudal médio diário medido pela APA na estação {code}, a montante ({a} km² de bacia, o mesmo ponto no modelo).",
+             "There is no flow measurement at Alcácer (the river level there is dominated by the tide). The model's flow is compared "
+             "with the daily mean flow measured by APA at gauge {code}, upstream ({a} km² of basin, the same point in the model)."),
+    "fck_obs": ("Medido (APA, média diária)", "Measured (APA, daily mean)"),
+    "fck_mod": ("Modelo no mesmo ponto", "Model at the same point"),
+    "fck_last": ("Último dia medido ({d}): <b>{o} m³/s</b>; modelo no início da previsão: <b>{m} m³/s</b>.",
+                "Latest measured day ({d}): <b>{o} m³/s</b>; model at the forecast start: <b>{m} m³/s</b>."),
     "wc_h": ("Webcam em direto", "Live webcam"),
     "wc_credit": ("imagem: {c}", "image: {c}"),
     "wc_upd": ("atualizada às", "updated at"),
@@ -1058,7 +1067,8 @@ def _screening_block(i18n: _I18n, screening: dict | None, rain_src: str | None =
     )
 
 
-def _hydrology_block(i18n: _I18n, summary: dict | None, flow_src: str | None = None, geo: str = "") -> str:
+def _hydrology_block(i18n: _I18n, summary: dict | None, flow_src: str | None = None, geo: str = "",
+                     flowcheck: dict | None = None) -> str:
     if not summary:
         return ""
     flow_map = _anim_map(i18n, "flow", flow_src, geo + "rivers.geojson",
@@ -1093,6 +1103,7 @@ def _hydrology_block(i18n: _I18n, summary: dict | None, flow_src: str | None = N
             f'<section class="card" id="hydrology"><h2><span class="num">2</span>{i18n.raw("hydro_h")}</h2>'
             f'<p class="muted">{i18n.raw("hydro_p_scn")}</p>'
             f'{_wide_layout(hydro_chart, flow_map, "<h3>" + i18n.raw("peak") + "</h3><p>" + peak_txt + "</p>" + table, i18n.raw("peak_more"))}'
+            f'{_flowcheck_block(i18n, flowcheck)}'
             f'{_details(i18n, state_html + _reasons(i18n, summary.get("decision")))}</section>'
         )
     for level in ("watch", "warning", "alert"):
@@ -1242,7 +1253,7 @@ def _webcam_block(i18n: _I18n, cams: list) -> str:
             f'<figure class="webcam" data-src="{_esc(c["url"])}" data-refresh="{int(c.get("refresh_s") or 120)}" '
             f'data-upd="{_esc(json.dumps(_sl(i18n, "wc_upd")))}" data-err="{_esc(json.dumps(_sl(i18n, "wc_err")))}">'
             f'<figcaption><strong>{i18n.raw("wc_h")}</strong> <span class="wc-live">●</span> '
-            f'<span class="muted">{_esc(c.get("name") or "")}</span></figcaption>'
+            f'<span class="muted">{_esc(c.get("name") or "")}</span> <span class="wc-time"></span></figcaption>'
             f'<div class="wc-frame"><a href="{_esc(link)}" target="_blank" rel="noopener">'
             f'<img alt="{_esc(i18n.plain("wc_h"))}" loading="lazy"></a>'
             + (f'<div class="wcmap" data-lat="{float(c["lat"])}" data-lon="{float(c["lon"])}"'
@@ -1251,8 +1262,8 @@ def _webcam_block(i18n: _I18n, cams: list) -> str:
                f'title="{_esc(i18n.plain("wc_where_approx" if c.get("approx") else "wc_where"))}" '
                f'role="img" aria-label="{_esc(i18n.plain("wc_where"))}"></div>'
                if c.get("lat") is not None and c.get("lon") is not None else "")
-            + f'</div><p class="muted wc-meta"><span class="wc-time"></span>'
-            f'{" · " + i18n.raw("wc_credit", c=credit) if credit else ""}'
+            + f'</div><p class="muted wc-meta">'
+            f'{i18n.raw("wc_credit", c=credit) if credit else ""}'
             + (f' · <span class="wc-dot">●</span> {i18n.raw("wc_where_approx" if c.get("approx") else "wc_where")}'
                if c.get("lat") is not None else "")
             + '</p></figure>')
@@ -1311,6 +1322,70 @@ def _gauge_block(i18n: _I18n, doc: dict | None) -> str:
             f'<div class="wide-chart"><div class="clockbadge chartclock"></div>{chart}</div>'
             f'{gmap}<div class="gstats">{"".join(stats)}</div>'   # map first: lines up with maps 1 and 2
             f'<details class="tech s12-more"><summary>{i18n.raw("lvl_more")}</summary>{"".join(tech)}{method}</details></section>')
+
+
+def _flowcheck_block(i18n: _I18n, doc: dict | None) -> str:
+    """Section 2 add-on: measured daily flow at the upstream APA gauge vs the model at the same reach
+    (there is no flow gauge at Alcácer: the town gauge measures a tide-dominated level)."""
+    from datetime import timedelta as _td
+
+    if not doc or not (doc.get("model") or {}).get("times_utc"):
+        return ""
+    g, mod, obs = doc.get("gauge") or {}, doc["model"], doc.get("observed") or {}
+    mt = [_parse_ts(t) for t in mod["times_utc"]]
+    od = [_parse_ts(d + "T12:00:00Z") for d in obs.get("dates") or []]
+    t0 = min([mt[0]] + od) if od else mt[0]
+    t1 = mt[-1]
+    span = max((t1 - t0).total_seconds(), 3600.0)
+    vals = [v for k in ("lower", "central", "upper") for v in (mod.get(k) or []) if v is not None] + list(obs.get("q_m3s") or []) + [1.0]
+    ymax = _nice_max(max(vals) * 1.1)
+    w, h = 640, 260
+    x0, x1, y0, y1 = 48, w - 12, 14, h - 34
+    pw, ph = x1 - x0, y1 - y0
+
+    def px(t):
+        return x0 + pw * (t - t0).total_seconds() / span
+
+    def py(v):
+        return y1 - ph * min(v, ymax) / ymax
+
+    parts = [f'<svg class="chart fcheck" viewBox="0 0 {w} {h}" role="img" aria-label="{_esc(i18n.plain("fck_h", name=g.get("name", "")))}">']
+    for tk in _ticks(ymax):
+        parts.append(f'<line class="gridl" x1="{x0}" x2="{x1}" y1="{py(tk):.1f}" y2="{py(tk):.1f}"/>'
+                     f'<text x="{x0 - 6}" y="{py(tk) + 4:.1f}" text-anchor="end">{tk:g}</text>')
+    parts.append(f'<text x="12" y="{y0 + ph / 2:.1f}" transform="rotate(-90 12 {y0 + ph / 2:.1f})" text-anchor="middle">m³/s</text>')
+    xs = px(mt[0])
+    parts.append(f'<rect class="pastbg" x="{x0}" y="{y0}" width="{max(0, xs - x0):.1f}" height="{ph}"/>')
+    lo, up = mod.get("lower"), mod.get("upper")
+    if lo and up:
+        pts = " ".join(f"{px(t):.1f},{py(v):.1f}" for t, v in zip(mt, up)) + " " + \
+            " ".join(f"{px(t):.1f},{py(v):.1f}" for t, v in reversed(list(zip(mt, lo))))
+        parts.append(f'<polygon class="band" points="{pts}"/>')
+    for k, cls in (("lower", "lo"), ("central", "ce"), ("upper", "up")):
+        if mod.get(k):
+            parts.append(f'<polyline class="scn {cls}" points="{" ".join(f"{px(t):.1f},{py(v):.1f}" for t, v in zip(mt, mod[k]))}"/>')
+    day_w = pw * 86400 / span
+    for t, v in zip(od, obs.get("q_m3s") or []):   # measured daily means: one bar per day
+        x = px(t)
+        parts.append(f'<rect class="obsbar" x="{x - day_w * 0.35:.1f}" y="{py(v) - 1.5:.1f}" width="{day_w * 0.7:.1f}" height="{max(1.5, y1 - py(v) + 1.5):.1f}"/>')
+    parts.append(f'<line class="fcstart" x1="{xs:.1f}" x2="{xs:.1f}" y1="{y0}" y2="{y1}"/>')
+    parts.append(f'<line class="axis" x1="{x0}" x2="{x1}" y1="{y1}" y2="{y1}"/>')
+    n = 6
+    for i in range(n + 1):
+        t = t0 + _td(seconds=span * i / n)
+        anchor = "start" if i == 0 else ("end" if i == n else "middle")
+        parts.append(f'<text class="t-lbl" x="{px(t):.1f}" y="{y1 + 16}" text-anchor="{anchor}">{t.strftime("%d/%m")}</text>')
+    parts.append("</svg>")
+    last = ""
+    if obs.get("dates"):
+        last = i18n.raw("fck_last", d=obs["dates"][-1][8:10] + "/" + obs["dates"][-1][5:7], o=f'{obs["q_m3s"][-1]:.2f}',
+                        m=f'{(mod.get("central") or [0])[0]:.1f}')
+    legend = (f'<p class="legend"><span><i class="obsq"></i>{i18n.raw("fck_obs")}</span>'
+              f'<span><i class="ln selc"></i>{i18n.raw("fck_mod")}</span>'
+              f'<span><i style="background:var(--band)"></i>{i18n.raw("band")}</span></p>')
+    return (f'<div class="fcheckwrap"><h3>{i18n.raw("fck_h", name=g.get("name", ""))}</h3>'
+            f'<p class="muted">{i18n.raw("fck_p", code=g.get("code", ""), a=f"{float(g.get("area_km2") or 0):.0f}")}</p>'
+            f'{"".join(parts)}{legend}{"<p>" + last + "</p>" if last else ""}</div>')
 
 
 def _legend_html(i18n: _I18n) -> str:
@@ -1926,6 +2001,7 @@ def _load_cycle(op: Path, rel: str) -> dict:
         "health": _read_json(op / "health.json"),
         "tide": _read_json(cdir / "tide.json"),
         "gauge": _read_json(cdir / "gauge_level.json"),
+        "flowcheck": _read_json(cdir / "flow_check.json"),
         "_cdir": cdir,
         "precip_ens": _with(_read_json(cdir / "hydrology" / "precip_ensemble.json"),
                             _scn_file=(cdir / "precip_scenarios.json").is_file()),
@@ -1977,7 +2053,8 @@ def _cycle_content(i18n: _I18n, latest, data: dict, prefix: str, data_rel: str, 
     s1 = _screening_block(i18n, data["screening"], base + "precip_grid.json" if data.get("rain_file") else None,
                           geo, data.get("precip_ens"))
     s2 = _hydrology_block(i18n, data["hydrology"],
-                          base + "hydrology/reach_flow.json" if data.get("flow_file") else None, geo)
+                          base + "hydrology/reach_flow.json" if data.get("flow_file") else None, geo,
+                          flowcheck=data.get("flowcheck"))
     s12_ctl = (f'<div class="s12-ctl"><span class="fc-l">{i18n.raw("s12_ctl")}</span>{_scn_buttons(i18n, "s12-scn")}</div>'
                if data.get("precip_ens") or data.get("hydrology") else "")
     s3 = _gauge_block(i18n, data.get("gauge"))

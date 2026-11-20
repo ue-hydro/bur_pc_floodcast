@@ -225,6 +225,12 @@ ES = {
     "t_max_btn": "Profundidad máxima",
     "tide_lvl": "Nivel del mar",
     "j_level": "Nivel del río",
+    "fck_h": "Verificación aguas arriba: caudal medido en {name}",
+    "fck_p": ("En Alcácer no hay medición de caudal (el nivel del río está dominado por la marea). Comparamos el caudal del modelo con el "
+             "caudal medio diario medido por la APA en la estación {code}, aguas arriba ({a} km² de cuenca, el mismo punto en el modelo)."),
+    "fck_obs": "Medido (APA, media diaria)",
+    "fck_mod": "Modelo en el mismo punto",
+    "fck_last": "Último día medido ({d}): <b>{o} m³/s</b>; modelo al inicio de la previsión: <b>{m} m³/s</b>.",
     "wc_h": "Webcam en directo",
     "wc_credit": "imagen: {c}",
     "wc_upd": "actualizada a las",

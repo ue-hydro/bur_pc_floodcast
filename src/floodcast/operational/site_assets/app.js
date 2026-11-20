@@ -373,8 +373,10 @@
       var probe = new Image();
       probe.onload = function () {
         pending = false; img.src = probe.src; fig.classList.remove("wc-off");
-        var hm = new Date().toLocaleTimeString(lang() === "en" ? "en-GB" : lang() + "-PT", { hour: "2-digit", minute: "2-digit", timeZone: "Europe/Lisbon" });
-        if (tEl) tEl.textContent = (upd[lang()] || upd.pt || "") + " " + hm;
+        var loc = lang() === "en" ? "en-GB" : lang() + "-PT", now = new Date();
+        var dm = now.toLocaleDateString(loc, { day: "2-digit", month: "2-digit", timeZone: "Europe/Lisbon" });
+        var hm = now.toLocaleTimeString(loc, { hour: "2-digit", minute: "2-digit", timeZone: "Europe/Lisbon" });
+        if (tEl) tEl.textContent = "— " + dm + " " + hm;   // when this image was fetched (Lisbon time)
       };
       probe.onerror = function () { pending = false; fig.classList.add("wc-off"); if (tEl) tEl.textContent = err[lang()] || err.pt || ""; };
       probe.src = src + (src.indexOf("?") < 0 ? "?" : "&") + "t=" + bucket;
