@@ -94,6 +94,34 @@
     if (title) title.textContent = txt("Controlos", "Controls", "Controles");
     var tabLabel = tab && tab.querySelector("span");
     if (tabLabel) tabLabel.textContent = "☰ " + txt("Controlos", "Controls", "Controles");
+    if (CTRL && panel) {   // inside the forecast page: its single controls icon drives these (proxyControls)
+      panel.style.display = "none";
+      if (tab) { tab.hidden = true; tab.style.display = "none"; }
+    }
+  }
+
+  // the page's controls icon: {type:"fluxos-click", id} clicks one of these viewer buttons (works
+  // while the panel is hidden); the viewer answers {type:"fluxos-state", active:{id:bool}}
+  var PROXY = ["btn-water", "btn-sat", "cam-top", "cam-front", "cam-side", "cam-low", "cam-3d", "cam-drop"];
+  function sendState() {
+    if (!CTRL) return;
+    var active = {};
+    PROXY.forEach(function (id) { var b = document.getElementById(id); if (b) active[id] = b.classList.contains("active"); });
+    try { CTRL.postMessage({ type: "fluxos-state", active: active }, "*"); } catch (e) {}
+  }
+  function proxyControls() {
+    window.addEventListener("message", function (ev) {
+      var d = ev.data;
+      if (!d || (CTRL && ev.source !== CTRL)) return;
+      if (d.type === "fluxos-click" && PROXY.indexOf(d.id) >= 0) {
+        var b = document.getElementById(d.id);
+        if (b) b.click();
+        setTimeout(sendState, 30);
+      } else if (d.type === "fluxos-state?") sendState();
+    });
+    var canvas = document.querySelector("canvas");
+    if (canvas) canvas.addEventListener("click", function () { setTimeout(sendState, 50); });   // "Drop" disarms after use
+    setTimeout(sendState, 500); setTimeout(sendState, 3200);
   }
 
   // the page's sun button: {type:"fluxos-sun", follow:true|false}
@@ -296,6 +324,7 @@
     sunClock();
     rainToggle();
     exagControl();
+    proxyControls();
     autoRotate();
     requestAnimationFrame(tick);
   }

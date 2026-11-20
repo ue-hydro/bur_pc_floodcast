@@ -389,6 +389,18 @@ T: dict[str, tuple[str, str]] = {
     "exag_lbl": ("Exagero vertical", "Vertical exaggeration"),
     "vc_tip": ("Controlos da animação 3D", "3-D animation controls"),
     "fs_tip": ("Ecrã inteiro", "Full screen"),
+    "vc_show": ("Mostrar", "Show"),
+    "vc_water": ("Água", "Water"),
+    "vc_sat": ("Satélite", "Satellite"),
+    "vc_view": ("Vista", "View"),
+    "vc_cam_top": ("Cima", "Top"),
+    "vc_cam_front": ("Frente", "Front"),
+    "vc_cam_side": ("Lado", "Side"),
+    "vc_cam_low": ("Baixa", "Low"),
+    "vc_cam_3d": ("3D", "3D"),
+    "vc_drop": ("Aproximar", "Drop"),
+    "vc_drop_tip": ("Depois clique no terreno para aproximar a câmara desse ponto",
+                    "Then click on the terrain to swoop the camera down to that point"),
     "exag_tip": ("Aumenta ou reduz o relevo na animação 3D (1× = escala por defeito do visualizador)",
                  "Raises or flattens the relief in the 3-D animation (1× = the viewer's default scale)"),
     "rain_tip": ("Mostra a chuva na animação 3D quando e com a intensidade prevista (sem chuva prevista, não chove)",
@@ -1681,7 +1693,16 @@ def _animation_block(i18n: _I18n, scenarios: list[dict], prefix: str, data_rel: 
         f'<span>{i18n.raw("rain_lbl")}</span><span class="sw" aria-hidden="true"><i></i></span></button>'
         f'<label class="exagctl" title="{_esc(i18n.plain("exag_tip"))}"><span>{i18n.raw("exag_lbl")}</span>'
         f'<input type="range" class="exagslider" min="0.5" max="6" step="0.25" value="1" aria-label="{_esc(i18n.plain("exag_lbl"))}">'
-        f'<b class="exagv">1×</b></label></div></div>'
+        f'<b class="exagv">1×</b></label>'
+        f'<div class="vc-group"><span class="vc-gl">{i18n.raw("vc_show")}</span>'
+        f'<button type="button" class="vc-px" data-id="btn-water" aria-pressed="true">{i18n.raw("vc_water")}</button>'
+        f'<button type="button" class="vc-px" data-id="btn-sat" aria-pressed="true">{i18n.raw("vc_sat")}</button></div>'
+        f'<div class="vc-group"><span class="vc-gl">{i18n.raw("vc_view")}</span>'
+        + "".join(f'<button type="button" class="vc-px vc-cam" data-id="cam-{k}" aria-pressed="{"true" if k == "3d" else "false"}">'
+                  f'{i18n.raw("vc_cam_" + k)}</button>' for k in ("top", "front", "side", "low", "3d"))
+        + f'<button type="button" class="vc-px" data-id="cam-drop" aria-pressed="false" title="{_esc(i18n.plain("vc_drop_tip"))}">'
+        f'📍 {i18n.raw("vc_drop")}</button></div>'
+        f'</div></div>'
         f'</div>'
         f'</section>'
     )

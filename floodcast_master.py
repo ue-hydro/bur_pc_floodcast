@@ -512,8 +512,14 @@ def publish_site(cfg: OperationalConfig, store, push: bool = False) -> None:
     shows a half-updated set of results."""
     if cfg.publish.output_dir is None:
         return
+    from floodcast.operational.hydraulics import inject_operational_adapter
     from floodcast.operational.site import build_site
 
+    for wd in (store.root / "cycles").glob("*/hydraulics/*/webgl"):   # viewers get the current adapter
+        try:
+            inject_operational_adapter(wd)
+        except OSError:
+            pass
     build_site(store.root, cfg.publish.output_dir, site_title=cfg.publish.site_title,
                base_url=cfg.publish.base_url, chat_endpoint=cfg.publish.chat_endpoint,
                webcams=[w.model_dump() for w in cfg.publish.webcams])

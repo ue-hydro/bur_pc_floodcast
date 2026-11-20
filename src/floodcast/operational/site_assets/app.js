@@ -437,6 +437,25 @@
     });
   });
 
+  // ---- viewer buttons (water, satellite, camera views, drop) inside the controls icon
+  Array.prototype.forEach.call(document.querySelectorAll(".viewctl .vc-px"), function (b) {
+    b.addEventListener("click", function () {
+      var fr = b.closest(".webglwrap") && b.closest(".webglwrap").querySelector("iframe");
+      if (fr && fr.contentWindow) { try { fr.contentWindow.postMessage({ type: "fluxos-click", id: b.getAttribute("data-id") }, "*"); } catch (e) {} }
+    });
+  });
+  window.addEventListener("message", function (ev) {
+    var d = ev.data;
+    if (!d || d.type !== "fluxos-state" || !d.active) return;
+    Array.prototype.forEach.call(document.querySelectorAll(".webglwrap iframe"), function (fr) {
+      if (fr.contentWindow !== ev.source) return;
+      Array.prototype.forEach.call(fr.closest(".webglwrap").querySelectorAll(".vc-px"), function (b) {
+        var id = b.getAttribute("data-id");
+        if (id in d.active) b.setAttribute("aria-pressed", d.active[id] ? "true" : "false");
+      });
+    });
+  });
+
   // ---- 3-D viewer in its own pop-up window, driven by this page's clock
   var popWin = null;
   Array.prototype.forEach.call(document.querySelectorAll("button.popout"), function (b) {
@@ -567,8 +586,55 @@
     var s = document.createElement("script");
     s.src = "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js";
     s.integrity = "sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="; s.crossOrigin = "";
-    s.onload = cb;
+    s.onload = function () { addExpandHook(); cb(); };
     document.head.appendChild(s);
+  }
+  // ---- every map gets an expand button (full screen with its title, slider and legend)
+  var FS_TIP = { pt: "Expandir mapa", en: "Expand map", es: "Ampliar mapa" };
+  var FS_OUT = { pt: "Sair do ecrã inteiro", en: "Exit full screen", es: "Salir de pantalla completa" };
+  var FS_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5"/></svg>';
+  var FS_SVG_OUT = '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" d="M9 4v5H4M20 9h-5V4M15 20v-5h5M4 15h5v5"/></svg>';
+  function fsElement() { return document.fullscreenElement || document.webkitFullscreenElement || null; }
+  function addExpandHook() {
+    var L = window.L;
+    if (!L || L.__fsHook) return;
+    L.__fsHook = true;
+    L.Map.addInitHook(function () {
+      var map = this, el = map.getContainer();
+      if (el.closest(".wcmap")) return;   // the webcam inset has its own enlarge button
+      var box = el.closest(".animmap, .panel, #map-card") || el.parentNode;
+      var c = L.control({ position: "topleft" });
+      c.onAdd = function () {
+        var b = L.DomUtil.create("a", "leaflet-bar mapfs");
+        b.href = "#"; b.setAttribute("role", "button");
+        function label() {
+          var on = fsElement() === box || box.classList.contains("fs-fallback"), lg = root.getAttribute("data-lang") || "pt";
+          b.innerHTML = on ? FS_SVG_OUT : FS_SVG; b.title = (on ? FS_OUT : FS_TIP)[lg]; b.setAttribute("aria-label", b.title);
+        }
+        function after() { label(); setTimeout(function () { map.invalidateSize(); }, 120); }
+        L.DomEvent.on(b, "click", function (e) {
+          L.DomEvent.stop(e);
+          var req = box.requestFullscreen || box.webkitRequestFullscreen;
+          if (fsElement() === box) { (document.exitFullscreen || document.webkitExitFullscreen).call(document); return; }
+          if (box.classList.contains("fs-fallback")) { box.classList.remove("fs-fallback"); el.classList.remove("fs-target"); after(); return; }
+          el.classList.add("fs-target");
+          function fallback() { box.classList.add("fs-fallback"); after(); }   // no Fullscreen API (iPhone) or refused: whole-window overlay
+          if (!req) { fallback(); return; }
+          var done = false;
+          function fb() { if (!done && fsElement() !== box) { done = true; fallback(); } }
+          try { var pr = req.call(box); if (pr && pr.catch) pr.catch(fb); } catch (err) { fb(); }
+          setTimeout(fb, 700);   // some embedded views neither grant nor refuse
+        });
+        document.addEventListener("fullscreenchange", function () { if (fsElement() !== box) el.classList.remove("fs-target"); after(); });
+        document.addEventListener("webkitfullscreenchange", function () { if (fsElement() !== box) el.classList.remove("fs-target"); after(); });
+        document.addEventListener("keydown", function (ev) {
+          if (ev.key === "Escape" && box.classList.contains("fs-fallback")) { box.classList.remove("fs-fallback"); el.classList.remove("fs-target"); after(); }
+        });
+        label();
+        return b;
+      };
+      c.addTo(map);
+    });
   }
   // ---- animated maps: rain per sub-basin, flow per river reach ------------------------
   var RAMP = ["#f7fbff", "#c6dbef", "#6baed6", "#2171b5", "#08306b"];

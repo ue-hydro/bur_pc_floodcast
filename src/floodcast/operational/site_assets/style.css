@@ -951,3 +951,22 @@ html[data-scn="lower"] .wide-chart .chart .scn.lo,html[data-scn="upper"] .wide-c
 .wc-dlg-t{flex:1;min-width:0}
 .wc-dlg .wc-close{border:1px solid rgba(255,255,255,.4);background:transparent;color:#fff;width:32px;height:32px;border-radius:3px;cursor:pointer;font-size:1rem}
 .wc-dlg img{display:block;width:100%;max-height:calc(92vh - 50px);object-fit:contain;background:#000}
+
+/* maps: expand button (Leaflet control under the zoom) and the full-screen layout */
+.leaflet-bar.mapfs{display:flex;align-items:center;justify-content:center;width:30px;height:30px;background:#fff;color:#1d2329;cursor:pointer}
+.leaflet-bar.mapfs svg{width:17px;height:17px}
+.leaflet-bar.mapfs:hover{background:#f4f4f4}
+:fullscreen:has(> .fs-target),:fullscreen:has(.fs-target),.fs-fallback{display:flex!important;flex-direction:column;gap:6px;background:var(--bg)!important;
+  padding:12px!important;margin:0!important;border-radius:0!important;overflow:auto;box-sizing:border-box}
+.fs-fallback{position:fixed!important;inset:0;z-index:9999;width:100vw;height:100vh}
+:fullscreen > *,.fs-fallback > *{flex:none}
+:fullscreen .fs-target,.fs-fallback .fs-target{flex:1 1 auto!important;height:auto!important;min-height:0!important;max-height:none!important;aspect-ratio:auto!important;width:100%!important}
+:-webkit-full-screen .fs-target{flex:1 1 auto!important;height:auto!important;min-height:0!important;max-height:none!important;aspect-ratio:auto!important}
+
+/* 3-D view: viewer buttons grouped inside the controls icon */
+.viewctl .vc-group{display:inline-flex;align-items:center;flex-wrap:wrap;gap:0;border:1px solid rgba(255,255,255,.35);border-radius:2px;
+  background:rgba(29,35,41,.85);color:#fff;font-size:.82rem}
+.viewctl .vc-gl{padding:6px 8px 6px 10px;font-weight:600;opacity:.85}
+.viewctl .vc-px{border:0;border-left:1px solid rgba(255,255,255,.25);background:transparent;color:#fff;padding:6px 9px;font:inherit;font-weight:600;cursor:pointer}
+.viewctl .vc-px[aria-pressed="true"]{background:#1d4f80}
+.viewctl .vc-px:hover{background:rgba(0,58,112,.7)}
