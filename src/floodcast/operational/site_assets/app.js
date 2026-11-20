@@ -672,6 +672,17 @@
     if (!FC.started) { FC.started = true; requestAnimationFrame(fcTick); }
   }
   function fcSeek(epoch) { FC.epoch = epoch; fcApply(); }
+  // While the mouse/finger is held on any time bar or chart, the clock stays where it is put;
+  // it carries on only once released.
+  function fcHold() { FC.hold = true; }
+  function fcRelease() { FC.hold = false; }
+  document.addEventListener("pointerdown", function (ev) {
+    if (ev.target && ev.target.closest && ev.target.closest("input.slider")) fcHold();
+  }, true);
+  window.addEventListener("pointerup", fcRelease, true);
+  window.addEventListener("pointercancel", fcRelease, true);
+  window.addEventListener("blur", fcRelease);
+  document.addEventListener("change", function (ev) { if (ev.target && ev.target.matches && ev.target.matches("input.slider")) fcRelease(); }, true);
   function fcApply() {
     for (var i = 0; i < FC.subs.length; i++) { try { FC.subs[i].set(FC.epoch); } catch (e) {} }
     cursorAll(FC.epoch);
@@ -699,7 +710,7 @@
   function fcTick(now) {
     var dt = FC.last ? Math.min(250, now - FC.last) : 0; FC.last = now;
     var span = FC.t1 - FC.t0;
-    if (span > 0 && !document.hidden) {
+    if (span > 0 && !document.hidden && !FC.hold) {   // held = a time bar/chart is being dragged
       FC.epoch += dt * FC.speed / FC.LOOP_MS * span;
       if (FC.epoch > FC.t1) FC.epoch = FC.t0;
       fcApply();
@@ -1167,7 +1178,7 @@
       }
       svg.addEventListener("pointermove", function (ev) { move(ev); if (drag) seekAt(ev); });
       svg.addEventListener("pointerdown", function (ev) {
-        drag = true; try { svg.setPointerCapture(ev.pointerId); } catch (e) {}
+        drag = true; fcHold(); try { svg.setPointerCapture(ev.pointerId); } catch (e) {}
         move(ev); seekAt(ev); ev.preventDefault();
       });
       function endDrag(ev) { if (!drag) return; drag = false; try { svg.releasePointerCapture(ev.pointerId); } catch (e) {} }
