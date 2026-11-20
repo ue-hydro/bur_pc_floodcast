@@ -90,6 +90,23 @@ def _tide_balance(out: Path) -> dict | None:
         return None
 
 
+def check_blowup(out: Path) -> None:
+    """Raise if a FLUXOS run blew up: non-finite values, or most of the water vanishing between two
+    snapshots (cells whose depth turns NaN drop out of the output). Covers the warm-up snapshots too,
+    which are deleted before the post-processing sees them."""
+    files = sorted((f for f in out.glob("*.txt") if f.stem.isdigit()), key=lambda f: int(f.stem))
+    prev = None
+    for f in files:
+        d = np.loadtxt(f, delimiter=",", skiprows=1, ndmin=2)
+        if d.size and not np.isfinite(d[:, 4:min(d.shape[1], 11)]).all():
+            raise RuntimeError(f"FLUXOS produced non-finite values in {f.name}: numerical blow-up")
+        vol = float(d[:, 5].sum()) if d.size else 0.0
+        if prev is not None and prev > 1000.0 and vol < 0.5 * prev:
+            raise RuntimeError(f"FLUXOS lost {100 * (1 - vol / prev):.0f}% of the water at t = {f.stem} s: "
+                               "numerical blow-up")
+        prev = vol
+
+
 def _drop_warmup(out: Path, warm_s: int) -> None:
     """Delete the warm-up snapshots and shift the rest so t = 0 is the forecast window start."""
     if warm_s <= 0:
@@ -336,6 +353,7 @@ class FluxosEngine:
         )
         if tide_info is not None:
             tide_info.update(_tide_balance(workdir / "out") or {})
+        check_blowup(workdir / "out")
         _drop_warmup(workdir / "out", int(round(warm_h * 3600)))
         summary = self._postprocess(workdir / "out", outdir, scenario)
         summary["warmup_hours"] = warm_h
@@ -443,8 +461,13 @@ class FluxosEngine:
                 if data.size:
                     ix = np.clip(((data[:, 2] - xll) / cs).astype(int), 0, nx - 1)
                     iy = np.clip(((data[:, 3] - yll) / cs).astype(int), 0, ny - 1)
+                    bad = ~np.isfinite(data[:, 4:min(data.shape[1], 11)]).all(axis=1)
+                    if bad.any():
+                        raise RuntimeError(f"FLUXOS produced non-finite values in {f.name} ({int(bad.sum())} cells)")
                     np.maximum.at(g, (iy, ix), data[:, 5])
-                    if data.shape[1] > 7:
+                    if data.shape[1] > 10:     # 'us' = flow speed (this build leaves ux/uy at 0)
+                        np.maximum.at(gv, (iy, ix), np.abs(data[:, 10]))
+                    elif data.shape[1] > 7:
                         np.maximum.at(gv, (iy, ix), np.hypot(data[:, 6], data[:, 7]))
                 yield int(f.stem), g, gv
 
@@ -465,7 +488,17 @@ class FluxosEngine:
         # maps, but not counted as flooding (area, arrival, duration, hazard, impacts)
         river = impacts.permanent_water(self.domain.root)
         land = ~river if river is not None and river.shape == (ny, nx) else np.ones((ny, nx), bool)
+        prev_vol = None
         for k, (t_s, g, gv) in enumerate(steps):
+            vol = float(g.sum())
+            # Numerical blow-up guard: cells whose depth turns NaN drop out of FLUXOS's output, so a
+            # blow-up shows as most of the water vanishing between two snapshots. Fail the stage
+            # (the forecast is then incomplete and the online page is left unchanged) rather than
+            # publish an empty flood map.
+            if prev_vol is not None and prev_vol > 1000.0 and vol < 0.5 * prev_vol:
+                raise RuntimeError(f"FLUXOS lost {100 * (1 - vol / prev_vol):.0f}% of the water between snapshots "
+                                   f"(t = {t_s} s): numerical blow-up")
+            prev_vol = vol
             if files:   # keep a compact copy so the post-processing can be redone later
                 keep_t.append(t_s); keep_h.append(g.astype("float16")); keep_v.append(gv.astype("float16"))
             wet = (g >= MIN_FLOODED_DEPTH_M) & land

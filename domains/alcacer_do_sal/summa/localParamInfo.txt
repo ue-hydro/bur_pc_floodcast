@@ -1,3 +1,4 @@
+! CALIBRATED 2026-11-19 (DDS, 60 + 45 runs) against GloFAS v4 daily discharge at 38.325N 8.525W, Dec 2025-Nov 2026, ERA5 forcing: aquiferBaseflowRate, aquiferBaseflowExp, aquiferScaleFactor, k_soil, k_macropore, qSurfScale, routingGammaScale, routingGammaShape. GloFAS is a model, not a gauge: replace with SNIRH data when available.
 ! =======================================================================================================================
 ! =======================================================================================================================
 ! ===== DEFINITION OF MODEL PARAMETERS ==================================================================================
@@ -170,15 +171,15 @@ theta_res                 |       0.0500 |       0.0010 |       0.1500
 vGn_alpha                 |      -0.8400 |      -1.0000 |      -0.0100
 vGn_n                     |       1.3000 |       1.3000 |       4.0000
 mpExp                     |       5.0000 |       1.0000 |      10.0000
-k_soil                    |      7.5d-06 |       1.d-07 |       1.d-04
-k_macropore               |      1.0d-03 |       1.d-07 |       1.d-01
+k_soil                    |   1.0026e-05 |       1.d-07 |       1.d-04
+k_macropore               |   1.8916e-05 |       1.d-07 |       1.d-01
 kAnisotropic              |       1.0000 |       0.0001 |      10.0000
 zScale_TOPMODEL           |       2.5000 |       0.1000 |     100.0000
 compactedDepth            |       1.0000 |       0.0000 |       1.0000
-aquiferBaseflowRate       |       1.0d-8 |      1.0d-10 |       1.0d-6
-aquiferScaleFactor        |       0.3500 |       0.1000 |      10.0000
-aquiferBaseflowExp        |       2.0000 |       1.0000 |      10.0000
-qSurfScale                |       5.0000 |       1.0000 |      20.0000
+aquiferBaseflowRate       |   1.4135e-10 |      1.0d-10 |       1.0d-6
+aquiferScaleFactor        |   3.4926e-01 |       0.1000 |      10.0000
+aquiferBaseflowExp        |   1.6446e+00 |       1.0000 |      10.0000
+qSurfScale                |   1.6477e+00 |       1.0000 |      20.0000
 specificYield             |       0.2000 |       0.1000 |       0.3000
 specificStorage           |       1.d-06 |       1.d-05 |       1.d-07
 f_impede                  |       2.0000 |       1.0000 |      10.0000

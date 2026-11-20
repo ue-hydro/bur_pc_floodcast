@@ -46,6 +46,11 @@ DAMS = {
     "Campilhas": (37.8432, -8.6193, 3.77), "Pisão": (38.0819, -7.9825, 2.02),
 }
 MAX_DIST_KM = 2.0            # dam must be this close to a modelled reach
+# Catchment area upstream of each dam (km2): D8 flow accumulation (pysheds fill/resolve-flats/D8) on
+# _cache/dem_utm29_100m.tif, highest accumulation within 500 m of the dam, computed 2026-11-19.
+DAM_CATCHMENT_KM2 = {"Alvito": 212, "Roxo": 354, "Monte da Rocha": 244, "Pego do Altar": 515,
+                     "Odivelas": 431, "Vale do Gaio": 520, "Campilhas": None, "Pisão": None}
+MAX_AREA_RATIO = 1.5         # lake reach(es) must drain within x1.5 of the dam catchment, else skipped
 LAKE_TYPE = 0                # 0 = endorheic (no outflow); 1 = Döll (starts FULL on a cold start)
 INITIAL_FILL = 0.5           # starting storage as a fraction of capacity (only bookkeeping for type 0)
 
@@ -63,27 +68,68 @@ def main() -> None:
         xs, ys = tf.transform(*np.array(g.coords).T)
         from shapely.geometry import LineString
         segs.append((int(f["properties"]["segId"]), LineString(list(zip(xs, ys)))))
+    top = xr.open_dataset(HERE / "mizuroute" / "topology.nc").load()
+    seg_ids = top["segId"].values
+    down = {int(s): int(d) for s, d in zip(seg_ids, top["downSegId"].values)}
+    own = {int(s): 0.0 for s in seg_ids}
+    for a, s in zip(top["area"].values, top["hruToSegId"].values):
+        own[int(s)] += float(a) / 1e6
+
+    def upstream(s):           # s and every reach draining into it
+        out = [s]
+        for u, d in down.items():
+            if d == s:
+                out += upstream(u)
+        return out
+
+    def drained(group):        # km2 draining through the outlets of a group of reaches
+        return sum(own[x] for g in group for x in upstream(g))
+
+    # Each dam becomes the lake reach(es) whose drainage area best matches its catchment: the reach it
+    # sits on, or (dam at the top of a reach, e.g. Roxo) the reaches that join just above it. A lake
+    # reach retains its WHOLE drainage area, so a dam controlling a small part of a big reach is left
+    # out (smaller error than retaining the whole reach). Dams inside an accepted lake's catchment
+    # (Alvito above Odivelas) are merged into it.
     lakes: dict[int, dict] = {}
     skipped = []
-    for name, (lat, lon, area) in DAMS.items():
+    order = sorted(DAMS, key=lambda n: -(DAM_CATCHMENT_KM2.get(n) or 0))
+    for name in order:
+        lat, lon, area = DAMS[name]
         p = Point(tf.transform(lon, lat))
         dist, seg = min((s[1].distance(p), s[0]) for s in segs)
         if dist / 1000 > MAX_DIST_KM:
             skipped.append({"name": name, "reason": f"dam {dist / 1000:.1f} km from the nearest modelled reach"})
             continue
         cap = area * 1e6 * MEAN_DEPTH_M
-        e = lakes.setdefault(seg, {"segId": seg, "dams": [], "capacity_m3": 0.0})
-        e["dams"].append({"name": name, "area_km2": area, "capacity_hm3_estimate": round(cap / 1e6, 1)})
-        e["capacity_m3"] += cap
-    top = xr.open_dataset(HERE / "mizuroute" / "topology.nc").load()
-    seg_ids = top["segId"].values
+        dam = {"name": name, "area_km2": area, "capacity_hm3_estimate": round(cap / 1e6, 1),
+               "catchment_km2_d8": DAM_CATCHMENT_KM2.get(name)}
+        host = next((L for L in lakes.values() if seg in [x for g in L["group"] for x in upstream(g)]), None)
+        if host is not None:   # nested in an accepted lake: same retention, add the storage
+            host["dams"].append(dam)
+            host["capacity_m3"] += cap
+            continue
+        catch = DAM_CATCHMENT_KM2.get(name)
+        options = [[seg]] + ([[u for u, d in down.items() if d == seg]] if any(d == seg for d in down.values()) else [])
+        if catch:
+            best = min(options, key=lambda g: abs(np.log(drained(g) / catch)))
+            ratio = drained(best) / catch
+            if not (1 / MAX_AREA_RATIO <= ratio <= MAX_AREA_RATIO):
+                skipped.append({"name": name, "reason": f"catchment {catch} km2 is {1 / ratio:.0%} of the smallest "
+                                f"modelled lake area ({drained(best):.0f} km2): retaining it would over-retain"})
+                continue
+        else:
+            best = [seg]
+        dam["lake_drainage_km2"] = round(drained(best))
+        lakes[best[0]] = {"segId": best[0], "group": best, "dams": [dam], "capacity_m3": cap}
     n = len(seg_ids)
     islake = np.zeros(n, "int32")
     mtype = np.zeros(n, "int32")
     smax = np.zeros(n)
-    for i, s in enumerate(seg_ids):
-        if int(s) in lakes:
-            islake[i], mtype[i], smax[i] = 1, LAKE_TYPE, lakes[int(s)]["capacity_m3"]
+    for L in lakes.values():   # a group shares the storage in proportion to the area it drains
+        tot = drained(L["group"])
+        for g in L["group"]:
+            i = int(np.where(seg_ids == g)[0][0])
+            islake[i], mtype[i], smax[i] = 1, LAKE_TYPE, L["capacity_m3"] * drained([g]) / tot
     top["islake"] = ("seg", islake, {"long_name": "1 = lake / reservoir segment"})
     top["LakeModelType"] = ("seg", mtype, {"long_name": "lake model type (0 = endorheic, no outflow)"})
     top["LakeTargVol"] = ("seg", np.zeros(n, "int32"), {"long_name": "lake follows a target volume (1 = true)"})
@@ -99,7 +145,8 @@ def main() -> None:
            "skipped": skipped}
     (HERE / "mizuroute" / "reservoirs.json").write_text(json.dumps(doc, indent=1, ensure_ascii=False))
     for e in lakes.values():
-        print(f"seg {e['segId']}: {', '.join(d['name'] for d in e['dams'])} - {e['capacity_m3'] / 1e6:.0f} hm3 (est.)")
+        print(f"segs {e['group']}: {', '.join(d['name'] for d in e['dams'])} - {e['capacity_m3'] / 1e6:.0f} hm3 (est.), "
+              f"drains {drained(e['group']):.0f} km2")
     for s in skipped:
         print("skipped:", s["name"], "-", s["reason"])
 

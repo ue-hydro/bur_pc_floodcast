@@ -61,12 +61,15 @@ nrows = 300
 inflow_xy = [545050.0, 4244410.0]   # river entering the window (south edge)
 inflow_wgs84 = [-8.48445, 38.34671]
 window_wgs84_bbox = [-8.54728, 38.34652, -8.47823, 38.40030]
-# Downstream (estuary) edge for the tide / water-level boundary: the low ground (< 1.5 m) where the
-# Sado leaves the window towards Setubal, i.e. the north-west corner. 1-based cell index along the
-# edge (west: rows from the south; north: columns from the west). Found from dem.asc on 2026-11-19.
+# Downstream (estuary) edge for the tide / water-level boundary: where the carved Sado channel leaves
+# the window towards Setubal (north-west). 1-based cell index along the edge (west: rows from the
+# south; north: columns from the west). Only cells whose FLUXOS bed (2x2 mean of dem_channel.asc)
+# AND whose first interior neighbour are below 8.8 m (datum; < lowest tide) are used: a tide cell
+# next to an interior cell that can dry gave NaN velocities that wiped the whole domain once the
+# river reached it (2026-11-20; the old 171-300 / 1-27 edges had 57 such cells).
 tide_edges = [
-  { EDGE = "west", FROM = 171, TO = 300 },
-  { EDGE = "north", FROM = 1, TO = 27 },
+  { EDGE = "west", FROM = 208, TO = 257 },
+  { EDGE = "north", FROM = 5, TO = 25 },
 ]
 
 [reference_gauges]

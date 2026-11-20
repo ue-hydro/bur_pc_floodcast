@@ -6,67 +6,82 @@
  "source": "OpenStreetMap reservoirs and dams, 2026-11-19",
  "lakes": [
   {
-   "segId": 2011,
+   "segId": 2013,
+   "group": [
+    2013
+   ],
    "dams": [
     {
-     "name": "Alvito",
-     "area_km2": 13.21,
-     "capacity_hm3_estimate": 132.1
-    },
-    {
-     "name": "Odivelas",
-     "area_km2": 7.89,
-     "capacity_hm3_estimate": 78.9
+     "name": "Vale do Gaio",
+     "area_km2": 5.51,
+     "capacity_hm3_estimate": 55.1,
+     "catchment_km2_d8": 520,
+     "lake_drainage_km2": 528
     }
    ],
-   "capacity_m3": 211000000.0
-  },
-  {
-   "segId": 2016,
-   "dams": [
-    {
-     "name": "Roxo",
-     "area_km2": 12.54,
-     "capacity_hm3_estimate": 125.4
-    }
-   ],
-   "capacity_m3": 125400000.0
-  },
-  {
-   "segId": 2015,
-   "dams": [
-    {
-     "name": "Monte da Rocha",
-     "area_km2": 10.58,
-     "capacity_hm3_estimate": 105.8
-    }
-   ],
-   "capacity_m3": 105800000.0
+   "capacity_m3": 55100000.0
   },
   {
    "segId": 2012,
+   "group": [
+    2012
+   ],
    "dams": [
     {
      "name": "Pego do Altar",
      "area_km2": 8.43,
-     "capacity_hm3_estimate": 84.3
+     "capacity_hm3_estimate": 84.3,
+     "catchment_km2_d8": 515,
+     "lake_drainage_km2": 517
     }
    ],
    "capacity_m3": 84300000.0
   },
   {
-   "segId": 2013,
+   "segId": 2011,
+   "group": [
+    2011
+   ],
    "dams": [
     {
-     "name": "Vale do Gaio",
-     "area_km2": 5.51,
-     "capacity_hm3_estimate": 55.1
+     "name": "Odivelas",
+     "area_km2": 7.89,
+     "capacity_hm3_estimate": 78.9,
+     "catchment_km2_d8": 431,
+     "lake_drainage_km2": 502
+    },
+    {
+     "name": "Alvito",
+     "area_km2": 13.21,
+     "capacity_hm3_estimate": 132.1,
+     "catchment_km2_d8": 212
     }
    ],
-   "capacity_m3": 55100000.0
+   "capacity_m3": 211000000.0
+  },
+  {
+   "segId": 2002,
+   "group": [
+    2002,
+    2004
+   ],
+   "dams": [
+    {
+     "name": "Roxo",
+     "area_km2": 12.54,
+     "capacity_hm3_estimate": 125.4,
+     "catchment_km2_d8": 354,
+     "lake_drainage_km2": 353
+    }
+   ],
+   "capacity_m3": 125400000.0
   }
  ],
  "skipped": [
+  {
+   "name": "Monte da Rocha",
+   "reason": "catchment 244 km2 is 37% of the smallest modelled lake area (668 km2): retaining it would over-retain"
+  },
   {
    "name": "Campilhas",
    "reason": "dam 5.6 km from the nearest modelled reach"
