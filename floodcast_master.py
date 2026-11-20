@@ -44,13 +44,25 @@ PROG = None  # Progress (live progress.json for the site)
 RESTART = {"now": False}
 
 
+EARLY_CHECK_H = 1.0   # start asking ECMWF this long before a run's usual publication time
+
+
 def new_cycles(cfg: OperationalConfig, store) -> list[datetime]:
-    """Forecast cycles ECMWF has published and we have not processed yet (oldest first)."""
+    """Forecast cycles ECMWF has published and we have not processed yet (oldest first).
+
+    ECMWF open data appear at fixed times (~7 h after the 06/18 UTC runs, ~8 h after 00/12 UTC):
+    a cycle is not asked for before EARLY_CHECK_H ahead of that, so between runs the loop sends
+    no requests to ECMWF (APA gauges and the site keep their own, slower schedule)."""
+    from floodcast.operational.site import ecmwf_publish_delay_h
+
     fc = cfg.forecast
     out = []
-    for cycle in sorted(ifs.cycle_candidates(now_utc(), fc.cycles, max_age_h=fc.max_cycle_age_h)):
+    now = now_utc()
+    for cycle in sorted(ifs.cycle_candidates(now, fc.cycles, max_age_h=fc.max_cycle_age_h)):
         if store.is_complete(cycle):
             continue
+        if now < cycle + timedelta(hours=ecmwf_publish_delay_h(cycle.hour) - EARLY_CHECK_H):
+            continue   # too early: not published yet, no request
         if ifs.cycle_is_available(cycle, source=fc.source, resolution=fc.resolution,
                                   max_lead_h=fc.screening_max_lead_h, ensemble=False):
             out.append(cycle)
@@ -590,8 +602,9 @@ def idle_status(store, wait_s: float, processed: int) -> None:
         exp = ""
         try:
             c = datetime.fromisoformat(latest["cycle"].replace("Z", "+00:00")) + timedelta(hours=CYCLE_STEP_H)
-            exp = (f" | next run {c:%H} UTC expected ~"
-                   f"{(c + timedelta(hours=ecmwf_publish_delay_h(c.hour))).astimezone():%H:%M}")
+            due = c + timedelta(hours=ecmwf_publish_delay_h(c.hour))
+            exp = (f" | next run {c:%H} UTC expected ~{due.astimezone():%H:%M}"
+                   f" (ECMWF not asked before {(due - timedelta(hours=EARLY_CHECK_H)).astimezone():%H:%M})")
         except (KeyError, ValueError):
             pass
         log.info("waiting: no new ECMWF forecast yet | on the site: %s (level %s)%s | next check %s",
