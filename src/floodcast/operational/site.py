@@ -105,6 +105,8 @@ T: dict[str, tuple[str, str]] = {
     "fck_last": ("Último dia medido ({d}): <b>{o} m³/s</b>; modelo no início da previsão: <b>{m} m³/s</b>.",
                 "Latest measured day ({d}): <b>{o} m³/s</b>; model at the forecast start: <b>{m} m³/s</b>."),
     "wc_h": ("Webcam em direto", "Live webcam"),
+    "wc_big": ("Ampliar imagem", "Enlarge image"),
+    "wc_close": ("Fechar", "Close"),
     "wc_credit": ("imagem: {c}", "image: {c}"),
     "wc_upd": ("atualizada às", "updated at"),
     "wc_err": ("imagem indisponível de momento", "image unavailable at the moment"),
@@ -1259,6 +1261,12 @@ def _webcam_block(i18n: _I18n, cams: list) -> str:
             f'<span class="muted">{_esc(c.get("name") or "")}</span> <span class="wc-time"></span></figcaption>'
             f'<div class="wc-frame"><a href="{_esc(link)}" target="_blank" rel="noopener">'
             f'<img alt="{_esc(i18n.plain("wc_h"))}" loading="lazy"></a>'
+            f'<button type="button" class="wcfs" title="{_esc(i18n.plain("wc_big"))}" aria-label="{_esc(i18n.plain("wc_big"))}">'
+            f'<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" '
+            f'd="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5"/></svg></button>'
+            f'<dialog class="wc-dlg" aria-label="{_esc(i18n.plain("wc_h"))}"><div class="wc-dlg-head"><span class="wc-dlg-t"></span>'
+            f'<button type="button" class="wc-close" title="{_esc(i18n.plain("wc_close"))}" aria-label="{_esc(i18n.plain("wc_close"))}">✕</button></div>'
+            f'<img alt="{_esc(i18n.plain("wc_h"))}"></dialog>'
             + (f'<div class="wcmap" data-lat="{float(c["lat"])}" data-lon="{float(c["lon"])}"'
                f'{"" if c.get("view_deg") is None else f" data-view={float(c["view_deg"])}"} '
                f'data-name="{_esc(i18n.plain("wc_where_approx" if c.get("approx") else "wc_where"))}" '

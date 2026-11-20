@@ -236,6 +236,8 @@ ES = {
     "fck_mod": "Modelo en el mismo punto",
     "fck_last": "Último día medido ({d}): <b>{o} m³/s</b>; modelo al inicio de la previsión: <b>{m} m³/s</b>.",
     "wc_h": "Webcam en directo",
+    "wc_big": "Ampliar imagen",
+    "wc_close": "Cerrar",
     "wc_credit": "imagen: {c}",
     "wc_upd": "actualizada a las",
     "wc_err": "imagen no disponible en este momento",

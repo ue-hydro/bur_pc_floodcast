@@ -377,12 +377,29 @@
         var dm = now.toLocaleDateString(loc, { day: "2-digit", month: "2-digit", timeZone: "Europe/Lisbon" });
         var hm = now.toLocaleTimeString(loc, { hour: "2-digit", minute: "2-digit", timeZone: "Europe/Lisbon" });
         if (tEl) tEl.textContent = "— " + dm + " " + hm;   // when this image was fetched (Lisbon time)
+        if (dlg && dlg.open) { big.src = img.src; setTitle(); }
       };
       probe.onerror = function () { pending = false; fig.classList.add("wc-off"); if (tEl) tEl.textContent = err[lang()] || err.pt || ""; };
       probe.src = src + (src.indexOf("?") < 0 ? "?" : "&") + "t=" + bucket;
     }
+    // enlarged view: same image (no extra request); keeps refreshing while open
+    var dlg = fig.querySelector(".wc-dlg"), big = dlg && dlg.querySelector("img"), fsb = fig.querySelector(".wcfs");
+    function setTitle() {
+      var cap = fig.querySelector("figcaption"), t = dlg.querySelector(".wc-dlg-t");
+      if (cap && t) t.innerHTML = cap.innerHTML;   // keeps the language spans (only the chosen one shows)
+    }
+    if (dlg && fsb) {
+      fsb.addEventListener("click", function () {
+        if (!img.src) return;
+        big.src = img.src; setTitle();
+        if (dlg.showModal) dlg.showModal(); else dlg.setAttribute("open", "");
+        onScreen = true; load(false);
+      });
+      dlg.querySelector(".wc-close").addEventListener("click", function () { dlg.close ? dlg.close() : dlg.removeAttribute("open"); });
+      dlg.addEventListener("click", function (ev) { if (ev.target === dlg) dlg.close(); });   // click outside the image closes
+    }
     if (window.IntersectionObserver) {
-      new IntersectionObserver(function (es) { onScreen = es[0].isIntersecting; if (onScreen) load(false); }, { rootMargin: "200px" }).observe(fig);
+      new IntersectionObserver(function (es) { onScreen = es[0].isIntersecting || !!(dlg && dlg.open); if (onScreen) load(false); }, { rootMargin: "200px" }).observe(fig);
     }
     document.addEventListener("visibilitychange", function () { if (!document.hidden) load(false); });
     setInterval(function () { load(false); }, 15000);   // checks often, fetches only when the interval has passed
