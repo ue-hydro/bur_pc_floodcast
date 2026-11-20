@@ -233,17 +233,27 @@
   function img(src) {
     return new Promise(function (res, rej) { var i = new Image(); i.onload = function () { res(i); }; i.onerror = rej; i.src = src; });
   }
+  // The page re-sends the layer as its clock runs: act only on a CHANGE of layer, otherwise the
+  // viewer's own "Water" button would be switched back on every few frames.
+  var curLayer = "depth";
+  function waterBtn() {
+    var b = document.getElementById("btn-water"); if (b) b.classList.toggle("active", !!viewer.showWater);
+  }
   function setLayer(k) {
     var gl = viewer.gl;
     if (!gl) return;
-    if (!LAYER_IMG[k]) {   // depth: back to the normal view - only if we draped something before
+    k = LAYER_IMG[k] ? k : "depth";
+    if (k === curLayer) return;
+    curLayer = k;
+    if (k === "depth") {   // back to the live water view from a draped static layer
       if (draped) { viewer.satelliteTex = baseSat; viewer.useSatellite = baseUse; draped = false; }
-      viewer.showWater = true;
+      viewer.showWater = true; waterBtn();
       return;
     }
     function apply(tex) {
+      if (curLayer !== k) return;   // the user moved on while the image loaded
       if (!draped) { baseSat = viewer.satelliteTex; baseUse = viewer.useSatellite; draped = true; }   // remember the real ground
-      viewer.satelliteTex = tex; viewer.useSatellite = true; viewer.showWater = false;
+      viewer.satelliteTex = tex; viewer.useSatellite = true; viewer.showWater = false; waterBtn();
     }
     if (layerTex[k]) { apply(layerTex[k]); return; }
     Promise.all([img("data/satellite.jpg" + (viewer._v || "")).catch(function () { return img("data/hillshade.png"); }),
