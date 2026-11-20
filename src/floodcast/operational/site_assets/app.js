@@ -357,6 +357,20 @@
     });
   });
 
+  // ---- vertical exaggeration slider on the 3-D viewer (factor x the viewer's default relief)
+  var EXAG = 1;
+  function sendExag(w) { try { w.postMessage({ type: "fluxos-exag", factor: EXAG }, "*"); } catch (e) {} }
+  Array.prototype.forEach.call(document.querySelectorAll(".exagslider"), function (sl) {
+    var out = sl.parentElement.querySelector(".exagv");
+    sl.addEventListener("input", function () {
+      EXAG = +sl.value || 1;
+      if (out) out.textContent = (EXAG % 1 ? EXAG.toFixed(2).replace(/0$/, "") : EXAG) + "×";
+      var fr = document.querySelector("#anim-card iframe");
+      if (fr && fr.contentWindow) sendExag(fr.contentWindow);
+      if (popWin && !popWin.closed) sendExag(popWin);
+    });
+  });
+
   // ---- 3-D viewer in its own pop-up window, driven by this page's clock
   var popWin = null;
   Array.prototype.forEach.call(document.querySelectorAll("button.popout"), function (b) {
@@ -364,7 +378,7 @@
       var w = Math.min(1600, screen.availWidth - 40), h = Math.min(1000, screen.availHeight - 60);
       var url = b.getAttribute("data-src").split("#")[0] + "#lang=" + root.getAttribute("data-lang");
       popWin = window.open(url, "floodcast-fluxos-3d", "popup=yes,width=" + w + ",height=" + h);
-      if (popWin) { popWin.focus(); setTimeout(function () { sendSun(popWin); }, 6000); }
+      if (popWin) { popWin.focus(); setTimeout(function () { sendSun(popWin); if (EXAG !== 1) sendExag(popWin); }, 6000); }
     });
   });
 

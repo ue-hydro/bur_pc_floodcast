@@ -378,6 +378,9 @@ T: dict[str, tuple[str, str]] = {
     "wg_hint": ("🖱 Arraste para rodar · roda do rato para aproximar · Shift + arrastar para deslocar · clique para parar a rotação",
                 "🖱 Drag to rotate · scroll to zoom · Shift + drag to pan · click to stop the rotation"),
     "rain_lbl": ("Chuva prevista", "Forecast rain"),
+    "exag_lbl": ("Exagero vertical", "Vertical exaggeration"),
+    "exag_tip": ("Aumenta ou reduz o relevo na animação 3D (1× = escala por defeito do visualizador)",
+                 "Raises or flattens the relief in the 3-D animation (1× = the viewer's default scale)"),
     "rain_tip": ("Mostra a chuva na animação 3D quando e com a intensidade prevista (sem chuva prevista, não chove)",
                  "Shows rain in the 3-D animation when and as hard as forecast (no forecast rain, no rain)"),
     "sun_lbl": ("Condições de luz locais", "Local light conditions"),
@@ -1619,7 +1622,10 @@ def _animation_block(i18n: _I18n, scenarios: list[dict], prefix: str, data_rel: 
         f'<button type="button" class="raintoggle" aria-pressed="true" title="{_esc(i18n.plain("rain_tip"))}">'
         f'<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M7 15a5 5 0 01-.5-9.97A6 6 0 0118 6a4.5 4.5 0 01-.5 9H7z"/>'
         f'<path d="M8 18l-1 3M12 18l-1 3M16 18l-1 3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>'
-        f'<span>{i18n.raw("rain_lbl")}</span><span class="sw" aria-hidden="true"><i></i></span></button></div>'
+        f'<span>{i18n.raw("rain_lbl")}</span><span class="sw" aria-hidden="true"><i></i></span></button>'
+        f'<label class="exagctl" title="{_esc(i18n.plain("exag_tip"))}"><span>{i18n.raw("exag_lbl")}</span>'
+        f'<input type="range" class="exagslider" min="0.5" max="6" step="0.25" value="1" aria-label="{_esc(i18n.plain("exag_lbl"))}">'
+        f'<b class="exagv">1×</b></label></div>'
         f'</div>'
         f'</section>'
     )

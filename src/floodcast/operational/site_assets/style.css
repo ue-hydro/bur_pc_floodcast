@@ -874,3 +874,9 @@ html[data-scn="lower"] .wide-chart .chart .scn.lo,html[data-scn="upper"] .wide-c
 .gmapwrap i.gm-st{border-radius:50%;background:#c62828;border:2px solid #fff;box-shadow:0 0 0 1px #c62828}
 .gmapwrap i.gm-cell{background:rgba(255,213,79,.55);border:1.5px solid #ffb300}
 .gmapwrap i.gm-dom{border:1.5px dashed #ffffff;background:#5b7fa6}
+
+/* 3-D viewer: vertical exaggeration slider next to the sun / rain switches */
+.exagctl{display:inline-flex;align-items:center;gap:8px;padding:6px 12px;border:1px solid rgba(255,255,255,.35);border-radius:2px;
+  background:rgba(29,35,41,.85);color:#fff;font-weight:600;font-size:.85rem}
+.exagctl input{width:110px;accent-color:#ffd54a}
+.exagctl .exagv{min-width:3.2em;text-align:right;font-variant-numeric:tabular-nums}

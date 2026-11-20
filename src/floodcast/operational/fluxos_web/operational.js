@@ -262,6 +262,20 @@
     if (d && d.type === "fluxos-layer" && (!CTRL || ev.source === CTRL)) setLayer(d.layer);
   });
 
+  // the page's vertical-exaggeration slider: {type:"fluxos-exag", factor} x the template's default
+  var EXAG0 = null, exagTimer = null;
+  function exagControl() {
+    EXAG0 = viewer.exaggeration || 0.1;
+    window.addEventListener("message", function (ev) {
+      var d = ev.data;
+      if (!d || d.type !== "fluxos-exag" || (CTRL && ev.source !== CTRL)) return;
+      var f = Math.max(0.25, Math.min(10, +d.factor || 1));
+      viewer.exaggeration = EXAG0 * f;
+      clearTimeout(exagTimer);   // the mesh rebuild is heavy: once the slider settles
+      exagTimer = setTimeout(function () { try { viewer.rebuildTerrainMesh(); } catch (e) {} }, 60);
+    });
+  }
+
   function start() {
     // bluer water: mostly the clear palette with a little river sediment (template default 0.55)
     viewer.turbidity = 0.2;
@@ -271,6 +285,7 @@
     if (CTRL) followPageClock();
     sunClock();
     rainToggle();
+    exagControl();
     autoRotate();
     requestAnimationFrame(tick);
   }

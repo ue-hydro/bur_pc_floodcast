@@ -206,11 +206,16 @@ ADAPTER_JS = Path(__file__).with_name("fluxos_web") / "operational.js"
 
 def inject_operational_adapter(webgl_dir: Path) -> None:
     """Add the floodcast operational adapter (basic controls, synced rain/sun/time) to a viewer."""
+    import hashlib
+    import re
+
     shutil.copyfile(ADAPTER_JS, webgl_dir / "operational.js")
     page = webgl_dir / "index.html"
     html = page.read_text()
-    tag = '<script src="operational.js"></script>'
+    ver = hashlib.sha1(ADAPTER_JS.read_bytes()).hexdigest()[:10]   # browsers fetch a new adapter when it changes
+    tag = f'<script src="operational.js?v={ver}"></script>'
     if tag not in html:
+        html = re.sub(r'<script src="operational\.js(\?v=[0-9a-f]*)?"></script>\n?', "", html)
         html = html.replace("</body>", tag + "\n</body>", 1) if "</body>" in html else html + tag
         page.write_text(html)
 
