@@ -938,15 +938,6 @@ html[data-scn="lower"] .wide-chart .chart .scn.lo,html[data-scn="upper"] .wide-c
 .webcam .wc-dot{color:#c62828}
 .webcam .wcmap .leaflet-control-layers{display:none}   /* inset: no basemap switch */
 
-/* section 2: chart tabs, Alcácer forecast | upstream gauge forecast + measured flow (APA) */
-.wide-chart .qtabs{position:absolute;top:0;left:0;z-index:2;display:inline-flex;border:1px solid var(--navy)}   /* in the band beside the time badge: the chart stays level with charts 1 and 3 */
-.qtabs .seg{padding:3px 8px;font-size:.74rem;white-space:nowrap}
-.fck-more{font-size:.76rem}.fck-more summary{cursor:pointer;color:var(--mute)}.fck-more p{margin:2px 0 0}
-.qpane[hidden]{display:none}
-.fck-note{font-size:.78rem;margin:2px 0 0}
-.chart.fcheck{width:100%;height:auto}
-.chart .obsbar{fill:var(--obs);opacity:.85}
-.legend i.obsq{background:var(--obs)}
 .webcam figcaption .wc-time{font-weight:700;white-space:nowrap}
 
 /* webcam: enlarge button (bottom left: the location inset is top right) and the enlarged view */

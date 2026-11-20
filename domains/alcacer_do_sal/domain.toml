@@ -111,13 +111,3 @@ gauge_zero_m = -2.18
 lat = 38.370111
 lon = -8.506972
 radius_m = 60
-
-# APA gauges with MEASURED river flow (SNIRH parameter 1850, daily mean) used to check the model
-# upstream (there is no flow gauge at Alcácer: the town gauge measures level, dominated by the tide).
-# seg = model reach with the same drainage area (station sheet vs mizuRoute upstream area).
-[[flow_gauges]]
-code = "26G/05H"
-name = "Ponte Alvalade Sado"
-snirh_site = 1627758998
-seg = 2015
-area_km2 = 669.75

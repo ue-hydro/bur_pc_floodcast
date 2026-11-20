@@ -347,12 +347,6 @@ def handle_cycle(cfg: OperationalConfig, p: CycleProcessor, cycle: datetime, *, 
             reach = getattr(p.hydrology, "last_reach_flow", None)
             if reach:
                 write_json(out / "hydrology" / "reach_flow.json", {"cycle": iso(cycle), **reach})
-                try:   # measured daily flow at the upstream APA gauge vs the model there (section 2)
-                    from floodcast.operational import gauges as _g
-
-                    _g.update_flow_check(out, p.domain)
-                except Exception as exc:
-                    log.warning("upstream flow check not produced: %s", exc)
             p._write_discharge_csv(out / "hydrology" / "discharge.csv", cycle, hours, q)
             level = summary["decision"]["level"]
             flow_trigger = cfg.hydrology.always_run or policies.hydraulics_triggered(level, cfg.hydrology)
@@ -564,10 +558,6 @@ def refresh_gauges(cfg: OperationalConfig, store, p, force: bool = False) -> boo
             n0 = len((before.get("observed") or {}).get("times_utc") or [])
             doc = gauges.update_cycle(cdir, p.domain)
             n1 = len(((doc or {}).get("observed") or {}).get("times_utc") or [])
-            fc0 = json.loads((cdir / gauges.FLOW_FILE).read_text()) if (cdir / gauges.FLOW_FILE).is_file() else {}
-            fdoc = gauges.update_flow_check(cdir, p.domain)
-            if fdoc and len((fdoc.get("observed") or {}).get("dates") or []) != len((fc0.get("observed") or {}).get("dates") or []):
-                changed = True
             if n1 != n0 or (doc and not before):
                 changed = True
                 log.info("APA gauge: %s measurements now %d (forecast %s)", gauges.gauge_config(p.domain).get("code"),

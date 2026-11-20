@@ -1168,19 +1168,3 @@
     }, EVERY_MS);
   })();
 })();
-
-/* section 2: switch the flow chart between Alcácer and the upstream gauge with measurements */
-(function () {
-  var groups = document.querySelectorAll(".qtabs");
-  Array.prototype.forEach.call(groups, function (g) {
-    var wrap = g.parentNode;
-    function show(q) {
-      Array.prototype.forEach.call(g.querySelectorAll(".seg"), function (b) { b.setAttribute("aria-pressed", b.getAttribute("data-q") === q ? "true" : "false"); });
-      Array.prototype.forEach.call(wrap.querySelectorAll(".qpane"), function (p) { p.hidden = p.getAttribute("data-q") !== q; });
-      try { localStorage.setItem("fc_qtab", q); } catch (e) {}
-    }
-    g.addEventListener("click", function (ev) { var b = ev.target.closest(".seg"); if (b) show(b.getAttribute("data-q")); });
-    var saved = null; try { saved = localStorage.getItem("fc_qtab"); } catch (e) {}
-    if (saved && wrap.querySelector('.qpane[data-q="' + saved + '"]')) show(saved);
-  });
-})();
