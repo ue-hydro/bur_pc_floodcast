@@ -77,7 +77,7 @@ T: dict[str, tuple[str, str]] = {
     "hydro_p_scn": ("Caudal simulado com três cenários de chuva — inferior (P10), central (P50) e superior (P90) da chuva acumulada de todas as previsões disponíveis.",
                     "Flow simulated with three rainfall scenarios — lower (P10), central (P50) and upper (P90) of the cumulative rain of all available forecasts."),
     "src_tbl_h": ("Estado de cada fonte de previsão de chuva", "Status of each rainfall forecast source"),
-    "s12_ctl": ("Cenário mostrado nos gráficos e mapas 1 e 2:", "Scenario shown in charts and maps 1 and 2:"),
+    "s12_ctl": ("Cenário mostrado nos gráficos e mapas 1 a 3:", "Scenario shown in charts and maps 1 to 3:"),
     "peak_more": ("Pico previsto e caudal de ponta por cenário", "Forecast peak and peak flow by scenario"),
     "src_h": ("Previsões de chuva utilizadas", "Rainfall forecasts used"),
     "src_p": ("{n} previsões de vários centros meteorológicos, ordenadas pela chuva acumulada na bacia. Os três cenários são previsões reais:",
@@ -90,6 +90,39 @@ T: dict[str, tuple[str, str]] = {
                 "Very likely: flooded even in the lower scenario · Likely: in the central · Possible: only in the upper."),
     "tide_h": ("Nível do mar na foz do Sado (maré + sobrelevação)", "Sea level at the Sado mouth (tide + surge)"),
     "tide_lvl": ("Nível do mar", "Sea level"),
+    "j_level": ("Nível do rio", "River level"),
+    "lvl_h": ("Nível do rio em Alcácer do Sal: previsto e medido", "River level at Alcácer do Sal: forecast and measured"),
+    "lvl_p": ("Nível da água no Sado junto à estação da APA {code}, previsto pelo modelo de inundação (FLUXOS) e medido pela "
+              "estação em tempo real. Metros acima do nível médio do mar. Serve para verificar se a previsão está certa.",
+              "Water level of the Sado at the APA gauge {code}, forecast by the flood model (FLUXOS) and measured by the gauge in "
+              "real time. Metres above mean sea level. It shows whether the forecast is right."),
+    "lvl_obs": ("Medido (APA)", "Measured (APA)"),
+    "lvl_pred": ("Previsto", "Forecast"),
+    "lvl_start": ("início da previsão", "forecast start"),
+    "lvl_msl": ("nível médio do mar", "mean sea level"),
+    "lvl_last": ("Última medição", "Latest measurement"),
+    "lvl_last_txt": ("{t}: medido <b>{o} m</b>, previsto <b>{p} m</b> (diferença {d} m)",
+                     "{t}: measured <b>{o} m</b>, forecast <b>{p} m</b> (difference {d} m)"),
+    "lvl_noobs": ("Ainda não há medições da APA dentro do período da previsão.",
+                  "No APA measurements inside the forecast period yet."),
+    "lvl_noobs_any": ("Medições da APA indisponíveis neste momento.", "APA measurements unavailable at the moment."),
+    "lvl_stats": ("Desde o início da previsão ({n} h com medição): erro médio {b} m, erro absoluto médio {m} m. "
+                  "Variação medida {o0} a {o1} m; prevista {p0} a {p1} m.",
+                  "Since the forecast start ({n} h with measurements): mean error {b} m, mean absolute error {m} m. "
+                  "Measured range {o0} to {o1} m; forecast {p0} to {p1} m."),
+    "lvl_more": ("Estação, conversão e método", "Gauge, conversion and method"),
+    "lvl_m_st": ("Estação {name} ({code}), rede hidrométrica da APA, sensor de nível com telemetria — "
+                 "<a href=\"{url}\" rel=\"noopener\">ficha no SNIRH</a>.",
+                 "Gauge {name} ({code}), APA hydrometric network, level sensor with telemetry — "
+                 "<a href=\"{url}\" rel=\"noopener\">SNIRH station sheet</a>."),
+    "lvl_m_zero": ("A estação mede a altura acima do zero da escala; somamos a cota desse zero ({z} m) para obter metros acima do nível médio do mar.",
+                   "The gauge measures height above its staff-gauge zero; we add that zero's elevation ({z} m) to get metres above mean sea level."),
+    "lvl_m_prov": ("Dados da APA em tempo real, provisórios e não validados. Atualizados no site de hora a hora a partir do SNIRH.",
+                   "APA real-time data, provisional and not validated. Refreshed on the site hourly from SNIRH."),
+    "lvl_m_pred": ("Previsto: superfície da água do FLUXOS (terreno + profundidade), mediana das células do rio a menos de {r} m da estação. "
+                   "O leito do rio não está medido (modelo de terreno de superfície), por isso a diferença absoluta conta menos que a forma e o momento das subidas.",
+                   "Forecast: FLUXOS water surface (terrain + depth), median of the river cells within {r} m of the gauge. "
+                   "The river bed is not surveyed (surface terrain model), so the absolute offset matters less than the shape and timing of the rises."),
     "tide_ref": ("relativo ao nível médio", "relative to mean sea level"),
     "tide_hw": ("preia-mar", "high tide"),
     "dec_h": ("Resumo para decisão", "Decision summary"),
@@ -215,7 +248,7 @@ T: dict[str, tuple[str, str]] = {
     ),
     "updated": ("Última atualização", "Last update"),
     "grp_h": ("Previsão de áreas inundadas", "Flooded area forecast"),
-    "ctl_l": ("Mostrar no mapa 3.1 e na animação 3.2:", "Show on map 3.1 and animation 3.2:"),
+    "ctl_l": ("Mostrar no mapa 4.1 e na animação 4.2:", "Show on map 4.1 and animation 4.2:"),
     "strips_h": ("Chuva, caudal e maré em todo o período da previsão", "Rain, river flow and tide over the whole forecast period"),
     "strips_p": ("— a linha vertical marca o instante mostrado no mapa e na animação.",
                  "— the vertical line marks the moment shown on the map and in the animation."),
@@ -1069,6 +1102,146 @@ def _hydrology_block(i18n: _I18n, summary: dict | None, flow_src: str | None = N
     )
 
 
+def _tspans(html: str) -> str:
+    """Multilingual spans -> SVG tspans (span is not valid inside an SVG text)."""
+    return html.replace("<span ", "<tspan ").replace("</span>", "</tspan>")
+
+
+def _level_ticks(lo: float, hi: float) -> list[float]:
+    span = max(hi - lo, 0.1)
+    step = next(s for s in (0.1, 0.2, 0.25, 0.5, 1.0, 2.0, 5.0, 10.0) if span / s <= 6)
+    import math
+
+    k0, k1 = math.floor(lo / step), math.ceil(hi / step)
+    return [round(k * step, 3) for k in range(k0, k1 + 1)]
+
+
+def _gauge_chart(i18n: _I18n, doc: dict) -> str:
+    """Forecast level (scenario lines + band) and APA measurements on one time axis: 48 h of
+    measurements before the forecast start, then the forecast window."""
+    from datetime import timedelta as _td
+
+    pred, obs = doc.get("predicted") or {}, doc.get("observed") or {}
+    ptimes = pred.get("times_utc") or []
+    if len(ptimes) < 2:
+        return ""
+    t_start, t_end = _parse_ts(ptimes[0]), _parse_ts(ptimes[-1])
+    otimes = [_parse_ts(t) for t in obs.get("times_utc") or []]
+    t0 = min([t_start] + [t for t in otimes if t is not None])
+    nh = int((t_end - t0).total_seconds() // 3600)
+    times = [(t0 + _td(hours=i)).strftime("%Y-%m-%dT%H:%M:%SZ") for i in range(nh + 1)]
+    idx = {t: i for i, t in enumerate(times)}
+
+    def on_axis(ts, vals):
+        out = [None] * len(times)
+        for t, v in zip(ts, vals):
+            if t in idx and v is not None:
+                out[idx[t]] = float(v)
+        return out
+
+    sc = {k: on_axis(ptimes, pred.get(k) or []) for k in ("p10", "p50", "p90")}
+    ob = on_axis(obs.get("times_utc") or [], obs.get("level_m") or [])
+    allv = [v for s in (*sc.values(), ob) for v in s if v is not None] + [0.0]
+    ticks = _level_ticks(min(allv) - 0.1, max(allv) + 0.15)
+    lo, hi = ticks[0], ticks[-1]
+    w, h = 640, 380
+    x0, x1, y0, y1 = 48, w - 12, 20, h - 40
+    pw, ph = x1 - x0, y1 - y0
+
+    def px(i):
+        return x0 + pw * i / (len(times) - 1)
+
+    def py(v):
+        return y1 - ph * (v - lo) / (hi - lo)
+
+    def line(vals, cls):
+        segs, cur = [], []
+        for i, v in enumerate(vals):
+            if v is None:
+                if len(cur) > 1:
+                    segs.append(cur)
+                cur = []
+            else:
+                cur.append(f"{px(i):.1f},{py(v):.1f}")
+        if len(cur) > 1:
+            segs.append(cur)
+        return "".join(f'<polyline class="{cls}" points="{" ".join(s)}"/>' for s in segs)
+
+    series = [{"l": _sl(i18n, "lvl_obs"), "u": "m", "v": ob, "c": "obs", "d": 2}] + \
+        _scn_series(i18n, {"up": sc["p90"], "ce": sc["p50"], "lo": sc["p10"]}, "m", 2)
+    cursor = _cursor_attr(times, [px(i) for i in range(len(times))], y0, y1, series)
+    parts = [f'<svg class="chart lvlchart" viewBox="0 0 {w} {h}"{cursor} role="img" '
+             f'aria-label="{_esc(i18n.plain("lvl_h"))}">']
+    for tk in ticks:
+        y = py(tk)
+        parts.append(f'<line class="gridl{" zero" if tk == 0 else ""}" x1="{x0}" x2="{x1}" y1="{y:.1f}" y2="{y:.1f}"/>')
+        parts.append(f'<text x="{x0 - 6}" y="{y + 4:.1f}" text-anchor="end">{tk:g}</text>')
+    parts.append(f'<text x="12" y="{y0 + ph / 2:.1f}" transform="rotate(-90 12 {y0 + ph / 2:.1f})" text-anchor="middle">m</text>')
+    if lo < 0 < hi:
+        parts.append(f'<text class="msl-t" x="{x0 + 4}" y="{py(0) - 4:.1f}">{_tspans(i18n.raw("lvl_msl"))}</text>')
+    i0 = idx.get(ptimes[0], 0)
+    xs = px(i0)
+    parts.append(f'<rect class="pastbg" x="{x0}" y="{y0}" width="{xs - x0:.1f}" height="{ph}"/>')
+    upper = [(i, v) for i, v in enumerate(sc["p90"]) if v is not None]
+    lower = [(i, v) for i, v in enumerate(sc["p10"]) if v is not None]
+    if upper and lower:
+        pts = " ".join(f"{px(i):.1f},{py(v):.1f}" for i, v in upper) + " " + \
+            " ".join(f"{px(i):.1f},{py(v):.1f}" for i, v in reversed(lower))
+        parts.append(f'<polygon class="band" points="{pts}"/>')
+    for key, cls in (("p10", "lo"), ("p50", "ce"), ("p90", "up")):
+        parts.append(line(sc[key], f"scn {cls}"))
+    parts.append(line(ob, "obs"))
+    parts.append("".join(f'<circle class="obsdot" cx="{px(i):.1f}" cy="{py(v):.1f}" r="1.9"/>'
+                         for i, v in enumerate(ob) if v is not None))
+    parts.append(f'<line class="fcstart" x1="{xs:.1f}" x2="{xs:.1f}" y1="{y0}" y2="{y1}"/>'
+                 f'<text class="fcstart-t" x="{xs + 4:.1f}" y="{y0 + 28}">{_tspans(i18n.raw("lvl_start"))} ▸</text>')
+    parts.append(f'<line class="axis" x1="{x0}" x2="{x1}" y1="{y1}" y2="{y1}"/>')
+    parts.append(_time_labels(times, x0, pw, 6).replace("{y}", str(y1 + 18)))
+    parts.append("</svg>")
+    legend = (f'<p class="legend"><span><i class="ln obsc"></i>{i18n.raw("lvl_obs")}</span>'
+              f'<span><i class="ln selc"></i>{i18n.raw("lvl_pred")} · {i18n.raw("scn_sel")}</span>'
+              f'<span><i class="ln othc"></i>{i18n.raw("scn_oth")}</span>'
+              f'<span><i style="background:var(--band)"></i>{i18n.raw("band")}</span></p>')
+    return "".join(parts) + legend
+
+
+def _gauge_block(i18n: _I18n, doc: dict | None) -> str:
+    """Section 3: forecast vs measured river level at the APA gauge in town."""
+    from .gauges import comparison
+
+    if not doc or not (doc.get("predicted") or {}).get("times_utc"):
+        return ""
+    g = doc.get("gauge") or {}
+    chart = _gauge_chart(i18n, doc)
+    stats = []
+    for scn, cls in (("p10", "lower"), ("p50", "central"), ("p90", "upper")):
+        cmp_ = comparison(doc, scn)
+        if cmp_ is None:
+            msg = "lvl_noobs" if (doc.get("observed") or {}).get("fetched_utc") else "lvl_noobs_any"
+            body = f'<p class="muted">{i18n.raw(msg)}</p>'
+        else:
+            last = cmp_["last"]
+            sgn = lambda v: f"{v:+.2f}".replace("-", "−")  # noqa: E731
+            body = (f'<p><strong>{i18n.raw("lvl_last")}</strong> — '
+                    + i18n.raw("lvl_last_txt", t=_Html(_short_t(last["time_utc"])), o=f'{last["obs_m"]:.2f}',
+                               p=f'{last["pred_m"]:.2f}', d=sgn(last["pred_m"] - last["obs_m"]))
+                    + "</p>"
+                    + f'<p class="muted">' + i18n.raw("lvl_stats", n=cmp_["n"], b=sgn(cmp_["bias_m"]), m=f'{cmp_["mae_m"]:.2f}',
+                                                     o0=f'{cmp_["obs_range_m"][0]:.2f}', o1=f'{cmp_["obs_range_m"][1]:.2f}',
+                                                     p0=f'{cmp_["pred_range_m"][0]:.2f}', p1=f'{cmp_["pred_range_m"][1]:.2f}') + "</p>")
+        stats.append(f'<div class="gstat imp-{cls}">{body}</div>')
+    method = "<ul>" + "".join(f"<li>{x}</li>" for x in (
+        i18n.raw("lvl_m_st", name=g.get("name", ""), code=g.get("code", ""), url=_Html(_esc(g.get("url", "")))),
+        i18n.raw("lvl_m_zero", z=f'{float(g.get("gauge_zero_m") or 0):.2f}'),
+        i18n.raw("lvl_m_prov"),
+        i18n.raw("lvl_m_pred", r="60"))) + "</ul>"
+    return (f'<section class="card" id="riverlevel"><h2><span class="num">3</span>{i18n.raw("lvl_h")}</h2>'
+            f'<p class="muted">{i18n.raw("lvl_p", code=g.get("code", ""))}</p>'
+            f'<div class="wide-chart"><div class="clockbadge chartclock"></div>{chart}</div>'
+            f'<div class="gstats">{"".join(stats)}</div>'
+            f'<details class="tech s12-more"><summary>{i18n.raw("lvl_more")}</summary>{method}</details></section>')
+
+
 def _legend_html(i18n: _I18n) -> str:
     items = []
     for low, high, colour in DEPTH_CLASSES:
@@ -1147,7 +1320,7 @@ def _impacts_section(i18n: _I18n, scenarios: list[dict], prefix: str, data_rel: 
     note = "" if timed else f'<p class="notice">{i18n.raw("imp_notiming")}</p>'
     method = "<ul>" + "".join(f"<li>{i18n.raw(k)}</li>" for k in
                               ("imp_m_src", "imp_m_depth", "imp_m_bld", "imp_m_road", "imp_m_fac", "imp_m_time", "imp_m_snap", "imp_m_lim")) + "</ul>"
-    return (f'<section class="card" id="impacts"><h2><span class="num">4</span>{i18n.raw("imp_h")}</h2>'
+    return (f'<section class="card" id="impacts"><h2><span class="num">5</span>{i18n.raw("imp_h")}</h2>'
             f'<p class="muted">{i18n.raw("imp_p")}</p>{_scn_buttons(i18n, "imp-scn", available={names[k] for k in byname if k in names})}'
             f'{note}{"".join(blocks)}'
             f'{_details(i18n, "<h3>" + i18n.raw("imp_m_h") + "</h3>" + method)}</section>')
@@ -1158,7 +1331,7 @@ def _hydraulics_block(i18n: _I18n, scenarios: list[dict], status: dict, prefix: 
     if not scenarios:
         stage = (status.get("stages") or {}).get("hydraulics") or {}
         if stage.get("state") == "skipped":
-            return (f'<section class="card" id="map-card"><h2><span class="num">3.1</span>{i18n.raw("map_h")}</h2>'
+            return (f'<section class="card" id="map-card"><h2><span class="num">4.1</span>{i18n.raw("map_h")}</h2>'
                     f'<p class="muted">{i18n.raw("map_none")}</p></section>')
         return ""
     base = f"{prefix}{data_rel}/hydraulics/"
@@ -1212,7 +1385,7 @@ def _hydraulics_block(i18n: _I18n, scenarios: list[dict], status: dict, prefix: 
                  f'<span class="muted">{i18n.raw("lk_note")}</span></div>') if cfg["likelihood"] else ""
     mapdata = json.dumps(cfg).replace("</", "<\\/")
     return (
-        f'<section class="card" id="map-card"><h2><span class="num">3.1</span>{i18n.raw("map_h")}</h2>'
+        f'<section class="card" id="map-card"><h2><span class="num">4.1</span>{i18n.raw("map_h")}</h2>'
         f'<div class="mapctl">{"" if ctl_out is not None else buttons}'
         f'<span class="muted map-info">{info}</span></div>'
         f'<div id="map" role="region" aria-label="{_esc(i18n.plain("map_h"))}"></div>{fallback}'
@@ -1401,7 +1574,7 @@ def _animation_block(i18n: _I18n, scenarios: list[dict], prefix: str, data_rel: 
     if strips_out is not None:
         strips_out.append(strips)
     return (
-        f'<section class="card" id="anim-card"><h2><span class="num">3.2</span>{i18n.raw("anim_h")}</h2><p class="muted">{i18n.raw("anim_p")}</p>'
+        f'<section class="card" id="anim-card"><h2><span class="num">4.2</span>{i18n.raw("anim_h")}</h2><p class="muted">{i18n.raw("anim_p")}</p>'
         f'{switch}<script type="application/json" class="anim-views">{data}</script>'
         f'{"" if strips_out is not None else strips}'
         f'<script type="application/json" class="anim-forcing">{json.dumps({"start": (first.get("_forcing") or {}).get("sim_start_utc"), "inflow": (first.get("_forcing") or {}).get("inflow", []), "rain": (first.get("_forcing") or {}).get("rain", [])}).replace("</", "<\\/")}</script>'
@@ -1610,6 +1783,8 @@ def _jumpbar(i18n: _I18n, data: dict) -> str:
     links = [("summary", "j_summary"), ("precip", "j_rain")]
     if data.get("hydrology"):
         links.append(("hydrology", "j_flow"))
+    if (data.get("gauge") or {}).get("predicted"):
+        links.append(("riverlevel", "j_level"))
     if data.get("scenarios"):   # section 3 groups the flood map (3.1) and the 3-D animation (3.2)
         has_anim = any(sc.get("webgl") for sc in data["scenarios"])
         links.append(("flood-group" if has_anim else "map-card", "j_flood"))
@@ -1667,6 +1842,7 @@ def _load_cycle(op: Path, rel: str) -> dict:
     return {
         "health": _read_json(op / "health.json"),
         "tide": _read_json(cdir / "tide.json"),
+        "gauge": _read_json(cdir / "gauge_level.json"),
         "_cdir": cdir,
         "precip_ens": _with(_read_json(cdir / "hydrology" / "precip_ensemble.json"),
                             _scn_file=(cdir / "precip_scenarios.json").is_file()),
@@ -1721,7 +1897,8 @@ def _cycle_content(i18n: _I18n, latest, data: dict, prefix: str, data_rel: str, 
                           base + "hydrology/reach_flow.json" if data.get("flow_file") else None, geo)
     s12_ctl = (f'<div class="s12-ctl"><span class="fc-l">{i18n.raw("s12_ctl")}</span>{_scn_buttons(i18n, "s12-scn")}</div>'
                if data.get("precip_ens") or data.get("hydrology") else "")
-    out.append(f'<div class="s12">{s12_ctl}{s1}{s2}</div>')   # rain (1) and flow (2) side by side on wide screens
+    s3 = _gauge_block(i18n, data.get("gauge"))
+    out.append(f'<div class="s12{" s123" if s3 else ""}">{s12_ctl}{s1}{s2}{s3}</div>')   # rain (1), flow (2), river level (3) side by side
     # flood map (3) and 3-D animation (4) side by side on wide screens (same clock and scenario)
     strips: list = []
     ctl: list = []
@@ -1741,7 +1918,7 @@ def _cycle_content(i18n: _I18n, latest, data: dict, prefix: str, data_rel: str, 
                if ctl else "")
         out.append(
             f'<div class="viz-outer"><section class="card flood3" id="flood-group">'
-            f'<h2><span class="num">3</span>{i18n.raw("grp_h")}</h2>{bar}'
+            f'<h2><span class="num">4</span>{i18n.raw("grp_h")}</h2>{bar}'
             f'<div class="strips-wrap"><p class="muted strips-h"><strong>{i18n.raw("strips_h")}</strong> {i18n.raw("strips_p")}</p>'
             f'<div class="strip3">{strips[0]}</div></div>'
             f'<div class="viz-pair">{as_panel(hyd_html, "map-card")}{anim_panel}</div></section></div>')

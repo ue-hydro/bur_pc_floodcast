@@ -821,6 +821,31 @@ html[data-scn="lower"] .wide-chart .chart .scn.lo,html[data-scn="upper"] .wide-c
 .s12 .wide-chart .legend{min-height:3.4em;margin-bottom:4px}
 @media (min-width:1100px){ .s12 .animmap{margin-top:auto;padding-top:10px} }
 
+/* section 3 (river level, forecast vs APA gauge) as a third column: the row breaks out of the page
+   width on wide screens; 1100-1299 px it spans the row under 1 and 2 */
+@media (min-width:1100px) and (max-width:1299px){
+  .s12.s123>#riverlevel{grid-column:1/-1}
+  .s12.s123>#riverlevel .wide-chart,.s12.s123>#riverlevel .gstats{max-width:820px}
+}
+@media (min-width:1300px){
+  .s12.s123{grid-template-columns:repeat(3,minmax(0,1fr));width:min(calc(100vw - 40px),114rem);
+    margin-left:calc((100% - min(calc(100vw - 40px),114rem)) / 2)}
+  .s12.s123>section.card>p.muted{min-height:6.6em}
+}
+.chart .obs{fill:none;stroke:var(--obs);stroke-width:2}
+.chart .obsdot{fill:var(--obs)}
+.chart .pastbg{fill:var(--grid);opacity:.45}
+.chart .fcstart{stroke:var(--mute);stroke-width:1.2;stroke-dasharray:4 3}
+.chart .fcstart-t,.chart .msl-t{font-size:11px;fill:var(--mute)}
+.chart .gridl.zero{stroke:var(--mute);stroke-opacity:.6}
+.legend i.ln.obsc{border-top:2.5px solid var(--obs)}
+.charttip .ct-k.obs{background:var(--obs)}
+:root{--obs:#1b1b1b}                      /* light by default, like the rest of the site */
+:root[data-theme="dark"]{--obs:#f2f2f2}
+.gstats{margin-top:8px}
+.gstats p{margin:4px 0}
+.gstat{display:none}
+
 /* one scenario switch for sections 1 + 2, above both charts */
 .s12-ctl{grid-column:1/-1;display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;margin:18px 0 -6px;padding:8px 12px;
   background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--accent)}

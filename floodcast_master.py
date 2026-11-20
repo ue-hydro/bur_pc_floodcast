@@ -21,6 +21,7 @@ This file only orchestrates; it calls the small modules in ``floodcast.operation
 from __future__ import annotations
 
 import argparse
+import json
 import logging
 import os
 import signal
@@ -364,6 +365,12 @@ def handle_cycle(cfg: OperationalConfig, p: CycleProcessor, cycle: datetime, *, 
                         likelihood_map(out / "hydraulics", float(p.hydraulics.info["cellsize"]))
                     except Exception as exc:
                         log.warning("likelihood map not produced: %s", exc)
+                    try:   # forecast river level at the APA gauge (+ the measurements so far)
+                        from floodcast.operational import gauges
+
+                        gauges.update_cycle(out, p.domain)
+                    except Exception as exc:
+                        log.warning("gauge level comparison not produced: %s", exc)
                 except Exception as exc:
                     status["stages"]["hydraulics"] = {"state": "failed", "scenarios": done}
                     fail("hydraulics", exc)
@@ -473,6 +480,54 @@ def publish_site(cfg: OperationalConfig, store, push: bool = False) -> None:
                     log.info(line.split("publish:", 1)[1].strip())
         except (subprocess.SubprocessError, OSError) as exc:
             log.error("publish.post_command failed: %s", type(exc).__name__)
+
+
+GAUGE_REFRESH_S = 3600   # APA real-time levels: re-fetched hourly while a forecast window is open
+_gauge_last = {"t": 0.0}
+
+
+def refresh_gauges(cfg: OperationalConfig, store, p, force: bool = False) -> bool:
+    """Fetch new APA gauge measurements for the recent forecasts; True when any were added."""
+    if not force and time.monotonic() - _gauge_last["t"] < GAUGE_REFRESH_S:
+        return False
+    _gauge_last["t"] = time.monotonic()
+    from floodcast.operational import gauges
+
+    if gauges.gauge_config(p.domain) is None:
+        return False
+    changed = False
+    cutoff = now_utc() - timedelta(days=7)
+    for cdir in sorted((store.root / "cycles").glob("*/hydraulics")):
+        cdir = cdir.parent
+        try:
+            if parse_cycle(cdir.name) < cutoff:
+                continue
+            f = cdir / gauges.FILE
+            before = json.loads(f.read_text()) if f.is_file() else {}
+            if (before.get("observed") or {}).get("complete"):
+                continue
+            n0 = len((before.get("observed") or {}).get("times_utc") or [])
+            doc = gauges.update_cycle(cdir, p.domain)
+            n1 = len(((doc or {}).get("observed") or {}).get("times_utc") or [])
+            if n1 != n0 or (doc and not before):
+                changed = True
+                log.info("APA gauge: %s measurements now %d (forecast %s)", gauges.gauge_config(p.domain).get("code"),
+                         n1, cdir.name)
+        except Exception as exc:   # never fatal
+            log.warning("APA gauge refresh for %s failed: %s", cdir.name, exc)
+    return changed
+
+
+def latest_complete(store) -> bool:
+    """The forecast on the site is complete (so a refreshed page may go online)."""
+    from floodcast.operational.store import read_json
+
+    latest = read_json(store.root / "latest.json", {}) or {}
+    try:
+        c = datetime.fromisoformat(latest["cycle"].replace("Z", "+00:00"))
+    except (KeyError, ValueError):
+        return False
+    return forecast_complete(read_json(store.root / "cycles" / f"{c:%Y%m%d%H}" / "status.json", {}))
 
 
 def idle_status(store, wait_s: float, processed: int) -> None:
@@ -624,6 +679,11 @@ def main() -> int:
             if args.auto_update and git_update_available(Path(__file__).resolve().parent):
                 RESTART["now"] = True
                 break
+            try:   # new APA measurements -> page refreshed (online only if its forecast is complete)
+                if refresh_gauges(cfg, store, p):
+                    publish_site(cfg, store, push=latest_complete(store))
+            except Exception:
+                log.exception("gauge refresh failed")
             wait = max(30.0, cfg.poll_interval_minutes * 60 - (now_utc() - started).total_seconds())
             idle_status(store, wait, processed=len(cycles))
             end = time.monotonic() + wait

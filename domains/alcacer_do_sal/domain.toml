@@ -72,7 +72,20 @@ tide_edges = [
 ]
 
 [reference_gauges]
-# No gauge is listed: SNIRH/APA station codes for the Sado at/near Alcácer could not be verified from
-# this environment and must not be guessed. Add {name, code, lat, lon} entries once confirmed with APA.
-status = "unknown"
-stations = []
+# Verified 2026-11-20 from the SNIRH station sheet (snirh.apambiente.pt, rede Hidrométrica): see [[gauges]].
+status = "verified"
+stations = ["23F/01H"]
+
+# APA gauges whose real-time level is compared with the FLUXOS prediction on the site (gauges.py).
+# Alcácer do Sal 23F/01H: automatic level sensor with telemetry, active since 2001, in the town reach.
+# snirh_site = SNIRH internal id; parameter 1843 = "Nível hidrométrico instantâneo" (m above the
+# staff-gauge zero, hourly). gauge_zero_m = "COTA ZERO ESCALA" since 13/05/2004 (m, mean sea level).
+[[gauges]]
+code = "23F/01H"
+name = "Alcácer do Sal"
+snirh_site = 1627743394
+snirh_parameter = 1843
+gauge_zero_m = -2.18
+lat = 38.370111
+lon = -8.506972
+radius_m = 60
