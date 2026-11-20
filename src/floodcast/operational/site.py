@@ -105,6 +105,9 @@ T: dict[str, tuple[str, str]] = {
     "dec_line": ("{b} edifícios com água e {r} km de estrada intransitável.", "{b} buildings with water and {r} km of road impassable."),
     "dec_roads": ("Cortes: {roads}.", "Cut: {roads}."),
     "dec_from": ("Primeira inundação: {t}.", "First flooding: {t}."),
+    "dec_fields": ("Sem edifícios nem estradas afetados; água apenas em campos e várzea ({a} km²).",
+                   "No buildings or roads affected; water only on fields and floodplain ({a} km²)."),
+    "dec_dry": ("Sem edifícios nem estradas afetados.", "No buildings or roads affected."),
     "dec_tide": ("Preia-mar na foz do Sado: {t}. Na preia-mar, o estuário dificulta o escoamento do rio em Alcácer.",
                  "High tide at the Sado mouth: {t}. At high tide the estuary slows the river's drainage at Alcácer."),
     "dec_note_tide": ("Indicativo: modelo não calibrado; a maré prevista na foz do Sado entra no modelo hidrodinâmico como nível do mar no limite do estuário, sem atraso nem amplificação até Alcácer. Siga sempre a Proteção Civil.",
@@ -1437,11 +1440,16 @@ def _decision_block(i18n: _I18n, data: dict) -> str:
         im = sc["impacts"]
         roads = ", ".join(r["road"] for r in im.get("roads_cut", [])[:3])
         first = _fmt_ts(_first_utc(sc)) if _first_utc(sc) else None
-        txt = i18n.raw("dec_line", b=im.get("buildings_flooded", 0), r=_num(im.get("roads_impassable_km"), 1))
-        if roads:
-            txt += " " + i18n.raw("dec_roads", roads=roads)
-        if first:
-            txt += " " + i18n.raw("dec_from", t=first)
+        nothing = not im.get("buildings_flooded") and not (im.get("roads_impassable_km") or 0) and not roads
+        if nothing:   # only fields / floodplain wet: no "first flooding" time that reads like the town
+            area = sc.get("flooded_area_km2") or 0
+            txt = i18n.raw("dec_fields", a=_num(area, 1)) if area >= 0.05 else i18n.raw("dec_dry")
+        else:
+            txt = i18n.raw("dec_line", b=im.get("buildings_flooded", 0), r=_num(im.get("roads_impassable_km"), 1))
+            if roads:
+                txt += " " + i18n.raw("dec_roads", roads=roads)
+            if first:
+                txt += " " + i18n.raw("dec_from", t=first)
         scn = {"p50": "central", "p90": "upper", "p10": "lower"}[pid]
         texts.append(txt)
         lines.append(f"<li><strong>{i18n.raw(key)}:</strong> {txt} "

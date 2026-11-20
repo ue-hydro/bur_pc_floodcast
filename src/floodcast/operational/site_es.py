@@ -231,6 +231,7 @@ ES = {
     "dec_why_min": "Los tres escenarios dan el mismo resultado en esta previsión.",
     "dec_line": "{b} edificios con agua y {r} km de carretera intransitable.",
     "dec_roads": "Cortes: {roads}.", "dec_from": "Primera inundación: {t}.",
+    "dec_fields": "Sin edificios ni carreteras afectados; agua solo en campos y vega ({a} km²).", "dec_dry": "Sin edificios ni carreteras afectados.",
     "dec_tide": "Pleamar en la desembocadura del Sado: {t}. En pleamar, el estuario dificulta el desagüe del río en Alcácer.",
     "dec_note_tide": "Indicativo: modelo no calibrado; el nivel del mar previsto en la desembocadura del Sado entra en el modelo hidrodinámico en el límite del estuario, sin retardo ni amplificación hasta Alcácer. Siga siempre a Protección Civil.",
     "dec_note": "Indicativo: modelo no calibrado; la marea aún no entra en el modelo hidrodinámico. Siga siempre a Protección Civil.",
