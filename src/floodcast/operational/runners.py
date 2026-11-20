@@ -79,8 +79,9 @@ class ModelRunner:
             cwd, environment = workdir, {**os.environ, **(env or {})}
         else:
             cmd = ["docker", "run", "--rm", "--user", f"{os.getuid()}:{os.getgid()}", "-w", workdir]
-            if self.settings.docker_platform:
-                cmd += ["--platform", self.settings.docker_platform]
+            platform = getattr(self.settings, f"{model}_docker_platform", "") or self.settings.docker_platform
+            if platform:
+                cmd += ["--platform", platform]
             if cpus:
                 cmd += ["--cpus", str(cpus)]
             for key, value in (env or {}).items():

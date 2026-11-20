@@ -281,6 +281,21 @@ class FluxosEngine:
             self._steady_cache[key] = (snaps[-1], float(int(snaps[-1].stem)))
             return self._steady_cache[key]
 
+    def _tide_edge_floor(self, edges) -> float | None:
+        """Lowest terrain (FLUXOS DEM datum) along the tide edges: the ramp starts there (dry)."""
+        try:
+            dem = np.flipud(np.loadtxt(self.domain.root / self.domain.fluxos["dem"], skiprows=6))  # row 0 = south
+            vals = []
+            for e in edges:
+                a, b = int(e["FROM"]) - 1, int(e["TO"])
+                side = str(e["EDGE"]).lower()
+                strip = {"west": dem[a:b, :2], "east": dem[a:b, -2:], "south": dem[:2, a:b], "north": dem[-2:, a:b]}[side]
+                vals.append(float(strip.min()))
+            return min(vals) if vals else None
+        except Exception as exc:  # never block a forecast on this
+            log.warning("tide ramp floor unavailable: %s", exc)
+            return None
+
     def _p(self, host: Path, name: str) -> str:
         return f"/run/{name}" if self.in_container else str(host / name)
 
@@ -337,6 +352,13 @@ class FluxosEngine:
                 log.warning("tide boundary off for %s: no sea-level forecast covering the run", scenario)
             else:
                 t_s, lev = ser
+                ramp_s = min(float(hs.tide_ramp_hours), warm_h) * 3600.0
+                if ramp_s > 0:   # fill the estuary gradually instead of a dam break at t = 0
+                    floor = self._tide_edge_floor(edges)
+                    if floor is not None:
+                        k = t_s < ramp_s
+                        lev = lev.copy()
+                        lev[k] = np.minimum(lev[k], floor + (lev[k] - floor) * t_s[k] / ramp_s)
                 (workdir / "tide_level.csv").write_text(
                     "t_seconds,level_m\n" + "".join(f"{int(a)},{b:.3f}\n" for a, b in zip(t_s, lev)))
                 modset.setdefault("BOUNDARY_CONDITIONS", {})["WATER_LEVEL"] = {

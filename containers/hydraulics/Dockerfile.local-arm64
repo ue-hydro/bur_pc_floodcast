@@ -1,0 +1,32 @@
+# LOCAL TEST BUILD for Apple silicon: FLUXOS compiled natively for linux/arm64 from a local,
+# already-patched source tree (same recipe as Dockerfile.local-source, no amd64 base image).
+#
+# Why: the linux/amd64 FLUXOS image runs emulated on Apple silicon, and the emulated build blew up
+# deterministically within ~30 s next to the water-level boundary (fluxes 1e150, dt 1e-150, NaN)
+# on inputs that the same source runs cleanly when compiled for arm64 (gcc/Linux and clang/macOS),
+# 2026-11-20. Native is also several times faster. Select it with
+#   [operational.models] fluxos_image = "<tag>"   fluxos_docker_platform = "linux/arm64"
+#
+#   git -C ../FLUXOS_cpp archive <commit> CMakeLists.txt src | tar -x -C <ctx>
+#   .venv/bin/python scripts/patch_fluxos.py <ctx> <ctx>/patches.json
+#   docker build --platform linux/arm64 -f containers/hydraulics/Dockerfile.local-arm64 \
+#       --build-arg FLUXOS_COMMIT=<commit> -t floodcast/hydraulics:<tag> <ctx>
+ARG BASE_IMAGE=ubuntu:24.04
+
+FROM ${BASE_IMAGE} AS build
+ENV DEBIAN_FRONTEND=noninteractive
+RUN apt-get update && apt-get install -y --no-install-recommends \
+      build-essential cmake libarmadillo-dev libhdf5-dev && rm -rf /var/lib/apt/lists/*
+COPY . /src
+RUN cmake -S /src -B /build -DMODE_release=ON -DUSE_MPI=OFF -DUSE_CUDA=OFF \
+      -DCMAKE_RUNTIME_OUTPUT_DIRECTORY=/out && \
+    cmake --build /build --parallel 4 && \
+    ldd /out/fluxos | tee /out/ldd.txt && \
+    ! grep -Eq 'not found|libarmadillo|libhdf5|libmpi|libcuda' /out/ldd.txt
+
+FROM ${BASE_IMAGE}
+ARG FLUXOS_COMMIT=unknown
+RUN apt-get update && apt-get install -y --no-install-recommends libgomp1 && rm -rf /var/lib/apt/lists/*
+COPY --from=build /out/fluxos /opt/floodcast/bin/fluxos
+COPY patches.json /opt/floodcast/share/hydraulics/local-source-patches.json
+LABEL org.floodcast.fluxos.local_source_commit=${FLUXOS_COMMIT} org.floodcast.fluxos.platform=linux/arm64

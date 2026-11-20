@@ -125,6 +125,11 @@ class HydraulicsSettings(_Model):
     tide_lag_h: float = Field(default=0.0, ge=0, le=12)
     # Added to the sea level (m) to convert MSL to the DEM datum; 0 if the DEM is in MSL (PT DTM: Cascais).
     tide_offset_m: float = 0.0
+    # Ramp the tide boundary in over the first hours of the warm-up: from the lowest bed along the
+    # tide edges up to the real sea level. Switching on full sea level next to a dry estuary is a
+    # 156-cell dam break that splashed water over the whole domain (frozen puddles on hilltops) or,
+    # in the emulated amd64 build, blew up to NaN (2026-11-20).
+    tide_ramp_hours: float = Field(default=3.0, ge=0, le=12)
     # Manning bed friction (s m^-1/3) for the regular-mesh FLUXOS; None = key not written (no friction,
     # the FLUXOS default). Needs FLUXOS_cpp e7638ff or later (MANNING_N); CUDA builds refuse it.
     manning_n: float | None = Field(default=None, gt=0, le=1)
@@ -140,6 +145,10 @@ class ModelSettings(_Model):
     summa_executable: str = "/opt/floodcast/hydrology/bin/summa_sundials_mizuroute.exe"
     fluxos_executable: str = "/opt/floodcast/bin/fluxos"
     docker_platform: str = ""
+    # Per-model override of docker_platform (e.g. FLUXOS as a native linux/arm64 image on Apple
+    # silicon while the hydrology image stays linux/amd64). Empty = use docker_platform.
+    summa_docker_platform: str = ""
+    fluxos_docker_platform: str = ""
 
 
 class PublishSettings(_Model):
