@@ -833,8 +833,7 @@ html[data-scn="lower"] .wide-chart .chart .scn.lo,html[data-scn="upper"] .wide-c
    scale with them. Each card is a subgrid row-set, so title, intro, chart and map line up across
    the three columns at any width. Below 700 px (phones) they stack. */
 @media (min-width:700px){
-  .s12.s123{grid-template-columns:repeat(3,minmax(0,1fr));column-gap:14px;
-    width:min(calc(100vw - 24px),114rem);margin-left:calc((100% - min(calc(100vw - 24px),114rem)) / 2)}
+  .s12.s123{grid-template-columns:repeat(3,minmax(0,1fr));column-gap:14px}   /* same width as every other section */
   .s12.s123>section.card{display:grid;grid-template-rows:subgrid;grid-row:span 8;align-content:start;
     margin:20px 0;min-width:0}
   .s12.s123>section.card>p.muted{min-height:0}
