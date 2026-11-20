@@ -95,8 +95,10 @@ class ModelRunner:
         for attempt in (1, 2):
             proc = self._exec(cmd, log_path, timeout_s, cwd, environment, model)
             # Docker Desktop can briefly fail to see a just-created host folder (mount race): retry once
-            if (proc.returncode in (125, 127) and attempt == 1 and self.settings.runtime != "local"
-                    and "mount source path" in log_path.read_text(errors="replace")):
+            text = log_path.read_text(errors="replace") if log_path.is_file() else ""
+            if (attempt == 1 and self.settings.runtime != "local"
+                    and ((proc.returncode in (125, 127) and "mount source path" in text)
+                         or (proc.returncode == 1 and "cannot open model log" in text))):
                 log.warning("docker mount race for %s; retrying", model)
                 import time
                 time.sleep(3)
