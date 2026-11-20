@@ -1953,9 +1953,9 @@ def _cycle_content(i18n: _I18n, latest, data: dict, prefix: str, data_rel: str, 
                if ctl else "")
         out.append(
             f'<div class="viz-outer"><section class="card flood3" id="flood-group">'
-            f'<h2><span class="num">4</span>{i18n.raw("grp_h")}</h2>{bar}'
+            f'<h2><span class="num">4</span>{i18n.raw("grp_h")}</h2>'
             f'<div class="strips-wrap"><p class="muted strips-h"><strong>{i18n.raw("strips_h")}</strong> {i18n.raw("strips_p")}</p>'
-            f'<div class="strip3">{strips[0]}</div></div>'
+            f'<div class="strip3">{strips[0]}</div></div>{bar}'   # scenario/layer bar right above map + animation
             f'<div class="viz-pair">{as_panel(hyd_html, "map-card")}{anim_panel}</div></section></div>')
     else:
         out.append(f'<div class="viz-outer">{hyd_html}{anim_html}</div>')

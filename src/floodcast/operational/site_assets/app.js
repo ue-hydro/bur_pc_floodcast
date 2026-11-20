@@ -666,9 +666,12 @@
     return box;
   }
   // fit a map to its area leaving room on the right for the tick-box panel (nothing hides the basin)
+  // (also clear of the zoom buttons on the left, the clock badge on top and the tile credits at the bottom)
   function fitClear(map, bounds, box) {
     var w = box && box.getContainer() ? box.getContainer().offsetWidth : 0;
-    map.fitBounds(bounds, { paddingTopLeft: [8, 8], paddingBottomRight: [(w || 160) + 18, 8], animate: false });
+    var att = map.attributionControl && map.attributionControl.getContainer();
+    var bottom = (att ? att.offsetHeight : 18) + 8;
+    map.fitBounds(bounds, { paddingTopLeft: [46, 40], paddingBottomRight: [(w || 160) + 14, bottom], animate: false });
   }
 
 
