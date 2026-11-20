@@ -439,7 +439,7 @@
     var L = window.L, lat = +el.getAttribute("data-lat"), lon = +el.getAttribute("data-lon"), cells = [], dom = [];
     try { cells = JSON.parse(el.getAttribute("data-cells")) || []; } catch (e) {}
     try { dom = JSON.parse(el.getAttribute("data-bounds")) || []; } catch (e) {}
-    var map = L.map(el, { scrollWheelZoom: false, zoomSnap: 0.25 }).setView([lat, lon], 14.75);
+    var map = L.map(el, { scrollWheelZoom: false, zoomSnap: 0.25 }).setView([lat + 0.003, lon - 0.004], 13.75);
     addBasemaps(map);
     if (dom.length === 2 && dom[0][0] !== null) {
       L.rectangle(dom, { color: "#ffffff", weight: 1.5, dashArray: "6 4", fill: false, interactive: false }).addTo(map);
@@ -449,7 +449,7 @@
     });
     L.circleMarker([lat, lon], { radius: 8, color: "#fff", weight: 2, fillColor: "#c62828", fillOpacity: 1 }).addTo(map)
       .bindTooltip(el.getAttribute("data-name"), { permanent: true, direction: "top", offset: [0, -9] });
-    var home = function () { map.setView([lat, lon], 14.75); };
+    var home = function () { map.setView([lat + 0.003, lon - 0.004], 13.75); };
     addRecenter(map, home);
     setTimeout(function () { map.invalidateSize(); }, 80);
   }
