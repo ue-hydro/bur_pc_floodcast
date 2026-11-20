@@ -19,6 +19,11 @@ floods away (Gamitinha Feb 2026: obs 133, sim 22 m3/s). The flood-weighted score
 volume on the days with measured flow >= its 90th percentile; weights Gamitinha 0.7, Alvalade 0.3.
 --seed <k> starts from round-1 evaluation k (apa_log.jsonl) with a smaller search step.
 Outputs then go to apa2_log.jsonl / apa2_best.json / apa2/.
+
+Round 3 (--peaks --round3 --seed <k>): same score, seeded from round-2 evaluation k (apa2_log.jsonl), with
+wider bounds for the five parameters round 2 left at their limits (aquiferBaseflowRate, aquiferBaseflowExp,
+aquiferScaleFactor, rootingDepth, routingGammaShape); SUMMA's min/max columns are widened to match.
+Outputs go to apa3_log.jsonl / apa3_best.json / apa3/.
 """
 import json
 import math
@@ -47,7 +52,8 @@ PEAKS = "--peaks" in sys.argv
 SEED = int(sys.argv[sys.argv.index("--seed") + 1]) if "--seed" in sys.argv else None
 _pos = [a for i, a in enumerate(sys.argv[1:], 1) if not a.startswith("--") and sys.argv[i - 1] != "--seed"]
 WORKERS = int(_pos[2]) if len(_pos) > 2 else 4
-TAG = "apa2" if PEAKS else "apa"
+ROUND3 = "--round3" in sys.argv   # wider bounds for the parameters round 2 left at their limits; seeded from apa2
+TAG = "apa3" if ROUND3 else ("apa2" if PEAKS else "apa")
 STEP = 0.1 if SEED is not None else 0.2
 START = datetime(2024, 10, 1, tzinfo=timezone.utc)
 SCORE_FROM = "2024-12-01"
@@ -70,6 +76,10 @@ PARAMS = [
     ("routingGammaScale", "basin", 3600.0, 86400.0, False, 34725.0),
     ("routingGammaShape", "basin", 1.0, 5.0, False, 2.5),
 ]
+if ROUND3:   # round 2 ended at (or next to) these limits
+    WIDER = {"aquiferBaseflowRate": (-12.0, -6.0), "aquiferBaseflowExp": (1.0, 20.0), "aquiferScaleFactor": (-1.0, 2.0),
+             "rootingDepth": (0.1, 3.0), "routingGammaShape": (1.0, 10.0)}
+    PARAMS = [(n, f, *WIDER.get(n, (lo, hi)), lg, d) for (n, f, lo, hi, lg, d) in PARAMS]
 
 
 def _chain():
@@ -128,7 +138,14 @@ def patch(settings: Path, values: dict):
         for i, ln in enumerate(lines):
             m = re.match(r"^(\w+)\s*\|[^|]*(\|.*)$", ln)
             if m and m.group(1) in values and kinds[m.group(1)] == kind:
-                lines[i] = f"{m.group(1):<25s} | {values[m.group(1)]:12.4e} {m.group(2)}"   # (a25,1x,a1,1x,f12.4)
+                rest = m.group(2)
+                if ROUND3:   # keep SUMMA's own min/max columns around the (wider) search range
+                    cols = [c.strip() for c in rest.strip("|").split("|")]
+                    lo, hi = (float(c.replace("d", "e").replace("D", "e")) for c in cols[:2])
+                    v = values[m.group(1)]
+                    lo, hi = min(lo, v * 0.5), max(hi, v * 1.5)
+                    rest = "| " + " | ".join([f"{lo:12.4e}", f"{hi:12.4e}", *cols[2:]])
+                lines[i] = f"{m.group(1):<25s} | {values[m.group(1)]:12.4e} {rest}"   # (a25,1x,a1,1x,f12.4)
         f.write_text("\n".join(lines))
 
 
@@ -216,7 +233,7 @@ def main():
     rng = random.Random(23 if PEAKS else 11)
     x0 = {p[0]: p[5] for p in PARAMS}
     if SEED is not None:
-        for ln in (S / "apa_log.jsonl").read_text().splitlines():
+        for ln in (S / ("apa2_log.jsonl" if ROUND3 else "apa_log.jsonl")).read_text().splitlines():
             rec = json.loads(ln)
             if rec["k"] == SEED:
                 x0 = rec["x"]
