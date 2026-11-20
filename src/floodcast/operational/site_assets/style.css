@@ -123,7 +123,15 @@ details.tech[open] summary::before{transform:rotate(90deg)}
 .s-done .dot{background:var(--none-bd);border-color:var(--none-bd);color:#fff}.s-done em{color:var(--none-bd)}
 .s-failed .dot{background:var(--alert-bd);border-color:var(--alert-bd);color:#fff}.s-failed em{color:var(--alert-bd)}
 .s-skipped em{color:var(--mute)}
-@media (max-width:760px){.stepper{grid-template-columns:1fr;gap:14px}.step:not(:last-child)::after{top:36px;bottom:-14px;left:16px;right:auto;width:2px;height:auto}}
+/* narrow windows: the three steps stay side by side (number above the text, smaller type) */
+@media (max-width:760px){
+  .step{flex-direction:column;gap:6px;padding-right:8px;min-width:0}
+  .step .dot{width:28px;height:28px;font-size:.85rem}
+  .step:not(:last-child)::after{top:14px;left:36px;right:4px}
+  .step .st{padding-right:0;min-width:0;overflow-wrap:anywhere}
+  .step .st strong{font-size:.85rem;line-height:1.2}
+  .step .st span,.step .st em{font-size:.72rem}
+}
 
 /* ---------- charts */
 .chart{width:100%;max-width:720px;height:auto;display:block;margin:0 auto}
