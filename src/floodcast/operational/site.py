@@ -97,6 +97,10 @@ T: dict[str, tuple[str, str]] = {
              "There is no flow measurement at Alcácer (the river level there is dominated by the tide). The model's flow is compared "
              "with the daily mean flow measured by APA at gauge {code}, upstream ({a} km² of basin, the same point in the model)."),
     "fck_obs": ("Medido (APA, média diária)", "Measured (APA, daily mean)"),
+    "fck_tab_alc": ("Alcácer do Sal", "Alcácer do Sal"),
+    "fck_tab_up": ("A montante: medido", "Upstream: measured"),
+    "fck_tab_tip": ("Previsão e caudal medido pela APA em {name}", "Forecast and flow measured by APA at {name}"),
+    "fck_start": ("início da previsão", "forecast start"),
     "fck_mod": ("Modelo no mesmo ponto", "Model at the same point"),
     "fck_last": ("Último dia medido ({d}): <b>{o} m³/s</b>; modelo no início da previsão: <b>{m} m³/s</b>.",
                 "Latest measured day ({d}): <b>{o} m³/s</b>; model at the forecast start: <b>{m} m³/s</b>."),
@@ -1102,8 +1106,7 @@ def _hydrology_block(i18n: _I18n, summary: dict | None, flow_src: str | None = N
         return (
             f'<section class="card" id="hydrology"><h2><span class="num">2</span>{i18n.raw("hydro_h")}</h2>'
             f'<p class="muted">{i18n.raw("hydro_p_scn")}</p>'
-            f'{_wide_layout(hydro_chart, flow_map, "<h3>" + i18n.raw("peak") + "</h3><p>" + peak_txt + "</p>" + table, i18n.raw("peak_more"))}'
-            f'{_flowcheck_block(i18n, flowcheck)}'
+            f'{_wide_layout(_flow_tabs(i18n, hydro_chart, flowcheck), flow_map, "<h3>" + i18n.raw("peak") + "</h3><p>" + peak_txt + "</p>" + table, i18n.raw("peak_more"))}'
             f'{_details(i18n, state_html + _reasons(i18n, summary.get("decision")))}</section>'
         )
     for level in ("watch", "warning", "alert"):
@@ -1339,8 +1342,8 @@ def _flowcheck_block(i18n: _I18n, doc: dict | None) -> str:
     span = max((t1 - t0).total_seconds(), 3600.0)
     vals = [v for k in ("lower", "central", "upper") for v in (mod.get(k) or []) if v is not None] + list(obs.get("q_m3s") or []) + [1.0]
     ymax = _nice_max(max(vals) * 1.1)
-    w, h = 640, 260
-    x0, x1, y0, y1 = 48, w - 12, 14, h - 34
+    w, h = 640, 380   # same frame as the Alcácer chart it alternates with
+    x0, x1, y0, y1 = 48, w - 12, 20, h - 40
     pw, ph = x1 - x0, y1 - y0
 
     def px(t):
@@ -1349,7 +1352,7 @@ def _flowcheck_block(i18n: _I18n, doc: dict | None) -> str:
     def py(v):
         return y1 - ph * min(v, ymax) / ymax
 
-    parts = [f'<svg class="chart fcheck" viewBox="0 0 {w} {h}" role="img" aria-label="{_esc(i18n.plain("fck_h", name=g.get("name", "")))}">']
+    parts = [f'<svg class="chart fcheck lvlchart" viewBox="0 0 {w} {h}" role="img" aria-label="{_esc(i18n.plain("fck_h", name=g.get("name", "")))}">']
     for tk in _ticks(ymax):
         parts.append(f'<line class="gridl" x1="{x0}" x2="{x1}" y1="{py(tk):.1f}" y2="{py(tk):.1f}"/>'
                      f'<text x="{x0 - 6}" y="{py(tk) + 4:.1f}" text-anchor="end">{tk:g}</text>')
@@ -1368,7 +1371,8 @@ def _flowcheck_block(i18n: _I18n, doc: dict | None) -> str:
     for t, v in zip(od, obs.get("q_m3s") or []):   # measured daily means: one bar per day
         x = px(t)
         parts.append(f'<rect class="obsbar" x="{x - day_w * 0.35:.1f}" y="{py(v) - 1.5:.1f}" width="{day_w * 0.7:.1f}" height="{max(1.5, y1 - py(v) + 1.5):.1f}"/>')
-    parts.append(f'<line class="fcstart" x1="{xs:.1f}" x2="{xs:.1f}" y1="{y0}" y2="{y1}"/>')
+    parts.append(f'<line class="fcstart" x1="{xs:.1f}" x2="{xs:.1f}" y1="{y0}" y2="{y1}"/>'
+                 f'<text class="fcstart-t" x="{xs + 4:.1f}" y="{y0 + 28}">{_tspans(i18n.raw("fck_start"))} ▸</text>')
     parts.append(f'<line class="axis" x1="{x0}" x2="{x1}" y1="{y1}" y2="{y1}"/>')
     n = 6
     for i in range(n + 1):
@@ -1381,11 +1385,28 @@ def _flowcheck_block(i18n: _I18n, doc: dict | None) -> str:
         last = i18n.raw("fck_last", d=obs["dates"][-1][8:10] + "/" + obs["dates"][-1][5:7], o=f'{obs["q_m3s"][-1]:.2f}',
                         m=f'{(mod.get("central") or [0])[0]:.1f}')
     legend = (f'<p class="legend"><span><i class="obsq"></i>{i18n.raw("fck_obs")}</span>'
-              f'<span><i class="ln selc"></i>{i18n.raw("fck_mod")}</span>'
+              f'<span><i class="ln selc"></i>{i18n.raw("fck_mod")} · {i18n.raw("scn_sel")}</span>'
+              f'<span><i class="ln upc"></i>{i18n.raw("scn_upper")}</span>'
+              f'<span><i class="ln loc"></i>{i18n.raw("scn_lower")}</span>'
               f'<span><i style="background:var(--band)"></i>{i18n.raw("band")}</span></p>')
-    return (f'<div class="fcheckwrap"><h3>{i18n.raw("fck_h", name=g.get("name", ""))}</h3>'
-            f'<p class="muted">{i18n.raw("fck_p", code=g.get("code", ""), a=f"{float(g.get("area_km2") or 0):.0f}")}</p>'
-            f'{"".join(parts)}{legend}{"<p>" + last + "</p>" if last else ""}</div>')
+    note = (f'<p class="fck-note"><strong>{i18n.raw("fck_h", name=g.get("name", ""))}.</strong> {last}</p>'
+            f'<details class="fck-more"><summary>{i18n.raw("details")}</summary><p class="muted">'
+            f'{i18n.raw("fck_p", code=g.get("code", ""), a=f"{float(g.get("area_km2") or 0):.0f}")}</p></details>')
+    return f'{"".join(parts)}{legend}{note}'
+
+
+def _flow_tabs(i18n: _I18n, chart: str, flowcheck: dict | None) -> str:
+    """Section 2 chart: the Alcácer forecast, and on the second tab the forecast at the upstream
+    APA flow gauge together with its measurements (as section 3 does for the level)."""
+    up = _flowcheck_block(i18n, flowcheck)
+    if not up:
+        return chart
+    name = (flowcheck.get("gauge") or {}).get("name", "")
+    return (f'<div class="qtabs segs" role="group">'
+            f'<button type="button" class="seg" data-q="alc" aria-pressed="true">{i18n.raw("fck_tab_alc")}</button>'
+            f'<button type="button" class="seg" data-q="up" aria-pressed="false" title="{_esc(i18n.plain("fck_tab_tip", name=name))}">'
+            f'{i18n.raw("fck_tab_up")}</button></div>'
+            f'<div class="qpane" data-q="alc">{chart}</div><div class="qpane" data-q="up" hidden>{up}</div>')
 
 
 def _legend_html(i18n: _I18n) -> str:
