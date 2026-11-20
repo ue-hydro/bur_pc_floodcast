@@ -970,3 +970,5 @@ html[data-scn="lower"] .wide-chart .chart .scn.lo,html[data-scn="upper"] .wide-c
 .viewctl .vc-px{border:0;border-left:1px solid rgba(255,255,255,.25);background:transparent;color:#fff;padding:6px 9px;font:inherit;font-weight:600;cursor:pointer}
 .viewctl .vc-px[aria-pressed="true"]{background:#1d4f80}
 .viewctl .vc-px:hover{background:rgba(0,58,112,.7)}
+/* lock view: always visible beside the controls icon */
+.viewctl > .viewlock{flex:none;height:38px;padding:0 12px}
