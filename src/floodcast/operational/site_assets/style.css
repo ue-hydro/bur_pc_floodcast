@@ -972,3 +972,5 @@ html[data-scn="lower"] .wide-chart .chart .scn.lo,html[data-scn="upper"] .wide-c
 .viewctl .vc-px:hover{background:rgba(0,58,112,.7)}
 /* lock view: always visible beside the controls icon */
 .viewctl > .viewlock{flex:none;height:38px;padding:0 12px}
+/* small maps: marker labels wrap so they stay inside the map instead of being cut at its edges */
+.gmap .leaflet-tooltip,.wcmap .leaflet-tooltip,.snapmap .leaflet-tooltip{white-space:normal;width:max-content;max-width:170px;text-align:center;line-height:1.25}
