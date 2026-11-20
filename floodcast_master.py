@@ -47,26 +47,46 @@ RESTART = {"now": False}
 EARLY_CHECK_H = 1.0   # start asking ECMWF this long before a run's usual publication time
 
 
+POLL = {"asked": [], "gate": None, "gate_cycle": None, "said": None}   # what the last pass asked ECMWF, when the next window opens
+
+
 def new_cycles(cfg: OperationalConfig, store) -> list[datetime]:
     """Forecast cycles ECMWF has published and we have not processed yet (oldest first).
 
     ECMWF open data appear at fixed times (~7 h after the 06/18 UTC runs, ~8 h after 00/12 UTC):
     a cycle is not asked for before EARLY_CHECK_H ahead of that, so between runs the loop sends
-    no requests to ECMWF (APA gauges and the site keep their own, slower schedule)."""
-    from floodcast.operational.site import ecmwf_publish_delay_h
+    no requests to ECMWF. POLL["gate"] is when the next check window opens (the loop sleeps until
+    then); POLL["asked"] lists the cycles actually requested in this pass."""
+    from floodcast.operational.site import CYCLE_STEP_H, ecmwf_publish_delay_h
 
     fc = cfg.forecast
-    out = []
+    out, asked, gates = [], [], []
     now = now_utc()
-    for cycle in sorted(ifs.cycle_candidates(now, fc.cycles, max_age_h=fc.max_cycle_age_h)):
-        if store.is_complete(cycle):
+    cands = sorted(ifs.cycle_candidates(now, fc.cycles, max_age_h=fc.max_cycle_age_h))
+    nxt = (cands[-1] if cands else now.replace(minute=0, second=0, microsecond=0)) + timedelta(hours=CYCLE_STEP_H)
+    for cycle in cands + [nxt]:
+        if cycle in cands and store.is_complete(cycle):
             continue
-        if now < cycle + timedelta(hours=ecmwf_publish_delay_h(cycle.hour) - EARLY_CHECK_H):
+        gate = cycle + timedelta(hours=ecmwf_publish_delay_h(cycle.hour) - EARLY_CHECK_H)
+        if now < gate:
+            gates.append((gate, cycle))
             continue   # too early: not published yet, no request
+        asked.append(cycle)
         if ifs.cycle_is_available(cycle, source=fc.source, resolution=fc.resolution,
                                   max_lead_h=fc.screening_max_lead_h, ensemble=False):
             out.append(cycle)
+    POLL["asked"] = [c for c in asked if c not in out]
+    first = None if POLL["asked"] or not gates else min(gates)
+    POLL["gate"], POLL["gate_cycle"] = (first if first else (None, None))
     return out
+
+
+def next_wait_s(cfg: OperationalConfig, started: datetime) -> float:
+    """Inside a check window: every poll interval. Before it: sleep until it opens, waking at most
+    hourly for the APA gauge levels."""
+    if POLL["gate"] is not None:
+        return max(30.0, min((POLL["gate"] - now_utc()).total_seconds(), GAUGE_REFRESH_S))
+    return max(30.0, cfg.poll_interval_minutes * 60 - (now_utc() - started).total_seconds())
 
 
 def export_map_geometry(domain, dest: Path) -> None:
@@ -586,25 +606,33 @@ def latest_complete(store) -> bool:
 
 
 def idle_status(store, wait_s: float, processed: int) -> None:
-    """One terminal line per pass so the log shows the loop is alive and what it is waiting for."""
+    """Log what the loop is waiting for: one line per real ECMWF check, and one line (not repeated)
+    when it goes to sleep until the next check window."""
     from floodcast.operational.store import read_json
 
-    latest = read_json(store.root / "latest.json", {}) or {}
+    if processed:
+        POLL["said"] = None
+        return
     nxt = (datetime.now() + timedelta(seconds=wait_s)).strftime("%H:%M")
-    shown = latest.get("cycle", "none yet").replace("T", " ").replace(":00:00Z", " UTC")
-    if processed == 0:
-        from floodcast.operational.site import CYCLE_STEP_H, ecmwf_publish_delay_h
+    if POLL["asked"]:
+        runs = ", ".join(f"{c:%d/%m %H} UTC" for c in POLL["asked"])
+        log.info("checked ECMWF: %s not published yet | next check %s", runs, nxt)
+        POLL["said"] = None
+        return
+    gate = POLL["gate"]
+    if gate is None or POLL["said"] == gate:
+        return   # already said; APA/tide refreshes run quietly
+    POLL["said"] = gate
+    from floodcast.operational.site import ecmwf_publish_delay_h
 
-        exp = ""
-        try:
-            c = datetime.fromisoformat(latest["cycle"].replace("Z", "+00:00")) + timedelta(hours=CYCLE_STEP_H)
-            due = c + timedelta(hours=ecmwf_publish_delay_h(c.hour))
-            exp = (f" | next run {c:%H} UTC expected ~{due.astimezone():%H:%M}"
-                   f" (ECMWF not asked before {(due - timedelta(hours=EARLY_CHECK_H)).astimezone():%H:%M})")
-        except (KeyError, ValueError):
-            pass
-        log.info("waiting: no new ECMWF forecast yet | on the site: %s (level %s)%s | next check %s",
-                 shown, latest.get("level", "?"), exp, nxt)
+    latest = read_json(store.root / "latest.json", {}) or {}
+    shown = latest.get("cycle", "none yet").replace("T", " ").replace(":00:00Z", " UTC")
+    run = POLL["gate_cycle"]
+    due = run + timedelta(hours=ecmwf_publish_delay_h(run.hour))
+    log.info("idle until %s: next ECMWF run %s UTC expected ~%s; no ECMWF requests before then "
+             "(APA level refreshed hourly) | on the site: %s (level %s)",
+             gate.astimezone().strftime("%H:%M"), f"{run:%H}", due.astimezone().strftime("%H:%M"),
+             shown, latest.get("level", "?"))
 
 
 def git_update_available(repo: Path) -> bool:
@@ -746,7 +774,7 @@ def main() -> int:
                     publish_site(cfg, store, push=latest_complete(store))
             except Exception:
                 log.exception("gauge refresh failed")
-            wait = max(30.0, cfg.poll_interval_minutes * 60 - (now_utc() - started).total_seconds())
+            wait = next_wait_s(cfg, started) if not args.cycle else 30.0
             idle_status(store, wait, processed=len(cycles))
             end = time.monotonic() + wait
             while not STOP and time.monotonic() < end:
