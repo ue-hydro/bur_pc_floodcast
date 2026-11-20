@@ -576,7 +576,7 @@ html:not([data-scn]) .imp-central,html[data-scn="central"] .imp-central,html[dat
 .flood3 .panel>h3 .num{font-size:.8rem}
 .flood3 .mapctl{margin:0 0 6px;min-height:0}
 .flood3 #map,.flood3 .webglwrap{height:clamp(300px,52vh,560px);aspect-ratio:auto}
-.flood3 .viz-pair{display:flex;flex-direction:column;gap:16px}
+.flood3 .viz-pair{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:0 12px;align-items:start}   /* 4.1 + 4.2 side by side at any width */
 .flood3 .strips-wrap{margin-top:14px;padding-top:10px;border-top:1px solid var(--line)}
 .flood3 .strips-h{margin:0 0 4px;font-size:.88rem}
 .strip3 .chart.strip{max-height:200px}
@@ -904,3 +904,11 @@ html[data-scn="lower"] .wide-chart .chart .scn.lo,html[data-scn="upper"] .wide-c
 .webglwrap .wgfs svg{width:20px;height:20px}
 .webglwrap:fullscreen{width:100vw;height:100vh;max-height:none;aspect-ratio:auto;border-radius:0}
 .webglwrap:-webkit-full-screen{width:100vw;height:100vh}
+
+/* narrow windows: 4.1 and 4.2 stay side by side, so their furniture shrinks */
+@container (max-width:899px){
+  .flood3 .panel>h3{font-size:.92rem}
+  .flood3 #map,.flood3 .webglwrap{height:clamp(260px,46vh,460px);min-height:0}
+  .flood3 .webglwrap .clockbadge.wg{font-size:11px;padding:3px 6px}
+  .flood3 .wg-hint{display:none}
+}
