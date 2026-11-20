@@ -225,6 +225,10 @@ ES = {
     "t_max_btn": "Profundidad máxima",
     "tide_lvl": "Nivel del mar",
     "j_level": "Nivel del río",
+    "wc_h": "Webcam en directo",
+    "wc_credit": "imagen: {c}",
+    "wc_upd": "actualizada a las",
+    "wc_err": "imagen no disponible en este momento",
     "lvl_h": "Nivel del río en Alcácer do Sal: previsto y medido",
     "lvl_p": ("Nivel del agua del Sado junto a la estación de la APA {code}, previsto por el modelo de inundación (FLUXOS) y medido por la "
               "estación en tiempo real. Metros sobre el nivel medio del mar. Sirve para comprobar si la previsión acierta."),

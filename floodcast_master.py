@@ -503,7 +503,8 @@ def publish_site(cfg: OperationalConfig, store, push: bool = False) -> None:
     from floodcast.operational.site import build_site
 
     build_site(store.root, cfg.publish.output_dir, site_title=cfg.publish.site_title,
-               base_url=cfg.publish.base_url, chat_endpoint=cfg.publish.chat_endpoint)
+               base_url=cfg.publish.base_url, chat_endpoint=cfg.publish.chat_endpoint,
+               webcams=[w.model_dump() for w in cfg.publish.webcams])
     if push and cfg.publish.post_command:
         import subprocess
 

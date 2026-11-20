@@ -154,6 +154,16 @@ class ModelSettings(_Model):
     fluxos_docker_platform: str = ""
 
 
+class WebcamSettings(_Model):
+    """A live webcam image shown next to the flood forecast (loaded by the visitor's browser from
+    the owner's server; ``refresh_s`` keeps the load on that server small)."""
+    url: str
+    name: str = ""
+    credit: str = ""
+    link: str = ""
+    refresh_s: int = Field(default=120, ge=60)
+
+
 class PublishSettings(_Model):
     site_title: str = "Floodcast Alcácer do Sal"
     base_url: str = ""
@@ -170,6 +180,8 @@ class PublishSettings(_Model):
     # "https://floodcast-chat.<account>.workers.dev/chat" or "http://localhost:8787/chat".
     # Empty = no chat box on the site.
     chat_endpoint: str = ""
+    # Live webcams shown beside the flood forecast (latest page only). Keep private until the owner agrees.
+    webcams: list[WebcamSettings] = Field(default_factory=list)
 
 
 class OperationalConfig(_Model):

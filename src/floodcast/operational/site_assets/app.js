@@ -357,6 +357,36 @@
     });
   });
 
+  // ---- live webcam(s) beside section 4: polite refresh - at most once per data-refresh seconds,
+  // only while this tab is visible and the panel is on screen (the image is the owner's server's).
+  Array.prototype.forEach.call(document.querySelectorAll("figure.webcam[data-src]"), function (fig) {
+    var img = fig.querySelector("img"), tEl = fig.querySelector(".wc-time");
+    var src = fig.getAttribute("data-src"), every = Math.max(60, +fig.getAttribute("data-refresh") || 120) * 1000;
+    var upd = {}, err = {}; try { upd = JSON.parse(fig.getAttribute("data-upd")); err = JSON.parse(fig.getAttribute("data-err")); } catch (e) {}
+    var onScreen = true, last = 0, pending = false;
+    function lang() { return root.getAttribute("data-lang") || "pt"; }
+    function load(force) {
+      if (pending || document.hidden || !onScreen) return;
+      if (!force && Date.now() - last < every) return;
+      pending = true; last = Date.now();
+      var bucket = Math.floor(Date.now() / every);   // same URL within an interval: browser cache, not their server
+      var probe = new Image();
+      probe.onload = function () {
+        pending = false; img.src = probe.src; fig.classList.remove("wc-off");
+        var hm = new Date().toLocaleTimeString(lang() === "en" ? "en-GB" : lang() + "-PT", { hour: "2-digit", minute: "2-digit", timeZone: "Europe/Lisbon" });
+        if (tEl) tEl.textContent = (upd[lang()] || upd.pt || "") + " " + hm;
+      };
+      probe.onerror = function () { pending = false; fig.classList.add("wc-off"); if (tEl) tEl.textContent = err[lang()] || err.pt || ""; };
+      probe.src = src + (src.indexOf("?") < 0 ? "?" : "&") + "t=" + bucket;
+    }
+    if (window.IntersectionObserver) {
+      new IntersectionObserver(function (es) { onScreen = es[0].isIntersecting; if (onScreen) load(false); }, { rootMargin: "200px" }).observe(fig);
+    }
+    document.addEventListener("visibilitychange", function () { if (!document.hidden) load(false); });
+    setInterval(function () { load(false); }, 15000);   // checks often, fetches only when the interval has passed
+    load(true);
+  });
+
   // ---- 3-D view: controls icon (opens the switches to the right) and full screen (page overlays kept)
   Array.prototype.forEach.call(document.querySelectorAll(".viewctl .vc-toggle"), function (b) {
     b.addEventListener("click", function () {

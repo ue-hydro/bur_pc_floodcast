@@ -91,6 +91,10 @@ T: dict[str, tuple[str, str]] = {
     "tide_h": ("Nível do mar na foz do Sado (maré + sobrelevação)", "Sea level at the Sado mouth (tide + surge)"),
     "tide_lvl": ("Nível do mar", "Sea level"),
     "j_level": ("Nível do rio", "River level"),
+    "wc_h": ("Webcam em direto", "Live webcam"),
+    "wc_credit": ("imagem: {c}", "image: {c}"),
+    "wc_upd": ("atualizada às", "updated at"),
+    "wc_err": ("imagem indisponível de momento", "image unavailable at the moment"),
     "lvl_h": ("Nível do rio em Alcácer do Sal: previsto e medido", "River level at Alcácer do Sal: forecast and measured"),
     "lvl_p": ("Nível da água no Sado junto à estação da APA {code}, previsto pelo modelo de inundação (FLUXOS) e medido pela "
               "estação em tempo real. Metros acima do nível médio do mar. Serve para verificar se a previsão está certa.",
@@ -1222,6 +1226,27 @@ def _gauge_chart(i18n: _I18n, doc: dict) -> str:
     return "".join(parts) + legend
 
 
+def _webcam_block(i18n: _I18n, cams: list) -> str:
+    """Live webcam(s) beside the section 4 strips. The browser loads the image from the owner's
+    server every ``refresh_s`` (default 2 min), only while the page is visible and the panel on
+    screen (app.js), so their server sees at most one request per viewer per interval."""
+    out = []
+    for c in cams:
+        if not c.get("url"):
+            continue
+        link = c.get("link") or c["url"]
+        credit = _esc(c.get("credit") or "")
+        out.append(
+            f'<figure class="webcam" data-src="{_esc(c["url"])}" data-refresh="{int(c.get("refresh_s") or 120)}" '
+            f'data-upd="{_esc(json.dumps(_sl(i18n, "wc_upd")))}" data-err="{_esc(json.dumps(_sl(i18n, "wc_err")))}">'
+            f'<figcaption><strong>{i18n.raw("wc_h")}</strong> <span class="wc-live">●</span> '
+            f'<span class="muted">{_esc(c.get("name") or "")}</span></figcaption>'
+            f'<a href="{_esc(link)}" target="_blank" rel="noopener"><img alt="{_esc(i18n.plain("wc_h"))}" loading="lazy"></a>'
+            f'<p class="muted wc-meta"><span class="wc-time"></span>'
+            f'{" · " + i18n.raw("wc_credit", c=credit) if credit else ""}</p></figure>')
+    return f'<div class="webcams">{"".join(out)}</div>' if out else ""
+
+
 def _gauge_block(i18n: _I18n, doc: dict | None) -> str:
     """Section 3: forecast vs measured river level at the APA gauge in town."""
     from .gauges import comparison
@@ -1958,6 +1983,7 @@ def _cycle_content(i18n: _I18n, latest, data: dict, prefix: str, data_rel: str, 
         html = html.replace("</h2>", "</h3>", 1)
         i = html.rfind("</section>")
         return html[:i] + "</div>" + html[i + len("</section>"):] if i >= 0 else html
+    cams = _webcam_block(i18n, data.get("webcams") or []) if is_latest else ""
     if anim_html and hyd_html and strips:
         anim_panel = as_panel(anim_html, "anim-card").replace(f'<p class="muted">{i18n.raw("anim_p")}</p>', "", 1)
         bar = (f'<div class="flood-ctl" id="flood-ctl"><span class="fc-l">{i18n.raw("ctl_l")}</span>{ctl[0]}</div>'
@@ -1965,8 +1991,9 @@ def _cycle_content(i18n: _I18n, latest, data: dict, prefix: str, data_rel: str, 
         out.append(
             f'<div class="viz-outer"><section class="card flood3" id="flood-group">'
             f'<h2><span class="num">4</span>{i18n.raw("grp_h")}</h2>'
+            f'<div class="strips-row{" with-cam" if cams else ""}">'
             f'<div class="strips-wrap"><p class="muted strips-h"><strong>{i18n.raw("strips_h")}</strong> {i18n.raw("strips_p")}</p>'
-            f'<div class="strip3">{strips[0]}</div></div>{bar}'   # scenario/layer bar right above map + animation
+            f'<div class="strip3">{strips[0]}</div></div>{cams}</div>{bar}'   # scenario/layer bar right above map + animation
             f'<div class="viz-pair">{as_panel(hyd_html, "map-card")}{anim_panel}</div></section></div>')
     else:
         out.append(f'<div class="viz-outer">{hyd_html}{anim_html}</div>')
@@ -2285,6 +2312,7 @@ def build_site(
     languages=("pt", "es", "en"),
     base_url: str = "",
     chat_endpoint: str = "",
+    webcams: list | None = None,
 ) -> list[Path]:
     """Render the static site into ``out_dir`` and return the files written.
 
@@ -2329,6 +2357,7 @@ def build_site(
         pages: dict[str, str] = {}
         if latest_rel:
             data = _load_cycle(op, latest_rel)
+            data["webcams"] = list(webcams or [])   # live views: on the latest forecast only
             content = _cycle_content(i18n, latest, data, "", latest_rel, is_latest=True, cycle_id=latest_id)
             updated = (latest or {}).get("updated_at") or data["status"].get("finished_at") or ""
             level = _level((latest or {}).get("level") or data["status"].get("level"))

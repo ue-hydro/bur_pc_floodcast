@@ -920,3 +920,14 @@ html[data-scn="lower"] .wide-chart .chart .scn.lo,html[data-scn="upper"] .wide-c
   .flood3 .webglwrap .clockbadge.wg{font-size:11px;padding:3px 6px}
   .flood3 .wg-hint{display:none}
 }
+
+/* section 4: live webcam to the right of the rain / flow / tide strips (side by side at any width) */
+.flood3 .strips-row.with-cam{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr);gap:16px;align-items:start}
+.flood3 .strips-row.with-cam .strips-wrap{min-width:0}
+.webcams{margin-top:14px;padding-top:10px;border-top:1px solid var(--line);min-width:0}
+.webcam{margin:0}
+.webcam figcaption{font-size:.88rem;margin:0 0 6px}
+.webcam .wc-live{color:#c62828;font-size:.7rem;vertical-align:2px}
+.webcam img{display:block;width:100%;aspect-ratio:16/9;object-fit:cover;background:var(--grid);border:1px solid var(--line)}
+.webcam.wc-off img{opacity:.35}
+.webcam .wc-meta{font-size:.75rem;margin:4px 0 0}
