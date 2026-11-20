@@ -110,6 +110,41 @@ def precip_grid(tp, cycle: datetime, max_h: float = 72.0) -> dict:
     }
 
 
+def rank_scenarios_by_flow(p, q):
+    """Relabel the three rainfall scenarios lower/central/upper by the river flow they give
+    (policies.flow_order) everywhere they appear: flow rows, rain maps, rain totals, reach flows and
+    the rain fed to the 3-D view. Each scenario keeps its rain rank as ``rain_rank``."""
+    import numpy as np
+
+    if q is None or q.shape[0] != 3:
+        return q
+    order = policies.flow_order(q)
+    names = ("lower", "central", "upper")
+    src = getattr(p, "last_ensemble_source", None) or {}
+    for k, name in enumerate(names):   # remember how each forecast ranked by rain
+        if name in (src.get("scenarios") or {}):
+            src["scenarios"][name].setdefault("rain_rank", name)
+    if order == [0, 1, 2]:
+        return q
+
+    def remap(d):
+        if isinstance(d, dict) and all(n in d for n in names):
+            old = {n: d[n] for n in names}
+            for k, n in enumerate(names):
+                d[n] = old[names[order[k]]]
+
+    remap(src.get("scenarios"))
+    remap((getattr(p, "last_precip_scenarios", None) or {}).get("mm_h"))
+    remap((getattr(p, "last_precip_stats", None) or {}).get("scenario_cum"))
+    remap((getattr(p.hydrology, "last_reach_flow", None) or {}).get("scenarios"))
+    mr = getattr(p.hydrology, "last_member_rain", None)
+    if mr is not None and np.asarray(mr.get("mm_h")).shape[0] == 3:
+        mr["mm_h"] = np.asarray(mr["mm_h"])[order]
+    log.info("scenarios re-ranked by river flow: lower/central/upper = rain %s",
+             "/".join(names[i] for i in order))
+    return q[order]
+
+
 def write_precip_scenarios(path: Path, cycle: datetime, data: dict | None, step_h: int = 3,
                            max_h: int = 72) -> None:
     """Rain of the lower / central / upper scenarios on 0.25° cells, 3-hourly, for the rain map."""
@@ -285,6 +320,7 @@ def handle_cycle(cfg: OperationalConfig, p: CycleProcessor, cycle: datetime, *, 
                 p.hydrology.on_member_done = _member_done
             weights = p._weights_for(control["tp"]) if control else p._weights
             hours, q, state_info = p.hydrology.run_ensemble(cycle, members, weights, cache / "run")
+            q = rank_scenarios_by_flow(p, q)
             outlet = {"seg_id": p.domain.outlet_seg_id, "name": p.domain.name,
                       "area_km2": p.domain.area_km2}
             summary = policies.scenario_summary(cycle, hours, q, cfg.hydrology, outlet=outlet,

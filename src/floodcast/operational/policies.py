@@ -55,6 +55,15 @@ def ensemble_summary(
 SCENARIOS = ("lower", "central", "upper")
 
 
+def flow_order(q: np.ndarray) -> list[int]:
+    """Order of the three scenario runs from least to most river flow (total over the window).
+    The rainfall forecasts are picked by basin-total rain (P10/P50/P90), but where and when the rain
+    falls matters: the "central" rain forecast can give MORE flow than the "upper" one. Ranking by
+    flow keeps lower <= central <= upper on the flow chart and makes "upper" the worst flood case."""
+    vol = [float(np.nansum(q[i])) for i in range(q.shape[0])]
+    return sorted(range(q.shape[0]), key=lambda i: (vol[i], i))
+
+
 def _level_of(peak: float, th: DischargeThresholds) -> str:
     level = "none"
     for name in ("watch", "warning", "alert"):

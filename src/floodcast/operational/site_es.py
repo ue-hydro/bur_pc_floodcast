@@ -213,7 +213,7 @@ ES = {
     "scn_h": "Escenarios de lluvia y caudal punta",
     "scn_col": "Escenario",
     "scn_peak_txt": "Escenario central: punta a las {t}. La banda abarca los escenarios inferior y superior.",
-    "hydro_p_scn": "Caudal simulado con tres escenarios de lluvia — inferior (P10), central (P50) y superior (P90) de la lluvia acumulada de todas las previsiones disponibles.",
+    "hydro_p_scn": "Caudal simulado con tres previsiones de lluvia reales, elegidas entre todas las disponibles (P10, P50 y P90 de la lluvia acumulada) y ordenadas por el caudal que producen: inferior, central y superior.",
     "src_tbl_h": "Estado de cada fuente de previsión de lluvia",
     "s12_ctl": "Escenario mostrado en los gráficos y mapas 1 a 3:",
     "peak_more": "Pico previsto y caudal punta por escenario",
