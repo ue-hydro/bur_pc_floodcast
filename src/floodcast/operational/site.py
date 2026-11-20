@@ -95,6 +95,8 @@ T: dict[str, tuple[str, str]] = {
     "wc_credit": ("imagem: {c}", "image: {c}"),
     "wc_upd": ("atualizada às", "updated at"),
     "wc_err": ("imagem indisponível de momento", "image unavailable at the moment"),
+    "wc_where": ("Localização da câmara", "Camera location"),
+    "wc_where_approx": ("Localização da câmara (aproximada)", "Camera location (approximate)"),
     "lvl_h": ("Nível do rio em Alcácer do Sal: previsto e medido", "River level at Alcácer do Sal: forecast and measured"),
     "lvl_p": ("Nível da água no Sado junto à estação da APA {code}, previsto pelo modelo de inundação (FLUXOS) e medido pela "
               "estação em tempo real. Metros acima do nível médio do mar. Serve para verificar se a previsão está certa.",
@@ -1241,9 +1243,19 @@ def _webcam_block(i18n: _I18n, cams: list) -> str:
             f'data-upd="{_esc(json.dumps(_sl(i18n, "wc_upd")))}" data-err="{_esc(json.dumps(_sl(i18n, "wc_err")))}">'
             f'<figcaption><strong>{i18n.raw("wc_h")}</strong> <span class="wc-live">●</span> '
             f'<span class="muted">{_esc(c.get("name") or "")}</span></figcaption>'
-            f'<a href="{_esc(link)}" target="_blank" rel="noopener"><img alt="{_esc(i18n.plain("wc_h"))}" loading="lazy"></a>'
-            f'<p class="muted wc-meta"><span class="wc-time"></span>'
-            f'{" · " + i18n.raw("wc_credit", c=credit) if credit else ""}</p></figure>')
+            f'<div class="wc-frame"><a href="{_esc(link)}" target="_blank" rel="noopener">'
+            f'<img alt="{_esc(i18n.plain("wc_h"))}" loading="lazy"></a>'
+            + (f'<div class="wcmap" data-lat="{float(c["lat"])}" data-lon="{float(c["lon"])}"'
+               f'{"" if c.get("view_deg") is None else f" data-view={float(c["view_deg"])}"} '
+               f'data-name="{_esc(i18n.plain("wc_where_approx" if c.get("approx") else "wc_where"))}" '
+               f'title="{_esc(i18n.plain("wc_where_approx" if c.get("approx") else "wc_where"))}" '
+               f'role="img" aria-label="{_esc(i18n.plain("wc_where"))}"></div>'
+               if c.get("lat") is not None and c.get("lon") is not None else "")
+            + f'</div><p class="muted wc-meta"><span class="wc-time"></span>'
+            f'{" · " + i18n.raw("wc_credit", c=credit) if credit else ""}'
+            + (f' · <span class="wc-dot">●</span> {i18n.raw("wc_where_approx" if c.get("approx") else "wc_where")}'
+               if c.get("lat") is not None else "")
+            + '</p></figure>')
     return f'<div class="webcams">{"".join(out)}</div>' if out else ""
 
 

@@ -162,6 +162,11 @@ class WebcamSettings(_Model):
     credit: str = ""
     link: str = ""
     refresh_s: int = Field(default=120, ge=60)
+    # where the camera is (map inset next to the image); approx = position estimated, not surveyed
+    lat: float | None = None
+    lon: float | None = None
+    approx: bool = False
+    view_deg: float | None = None   # viewing direction (degrees from north), drawn as a short line
 
 
 class PublishSettings(_Model):

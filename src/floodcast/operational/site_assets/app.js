@@ -493,6 +493,23 @@
   }
   var amaps = document.querySelectorAll(".amap");
   if (amaps.length) loadLeaflet(function () { for (var k = 0; k < amaps.length; k++) initAnimMap(amaps[k]); });
+  var wcmaps = document.querySelectorAll(".wcmap");
+  if (wcmaps.length) loadLeaflet(function () { for (var k = 0; k < wcmaps.length; k++) initCamMap(wcmaps[k]); });
+  function initCamMap(el) {   // small inset: where the webcam is (and which way it looks)
+    var L = window.L, lat = +el.getAttribute("data-lat"), lon = +el.getAttribute("data-lon");
+    var map = L.map(el, { scrollWheelZoom: false, zoomControl: false, attributionControl: true, dragging: false, doubleClickZoom: false, boxZoom: false, keyboard: false }).setView([lat, lon], 13);
+    addBasemaps(map);
+    var v = el.getAttribute("data-view");
+    if (v !== null) {
+      var a = (+v) * Math.PI / 180, d = 0.006;
+      L.polyline([[lat, lon], [lat + d * Math.cos(a), lon + d * Math.sin(a) / Math.cos(lat * Math.PI / 180)]],
+                 { color: "#ffd54f", weight: 3, dashArray: "4 4" }).addTo(map);
+    }
+    L.circleMarker([lat, lon], { radius: 7, color: "#fff", weight: 2, fillColor: "#c62828", fillOpacity: 1 }).addTo(map)
+      .bindTooltip(el.getAttribute("data-name"), { direction: "top", offset: [0, -8] });
+    setTimeout(function () { map.invalidateSize(); }, 80);
+    if (window.ResizeObserver) new ResizeObserver(function () { map.invalidateSize(); map.setView([lat, lon], 13); }).observe(el);
+  }
   var gmaps = document.querySelectorAll(".gmap");
   if (gmaps.length) loadLeaflet(function () { for (var k = 0; k < gmaps.length; k++) initGaugeMap(gmaps[k]); });
   // ---- section 3: where forecast and measurement are compared (APA gauge + model river cells) ----

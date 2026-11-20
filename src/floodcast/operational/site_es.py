@@ -229,6 +229,8 @@ ES = {
     "wc_credit": "imagen: {c}",
     "wc_upd": "actualizada a las",
     "wc_err": "imagen no disponible en este momento",
+    "wc_where": "Ubicación de la cámara",
+    "wc_where_approx": "Ubicación de la cámara (aproximada)",
     "lvl_h": "Nivel del río en Alcácer do Sal: previsto y medido",
     "lvl_p": ("Nivel del agua del Sado junto a la estación de la APA {code}, previsto por el modelo de inundación (FLUXOS) y medido por la "
               "estación en tiempo real. Metros sobre el nivel medio del mar. Sirve para comprobar si la previsión acierta."),
