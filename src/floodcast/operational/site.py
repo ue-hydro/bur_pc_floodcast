@@ -111,6 +111,17 @@ T: dict[str, tuple[str, str]] = {
                   "Since the forecast start ({n} h with measurements): mean error {b} m, mean absolute error {m} m. "
                   "Measured range {o0} to {o1} m; forecast {p0} to {p1} m."),
     "lvl_more": ("Estação, conversão e método", "Gauge, conversion and method"),
+    "lvl_map_h": ("Onde se compara: estação da APA e células do modelo", "Where it is compared: APA gauge and model cells"),
+    "lvl_map_st": ("Estação APA {name} ({code})", "APA gauge {name} ({code})"),
+    "lvl_map_lst": ("Estação da APA (medido)", "APA gauge (measured)"),
+    "lvl_map_lcell": ("Células do rio no modelo (previsto)", "Model river cells (forecast)"),
+    "lvl_map_ldom": ("Área do modelo de inundação", "Flood model area"),
+    "lvl_m_tide": ("Maré na fronteira do modelo: nível do mar previsto na foz do Sado convertido para o troço de Alcácer "
+                   "(preia-mar e baixa-mar com atraso e amplificação próprios), recalibrado automaticamente todos os dias com "
+                   "{n} dias desta estação — última calibração {d}; erro horário {e} m (sem conversão: {e0} m).",
+                   "Tide at the model boundary: forecast sea level at the Sado mouth converted to the Alcácer reach "
+                   "(high and low water with their own delay and amplification), recalibrated automatically every day on "
+                   "{n} days of this gauge — last calibration {d}; hourly error {e} m (without conversion: {e0} m)."),
     "lvl_m_st": ("Estação {name} ({code}), rede hidrométrica da APA, sensor de nível com telemetria — "
                  "<a href=\"{url}\" rel=\"noopener\">ficha no SNIRH</a>.",
                  "Gauge {name} ({code}), APA hydrometric network, level sensor with telemetry — "
@@ -1200,7 +1211,8 @@ def _gauge_chart(i18n: _I18n, doc: dict) -> str:
     parts.append("</svg>")
     legend = (f'<p class="legend"><span><i class="ln obsc"></i>{i18n.raw("lvl_obs")}</span>'
               f'<span><i class="ln selc"></i>{i18n.raw("lvl_pred")} · {i18n.raw("scn_sel")}</span>'
-              f'<span><i class="ln othc"></i>{i18n.raw("scn_oth")}</span>'
+              f'<span><i class="ln upc"></i>{i18n.raw("scn_upper")}</span>'
+              f'<span><i class="ln loc"></i>{i18n.raw("scn_lower")}</span>'
               f'<span><i style="background:var(--band)"></i>{i18n.raw("band")}</span></p>')
     return "".join(parts) + legend
 
@@ -1230,15 +1242,31 @@ def _gauge_block(i18n: _I18n, doc: dict | None) -> str:
                                                      o0=f'{cmp_["obs_range_m"][0]:.2f}', o1=f'{cmp_["obs_range_m"][1]:.2f}',
                                                      p0=f'{cmp_["pred_range_m"][0]:.2f}', p1=f'{cmp_["pred_range_m"][1]:.2f}') + "</p>")
         stats.append(f'<div class="gstat imp-{cls}">{body}</div>')
+    cal = doc.get("tide_calibration") or {}
     method = "<ul>" + "".join(f"<li>{x}</li>" for x in (
         i18n.raw("lvl_m_st", name=g.get("name", ""), code=g.get("code", ""), url=_Html(_esc(g.get("url", "")))),
         i18n.raw("lvl_m_zero", z=f'{float(g.get("gauge_zero_m") or 0):.2f}'),
         i18n.raw("lvl_m_prov"),
-        i18n.raw("lvl_m_pred", r="60"))) + "</ul>"
+        i18n.raw("lvl_m_pred", r=f'{float(g.get("radius_m") or 60):g}'))
+        + tuple([i18n.raw("lvl_m_tide", d=_Html(_short_t(cal["fitted_utc"])), n=cal.get("days", 90),
+                     e=f'{cal["stats"]["rmse_test_m"]:.2f}', e0=f'{cal["stats"]["rmse_raw_m"]:.2f}')]
+           if cal.get("stats") else [])) + "</ul>"
+    cells = doc.get("cells_wgs84") or []
+    gmap = ""
+    if g.get("lat") is not None:
+        bounds = doc.get("domain_bounds") or []
+        gmap = (f'<div class="animmap gmapwrap"><div class="am-head"><h3>{i18n.raw("lvl_map_h")}</h3></div>'
+                f'<div class="gmap" data-lat="{g["lat"]}" data-lon="{g["lon"]}" '
+                f'data-name="{_esc(i18n.plain("lvl_map_st", name=g.get("name", ""), code=g.get("code", "")))}" '
+                f'data-cells="{_esc(json.dumps(cells))}" data-bounds="{_esc(json.dumps(bounds))}" '
+                f'role="region" aria-label="{_esc(i18n.plain("lvl_map_h"))}"></div>'
+                f'<p class="maplegend"><span><i class="gm-st"></i>{i18n.raw("lvl_map_lst")}</span>'
+                f'<span><i class="gm-cell"></i>{i18n.raw("lvl_map_lcell")}</span>'
+                f'<span><i class="gm-dom"></i>{i18n.raw("lvl_map_ldom")}</span></p></div>')
     return (f'<section class="card" id="riverlevel"><h2><span class="num">3</span>{i18n.raw("lvl_h")}</h2>'
             f'<p class="muted">{i18n.raw("lvl_p", code=g.get("code", ""))}</p>'
             f'<div class="wide-chart"><div class="clockbadge chartclock"></div>{chart}</div>'
-            f'<div class="gstats">{"".join(stats)}</div>'
+            f'<div class="gstats">{"".join(stats)}</div>{gmap}'
             f'<details class="tech s12-more"><summary>{i18n.raw("lvl_more")}</summary>{method}</details></section>')
 
 

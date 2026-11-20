@@ -26,7 +26,6 @@ import urllib.parse
 import urllib.request
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from zoneinfo import ZoneInfo
 
 import numpy as np
 
@@ -34,8 +33,9 @@ log = logging.getLogger(__name__)
 
 SNIRH_DATA = "https://snirh.apambiente.pt/snirh/_dadosbase/site/janela_verdados.php"
 SNIRH_STATION = "https://snirh.apambiente.pt/index.php?idMain=2&idItem=1&objCover=920123705&objSite={site}"
-# SNIRH lists times in Portuguese legal time (identical to UTC in winter).
-SNIRH_TZ = ZoneInfo("Europe/Lisbon")
+# SNIRH time stamps are UTC all year (Portuguese winter time, no summer-time shift): read as legal
+# time, the tide delay mouth -> Alcácer jumped by exactly 1 h at the 25 Oct 2026 clock change.
+SNIRH_TZ = timezone.utc
 OBS_BEFORE_H = 48        # measured levels shown before the forecast start
 REFRESH_AFTER_END_H = 12  # keep fetching measurements until this long after the forecast window
 FILE = "gauge_level.json"
@@ -79,6 +79,10 @@ def fetch_observed(gauge: dict, start: datetime, end: datetime, timeout: int = 6
             continue
         times.append(_iso(t))
         vals.append(round(val + zero, 3))
+    seen = {}
+    for t, v in zip(times, vals):   # one value per time stamp
+        seen[t] = v
+    times, vals = sorted(seen), [seen[t] for t in sorted(seen)]
     return {"times_utc": times, "level_m": vals, "fetched_utc": _iso(datetime.now(timezone.utc)),
             "source": "APA / SNIRH real-time data (provisional, not validated)",
             "url": SNIRH_STATION.format(site=gauge["snirh_site"])}
@@ -122,6 +126,27 @@ def _gauge_cells(domain, gauge: dict, shape) -> tuple[np.ndarray, np.ndarray] | 
             near = chan
     yy, xx = yy[near], xx[near]
     return (yy, xx), bed[yy, xx]
+
+
+def gauge_cells_wgs84(domain, gauge: dict) -> list | None:
+    """Outlines (lat/lon rings) of the model river cells used for the forecast level (site map)."""
+    from pyproj import Transformer
+
+    fl = domain.fluxos
+    bed, hdr = _read_asc(domain.root / fl.get("dem", "fluxos/dem.asc"))
+    cells = _gauge_cells(domain, gauge, bed.shape)
+    if cells is None:
+        return None
+    (yy, xx), _ = cells
+    cs, x0, y0 = hdr["cellsize"], hdr["xllcorner"], hdr["yllcorner"]
+    tf = Transformer.from_crs(fl.get("crs", "EPSG:32629"), 4326, always_xy=True)
+    rings = []
+    for iy, ix in zip(yy.tolist(), xx.tolist()):
+        xs = [x0 + ix * cs, x0 + (ix + 1) * cs, x0 + (ix + 1) * cs, x0 + ix * cs]
+        ys = [y0 + iy * cs, y0 + iy * cs, y0 + (iy + 1) * cs, y0 + (iy + 1) * cs]
+        lon, lat = tf.transform(xs, ys)
+        rings.append([[round(a, 6), round(b, 6)] for a, b in zip(lat, lon)])
+    return rings
 
 
 def predicted_at_gauge(cycle_dir: Path, domain, gauge: dict) -> dict | None:
@@ -170,8 +195,24 @@ def update_cycle(cycle_dir: Path, domain, *, refresh_observed: bool = True, now:
         return None
     path = cycle_dir / FILE
     doc = json.loads(path.read_text()) if path.is_file() else {}
-    doc["gauge"] = {k: gauge.get(k) for k in ("code", "name", "snirh_site", "gauge_zero_m", "lat", "lon")}
+    doc["gauge"] = {k: gauge.get(k) for k in ("code", "name", "snirh_site", "gauge_zero_m", "lat", "lon", "radius_m")}
     doc["gauge"]["url"] = SNIRH_STATION.format(site=gauge["snirh_site"])
+    for sdir in sorted((cycle_dir / "hydraulics").glob("*/summary.json")):   # model area + tide calibration used
+        try:
+            summ = json.loads(sdir.read_text())
+        except (OSError, ValueError):
+            continue
+        b = summ.get("bounds_wgs84") or {}
+        if b and not doc.get("domain_bounds"):
+            doc["domain_bounds"] = [[b.get("south"), b.get("west")], [b.get("north"), b.get("east")]]
+        tr = (summ.get("tide_boundary") or {}).get("transfer") or {}
+        if tr.get("stats") and not doc.get("tide_calibration"):
+            doc["tide_calibration"] = {k: tr.get(k) for k in ("fitted_utc", "days", "stats")}
+    if not doc.get("cells_wgs84"):
+        try:
+            doc["cells_wgs84"] = gauge_cells_wgs84(domain, gauge)
+        except Exception as exc:
+            log.warning("gauge map cells not computed: %s", exc)
     if not doc.get("predicted"):
         try:
             doc["predicted"] = predicted_at_gauge(cycle_dir, domain, gauge)

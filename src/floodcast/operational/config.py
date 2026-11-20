@@ -130,6 +130,9 @@ class HydraulicsSettings(_Model):
     # 156-cell dam break that splashed water over the whole domain (frozen puddles on hilltops) or,
     # in the emulated amd64 build, blew up to NaN (2026-11-20).
     tide_ramp_hours: float = Field(default=3.0, ge=0, le=12)
+    # Convert the mouth sea level to the level at the town reach with the domain's calibrated
+    # high/low-water transfer ([fluxos.tide_transfer] in domain.toml) before using it as the boundary.
+    tide_transfer: bool = True
     # Manning bed friction (s m^-1/3) for the regular-mesh FLUXOS; None = key not written (no friction,
     # the FLUXOS default). Needs FLUXOS_cpp e7638ff or later (MANNING_N); CUDA builds refuse it.
     manning_n: float | None = Field(default=None, gt=0, le=1)

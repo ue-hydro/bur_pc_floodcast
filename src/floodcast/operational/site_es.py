@@ -235,6 +235,14 @@ ES = {
     "lvl_stats": ("Desde el inicio de la previsión ({n} h con medición): error medio {b} m, error absoluto medio {m} m. "
                   "Variación medida {o0} a {o1} m; prevista {p0} a {p1} m."),
     "lvl_more": "Estación, conversión y método",
+    "lvl_map_h": "Dónde se compara: estación de la APA y celdas del modelo",
+    "lvl_map_st": "Estación APA {name} ({code})",
+    "lvl_map_lst": "Estación de la APA (medido)",
+    "lvl_map_lcell": "Celdas del río en el modelo (previsto)",
+    "lvl_map_ldom": "Área del modelo de inundación",
+    "lvl_m_tide": ("Marea en la frontera del modelo: nivel del mar previsto en la desembocadura del Sado convertido al tramo de Alcácer "
+                   "(pleamar y bajamar con su propio retraso y amplificación), recalibrado automáticamente cada día con "
+                   "{n} días de esta estación — última calibración {d}; error horario {e} m (sin conversión: {e0} m)."),
     "lvl_m_st": ("Estación {name} ({code}), red hidrométrica de la APA, sensor de nivel con telemetría — "
                  "<a href=\"{url}\" rel=\"noopener\">ficha en el SNIRH</a>."),
     "lvl_m_zero": "La estación mide la altura sobre el cero de la escala; sumamos la cota de ese cero ({z} m) para obtener metros sobre el nivel medio del mar.",

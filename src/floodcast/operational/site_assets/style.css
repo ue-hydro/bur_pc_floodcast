@@ -859,3 +859,16 @@ html[data-scn="lower"] .wide-chart .chart .scn.lo,html[data-scn="upper"] .wide-c
 .wide-chart{position:relative}
 .wide-chart{padding-top:30px}
 .wide-chart .chartclock{position:absolute;top:0;right:6px;z-index:2;font-size:12px;padding:3px 8px}
+
+/* section 3: upper / lower scenario lines in their own colours; gauge map under the chart */
+.wide-chart .lvlchart .scn.lo{stroke:#2e7d32;stroke-width:1.6}
+.wide-chart .lvlchart .scn.up{stroke:#1565c0;stroke-width:1.6}
+.legend i.ln.upc{border-top:2px solid #1565c0}.legend i.ln.loc{border-top:2px solid #2e7d32}
+.gmap{width:100%;aspect-ratio:640/380;border:1px solid var(--line)}
+@media (max-width:640px){ .gmap{aspect-ratio:auto;height:300px} }
+.gmapwrap .maplegend{display:flex;flex-wrap:wrap;gap:4px 14px}
+.gmapwrap .maplegend>span{display:inline-flex;align-items:center;gap:5px;white-space:normal}
+.gmapwrap .maplegend i{display:inline-block;width:12px;height:12px}
+.gmapwrap i.gm-st{border-radius:50%;background:#c62828;border:2px solid #fff;box-shadow:0 0 0 1px #c62828}
+.gmapwrap i.gm-cell{background:rgba(255,213,79,.55);border:1.5px solid #ffb300}
+.gmapwrap i.gm-dom{border:1.5px dashed #ffffff;background:#5b7fa6}

@@ -71,6 +71,28 @@ tide_edges = [
   { EDGE = "north", FROM = 1, TO = 27 },
 ]
 
+# Mouth sea level (Open-Meteo marine, 38.47N 8.92W) -> water level at the Alcácer reach, applied to
+# the tide boundary (tide.transfer). Fitted 2026-11-20 on 90 days (22 Aug-20 Nov 2026) of the APA
+# gauge 23F/01H (SNIRH, UTC stamps, gauge zero -2.18 m): high water = 0.666 + 1.249 x mouth high
+# water, 1.69 h later (rmse 0.07 m, n=174); low water = -0.227 + 0.604 x mouth low water, 2.39 h
+# later (rmse 0.11 m, n=173); ebb shape fitted on the first 70 %. Hourly rmse on the last 30 %:
+# 0.21 m (mouth series as is: 0.78 m). Calibrated at the gauge, so checked with FLUXOS at the gauge.
+# The transfer is fitted AT the gauge; the boundary is the estuary edge ~3.5 km downstream, and FLUXOS
+# takes ~1 h to carry the tide from there to the gauge (17-19 Nov 2026 check: hourly error at the
+# gauge 0.31 m without this lead, 0.18 m with the boundary 1 h earlier). Not refitted daily: it is
+# a property of the model geometry, not of the tide.
+tide_edge_lead_h = 1.0
+
+# Fallback values; the forecast loop recalibrates these daily (state/tide_transfer.json).
+[fluxos.tide_transfer]
+hw_scale = 1.249
+hw_offset_m = 0.666
+hw_lag_h = 1.688
+lw_scale = 0.604
+lw_offset_m = -0.227
+lw_lag_h = 2.39
+fall_shape = 0.611
+
 [reference_gauges]
 # Verified 2026-11-20 from the SNIRH station sheet (snirh.apambiente.pt, rede Hidrométrica): see [[gauges]].
 status = "verified"

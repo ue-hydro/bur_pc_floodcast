@@ -304,6 +304,14 @@ class FluxosEngine:
         hs = self.config.hydraulics
         if member is None:
             member = policies.select_scenario(q, scenario)
+        # daily automatic calibration (set by the loop) or the fixed one in domain.toml
+        transfer_p = getattr(self, "tide_transfer_override", None) or self.domain.fluxos.get("tide_transfer")
+        if tide and transfer_p and hs.tide_transfer:   # mouth sea level -> level at the town reach
+            from .tide import transfer
+
+            lead = float(self.domain.fluxos.get("tide_edge_lead_h", 0.0))   # model travel time edge -> gauge
+            tide = transfer(tide, {**transfer_p, "hw_lag_h": float(transfer_p["hw_lag_h"]) - lead,
+                                   "lw_lag_h": float(transfer_p["lw_lag_h"]) - lead})
         if hs.window == "forecast_start":
             mask = (hours >= 0) & (hours <= hs.simulated_hours)
             t_h, q_win, start_h = hours[mask] - hours[mask][0], q[member][mask], float(hours[mask][0])
@@ -364,9 +372,9 @@ class FluxosEngine:
                 modset.setdefault("BOUNDARY_CONDITIONS", {})["WATER_LEVEL"] = {
                     "STATUS": True, "FILENAME": self._p(workdir, "tide_level.csv"),
                     "EDGE": [dict(e) for e in edges], "VELOCITY": "zero_gradient",
-                    "COMMENT": "sea level at the Sado mouth (Open-Meteo marine), floodcast"}
+                    "COMMENT": "sea level at the Sado mouth (Open-Meteo marine) -> town reach, floodcast"}
                 tide_info = {"edges": [dict(e) for e in edges], "lag_h": hs.tide_lag_h, "offset_m": hs.tide_offset_m,
-                             "source": tide.get("source", "")}
+                             "source": tide.get("source", ""), "transfer": tide.get("transfer")}
         (workdir / "modset.json").write_text(json.dumps(modset, indent=2))
         self.runner.run(
             "fluxos", [self._p(workdir, "modset.json")], [Mount(workdir, "/run", "rw")],

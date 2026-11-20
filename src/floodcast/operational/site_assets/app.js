@@ -432,6 +432,27 @@
   }
   var amaps = document.querySelectorAll(".amap");
   if (amaps.length) loadLeaflet(function () { for (var k = 0; k < amaps.length; k++) initAnimMap(amaps[k]); });
+  var gmaps = document.querySelectorAll(".gmap");
+  if (gmaps.length) loadLeaflet(function () { for (var k = 0; k < gmaps.length; k++) initGaugeMap(gmaps[k]); });
+  // ---- section 3: where forecast and measurement are compared (APA gauge + model river cells) ----
+  function initGaugeMap(el) {
+    var L = window.L, lat = +el.getAttribute("data-lat"), lon = +el.getAttribute("data-lon"), cells = [], dom = [];
+    try { cells = JSON.parse(el.getAttribute("data-cells")) || []; } catch (e) {}
+    try { dom = JSON.parse(el.getAttribute("data-bounds")) || []; } catch (e) {}
+    var map = L.map(el, { scrollWheelZoom: false, zoomSnap: 0.25 }).setView([lat, lon], 16);
+    addBasemaps(map);
+    if (dom.length === 2 && dom[0][0] !== null) {
+      L.rectangle(dom, { color: "#ffffff", weight: 1.5, dashArray: "6 4", fill: false, interactive: false }).addTo(map);
+    }
+    cells.forEach(function (ring) {
+      L.polygon(ring, { color: "#ffb300", weight: 1, fillColor: "#ffd54f", fillOpacity: 0.45 }).addTo(map);
+    });
+    L.circleMarker([lat, lon], { radius: 8, color: "#fff", weight: 2, fillColor: "#c62828", fillOpacity: 1 }).addTo(map)
+      .bindTooltip(el.getAttribute("data-name"), { permanent: true, direction: "top", offset: [0, -9] });
+    var home = function () { map.setView([lat, lon], 16); };
+    addRecenter(map, home);
+    setTimeout(function () { map.invalidateSize(); }, 80);
+  }
 
   var leafletQueue;  // (hoisted; must not be re-initialised after the first loadLeaflet call)
   function loadLeaflet(cb) {

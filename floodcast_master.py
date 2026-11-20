@@ -640,6 +640,12 @@ def main() -> int:
         while not STOP:
             started = now_utc()
             cycles = []
+            try:   # tide boundary: recalibrated against the APA gauge once a day (keeps the last good one)
+                from floodcast.operational import tide_calibration
+
+                p.hydraulics.tide_transfer_override = tide_calibration.refit_if_due(domain, store.root / "state")
+            except Exception:
+                log.exception("tide calibration failed")
             try:
                 cycles = [parse_cycle(args.cycle)] if args.cycle else new_cycles(cfg, store)
                 for i, cycle in enumerate(cycles):
