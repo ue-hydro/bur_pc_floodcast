@@ -230,7 +230,9 @@ ES = {
              "caudal medio diario medido por la APA en la estación {code}, aguas arriba ({a} km² de cuenca, el mismo punto en el modelo)."),
     "fck_obs": "Medido (APA, media diaria)",
     "fck_tab_alc": "Alcácer do Sal",
-    "fck_tab_up": "Aguas arriba: medido",
+    "fck_where": ("Estación APA {code} {name}, aguas arriba de Alcácer: mide el caudal de {a} km² de la cuenca (no es la estación "
+                  "23F/01H de Alcácer, que solo mide el nivel, sección 3)."),
+    "fck_tab_up": "Aguas arriba {code}: medido",
     "fck_tab_tip": "Previsión y caudal medido por la APA en {name}",
     "fck_start": "inicio de la previsión",
     "fck_mod": "Modelo en el mismo punto",

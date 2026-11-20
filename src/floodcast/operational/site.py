@@ -98,7 +98,11 @@ T: dict[str, tuple[str, str]] = {
              "with the daily mean flow measured by APA at gauge {code}, upstream ({a} km² of basin, the same point in the model)."),
     "fck_obs": ("Medido (APA, média diária)", "Measured (APA, daily mean)"),
     "fck_tab_alc": ("Alcácer do Sal", "Alcácer do Sal"),
-    "fck_tab_up": ("A montante: medido", "Upstream: measured"),
+    "fck_where": ("Estação APA {code} {name}, a montante de Alcácer: mede o caudal de {a} km² da bacia (não é a estação 23F/01H de "
+                  "Alcácer, que mede só o nível, secção 3).",
+                  "APA gauge {code} {name}, upstream of Alcácer: measures the flow from {a} km² of the basin (not the Alcácer gauge "
+                  "23F/01H, which measures level only, section 3)."),
+    "fck_tab_up": ("Montante {code}: medido", "Upstream {code}: measured"),
     "fck_tab_tip": ("Previsão e caudal medido pela APA em {name}", "Forecast and flow measured by APA at {name}"),
     "fck_start": ("início da previsão", "forecast start"),
     "fck_mod": ("Modelo no mesmo ponto", "Model at the same point"),
@@ -1397,7 +1401,7 @@ def _flowcheck_block(i18n: _I18n, doc: dict | None) -> str:
               f'<span><i class="ln upc"></i>{i18n.raw("scn_upper")}</span>'
               f'<span><i class="ln loc"></i>{i18n.raw("scn_lower")}</span>'
               f'<span><i style="background:var(--band)"></i>{i18n.raw("band")}</span></p>')
-    note = (f'<p class="fck-note"><strong>{i18n.raw("fck_h", name=g.get("name", ""))}.</strong> {last}</p>'
+    note = (f'<p class="fck-note"><strong>{i18n.raw("fck_where", code=g.get("code", ""), name=g.get("name", ""), a=f"{float(g.get("area_km2") or 0):.0f}")}</strong> {last}</p>'
             f'<details class="fck-more"><summary>{i18n.raw("details")}</summary><p class="muted">'
             f'{i18n.raw("fck_p", code=g.get("code", ""), a=f"{float(g.get("area_km2") or 0):.0f}")}</p></details>')
     return f'{"".join(parts)}{legend}{note}'
@@ -1413,7 +1417,7 @@ def _flow_tabs(i18n: _I18n, chart: str, flowcheck: dict | None) -> str:
     return (f'<div class="qtabs segs" role="group">'
             f'<button type="button" class="seg" data-q="alc" aria-pressed="true">{i18n.raw("fck_tab_alc")}</button>'
             f'<button type="button" class="seg" data-q="up" aria-pressed="false" title="{_esc(i18n.plain("fck_tab_tip", name=name))}">'
-            f'{i18n.raw("fck_tab_up")}</button></div>'
+            f'{i18n.raw("fck_tab_up", code=(flowcheck.get("gauge") or {}).get("code", ""))}</button></div>'
             f'<div class="qpane" data-q="alc">{chart}</div><div class="qpane" data-q="up" hidden>{up}</div>')
 
 
