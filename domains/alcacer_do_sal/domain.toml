@@ -49,7 +49,7 @@ routing_method = "3"   # Eulerian kinematic wave
 outlet_seg_id = 2029
 
 [fluxos]
-dem = "fluxos/dem_channel.asc"   # Sado channel carved + 10 m datum offset (burn_channel.py)
+dem = "fluxos/dem_banks.asc"     # channel carved + 10 m datum (burn_channel.py) + banks held at 2.3 m MSL (raise_banks.py)
 datum_offset_m = 10.0              # added to sea levels; FLUXOS needs elevations > 0
 modset_template = "fluxos/modset.template.json"
 crs = "EPSG:32629"

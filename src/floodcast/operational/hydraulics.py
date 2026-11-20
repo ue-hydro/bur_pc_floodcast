@@ -463,6 +463,37 @@ class FluxosEngine:
             shutil.rmtree(dest, ignore_errors=True)
             return None
 
+    def _land_ground(self, ny: int, nx: int):
+        """Ground elevation (FLUXOS datum) under each output cell, for depths on land. FLUXOS output
+        cell (i, j) is the node between terrain cells [i-1..i, j-1..j] (rows south-first) and its
+        bed is their mean; on land we use the mean of the NON-river terrain cells of that block
+        (the carved channel left out), NaN where all four are river (FLUXOS depth kept there)."""
+        try:
+            from . import impacts
+
+            fl = self.domain.fluxos
+            lines = (self.domain.root / fl["dem"]).read_text().splitlines()
+            z = np.flipud(np.loadtxt(lines[6:]))
+            chan = impacts.permanent_water(self.domain.root, margin_cells=0)
+            if z.shape != (ny, nx) or chan is None or chan.shape != (ny, nx):
+                return None
+            land = ~chan & (z > 0)
+            zs, ns = np.zeros((ny, nx)), np.zeros((ny, nx))
+            for di in (0, 1):
+                for dj in (0, 1):
+                    zz = np.zeros((ny, nx)); ll = np.zeros((ny, nx), bool)
+                    zz[di:, dj:] = z[:ny - di, :nx - dj]; ll[di:, dj:] = land[:ny - di, :nx - dj]
+                    zs += np.where(ll, zz, 0.0); ns += ll
+            za = np.zeros((ny, nx)); na = np.zeros((ny, nx))   # FLUXOS's own bed: mean of all 4 cells
+            for di in (0, 1):
+                for dj in (0, 1):
+                    za[di:, dj:] += z[:ny - di, :nx - dj]; na[di:, dj:] += 1
+            self._fluxos_bed = za / na
+            return np.where(ns > 0, zs / np.maximum(ns, 1), np.nan)
+        except Exception as exc:   # never fatal: fall back to FLUXOS depths
+            log.warning("land ground grid unavailable (%s); using FLUXOS depths", exc)
+            return None
+
     def _postprocess(self, out: Path, outdir: Path, scenario: str) -> dict:
         from PIL import Image
         from pyproj import Transformer
@@ -489,6 +520,8 @@ class FluxosEngine:
         files = sorted((f for f in out.glob("*.txt") if f.stem.isdigit()), key=lambda f: int(f.stem)) \
             if out is not None and out.is_dir() else []
 
+        ground = self._land_ground(ny, nx)   # real ground under each FLUXOS cell (NaN = river)
+
         def from_files():
             for f in files:
                 g = np.zeros((ny, nx)); gv = np.zeros((ny, nx))
@@ -499,7 +532,12 @@ class FluxosEngine:
                     bad = ~np.isfinite(data[:, 4:min(data.shape[1], 11)]).all(axis=1)
                     if bad.any():
                         raise RuntimeError(f"FLUXOS produced non-finite values in {f.name} ({int(bad.sum())} cells)")
-                    np.maximum.at(g, (iy, ix), data[:, 5])
+                    h = data[:, 5]
+                    if ground is not None:   # land: water level - real ground (FLUXOS averages the bed
+                        gr = ground[iy, ix]  # over 2x2 terrain cells, so quay cells next to the channel
+                        land = np.isfinite(gr)   # sit too low and look flooded at every high tide)
+                        h = np.where(land, np.clip(data[:, 4] - np.where(land, gr, 0.0), 0.0, None), h)
+                    np.maximum.at(g, (iy, ix), h)
                     if data.shape[1] > 10:     # 'us' = flow speed (this build leaves ux/uy at 0)
                         np.maximum.at(gv, (iy, ix), np.abs(data[:, 10]))
                     elif data.shape[1] > 7:
@@ -508,8 +546,14 @@ class FluxosEngine:
 
         def from_series():
             z = np.load(series_file)
+            land_done = bool(z["land_depth"]) if "land_depth" in z.files else False
+            bed = getattr(self, "_fluxos_bed", None)
             for k, t in enumerate(z["t"]):
-                yield int(t), z["h"][k].astype(float), z["v"][k].astype(float)
+                h = z["h"][k].astype(float)
+                if ground is not None and bed is not None and not land_done:   # older series: FLUXOS depths
+                    land = np.isfinite(ground) & (h > 0)
+                    h = np.where(land, np.clip(bed + h - np.where(land, ground, 0.0), 0.0, None), h)
+                yield int(t), h, z["v"][k].astype(float)
 
         if files:
             steps, n_steps = from_files(), len(files)
@@ -555,7 +599,7 @@ class FluxosEngine:
             rows.append((t_s, float(wet.sum() * cs * cs / 1e6), float(g.max()), float(g.sum() * cs * cs)))
         if keep_t:
             np.savez_compressed(series_file, t=np.array(keep_t, dtype="int64"), h=np.stack(keep_h), v=np.stack(keep_v),
-                                xll=xll, yll=yll, cs=cs)
+                                xll=xll, yll=yll, cs=cs, land_depth=ground is not None)
         t_last = float(t_s)
         outdir.mkdir(parents=True, exist_ok=True)
         _depth_png(maxh, outdir / "max_depth.png")
