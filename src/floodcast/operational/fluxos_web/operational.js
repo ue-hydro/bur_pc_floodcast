@@ -66,7 +66,7 @@
     if (panel && tab) { panel.dataset.collapsed = "true"; panel.style.transform = ""; tab.hidden = false; }
     // "sl-speed": playback speed is set once for the whole page (charts, maps and this view)
     ["sl-trail", "sl-exag", "sl-foam", "sl-turbidity", "sl-suntime", "sl-rain", "sl-speed"].forEach(function (id) { hide(rowOf(id)); });
-    ["btn-reset", "btn-rec", "btn-particles"].forEach(function (id) { hide(document.getElementById(id)); });
+    ["btn-reset", "btn-rec", "btn-particles", "btn-fs"].forEach(function (id) { hide(document.getElementById(id)); });   // full screen: page button
     hide(rowOf("sl-particles"));               // no particles in the operational view
     viewer.showParticles = false;
     var ip = document.getElementById("i-particles"); if (ip && ip.parentElement) hide(ip.parentElement);

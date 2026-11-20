@@ -129,6 +129,8 @@ ES = {
     "wg_hint": "🖱 Arrastre para girar · rueda del ratón para acercar · Mayús + arrastrar para desplazar · clic para detener la rotación",
     "rain_lbl": "Lluvia prevista",
     "exag_lbl": "Exageración vertical",
+    "vc_tip": "Controles de la animación 3D",
+    "fs_tip": "Pantalla completa",
     "exag_tip": "Aumenta o reduce el relieve en la animación 3D (1× = escala por defecto del visor)",
     "rain_tip": "Muestra la lluvia en la animación 3D cuándo y con la intensidad prevista (sin lluvia prevista, no llueve)",
     "sun_lbl": "Condiciones de luz locales",

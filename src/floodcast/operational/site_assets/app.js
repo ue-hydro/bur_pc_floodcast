@@ -357,6 +357,23 @@
     });
   });
 
+  // ---- 3-D view: controls icon (opens the switches to the right) and full screen (page overlays kept)
+  Array.prototype.forEach.call(document.querySelectorAll(".viewctl .vc-toggle"), function (b) {
+    b.addEventListener("click", function () {
+      var box = b.closest(".viewctl"), open = box.classList.toggle("collapsed") === false;
+      b.setAttribute("aria-expanded", open ? "true" : "false");
+    });
+  });
+  Array.prototype.forEach.call(document.querySelectorAll(".webglwrap .wgfs"), function (b) {
+    b.addEventListener("click", function () {
+      var wrap = b.closest(".webglwrap"), d = document;
+      var fsEl = d.fullscreenElement || d.webkitFullscreenElement;
+      if (fsEl) { (d.exitFullscreen || d.webkitExitFullscreen).call(d); return; }
+      var req = wrap.requestFullscreen || wrap.webkitRequestFullscreen;
+      if (req) req.call(wrap);
+    });
+  });
+
   // ---- vertical exaggeration slider on the 3-D viewer (factor x the viewer's default relief)
   var EXAG = 1;
   function sendExag(w) { try { w.postMessage({ type: "fluxos-exag", factor: EXAG }, "*"); } catch (e) {} }

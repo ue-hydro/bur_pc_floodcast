@@ -379,6 +379,8 @@ T: dict[str, tuple[str, str]] = {
                 "🖱 Drag to rotate · scroll to zoom · Shift + drag to pan · click to stop the rotation"),
     "rain_lbl": ("Chuva prevista", "Forecast rain"),
     "exag_lbl": ("Exagero vertical", "Vertical exaggeration"),
+    "vc_tip": ("Controlos da animação 3D", "3-D animation controls"),
+    "fs_tip": ("Ecrã inteiro", "Full screen"),
     "exag_tip": ("Aumenta ou reduz o relevo na animação 3D (1× = escala por defeito do visualizador)",
                  "Raises or flattens the relief in the 3-D animation (1× = the viewer's default scale)"),
     "rain_tip": ("Mostra a chuva na animação 3D quando e com a intensidade prevista (sem chuva prevista, não chove)",
@@ -1612,7 +1614,16 @@ def _animation_block(i18n: _I18n, scenarios: list[dict], prefix: str, data_rel: 
         f'<script type="application/json" class="anim-forcing">{json.dumps({"start": (first.get("_forcing") or {}).get("sim_start_utc"), "inflow": (first.get("_forcing") or {}).get("inflow", []), "rain": (first.get("_forcing") or {}).get("rain", [])}).replace("</", "<\\/")}</script>'
         f'<div class="webglwrap"><div class="clockbadge wg"></div><div class="wg-hint">{i18n.raw("wg_hint")}</div><div class="outsim" hidden>{i18n.raw("out_sim")}</div><iframe src="{_esc(src)}" title="{_esc(i18n.plain("anim_h"))}" loading="lazy" '
         f'allowfullscreen></iframe>'
-        f'<div class="viewctl"><button type="button" class="viewlock" aria-pressed="false">'
+        f'<button type="button" class="wgfs" title="{_esc(i18n.plain("fs_tip"))}" aria-label="{_esc(i18n.plain("fs_tip"))}">'
+        f'<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" '
+        f'd="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5"/></svg></button>'
+        f'<div class="viewctl collapsed"><button type="button" class="vc-toggle" aria-expanded="false" '
+        f'title="{_esc(i18n.plain("vc_tip"))}" aria-label="{_esc(i18n.plain("vc_tip"))}">'
+        f'<svg viewBox="0 0 24 24" aria-hidden="true"><g stroke="currentColor" stroke-width="2" stroke-linecap="round">'
+        f'<path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0"/></g>'
+        f'<circle cx="16" cy="6" r="2.2" fill="currentColor"/><circle cx="10" cy="12" r="2.2" fill="currentColor"/>'
+        f'<circle cx="18" cy="18" r="2.2" fill="currentColor"/></svg></button><div class="vc-items">'
+        f'<button type="button" class="viewlock" aria-pressed="false">'
         f'<svg class="lk-closed" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M17 9h-1V7a4 4 0 10-8 0v2H7a2 2 0 00-2 2v8a2 2 0 002 2h10a2 2 0 002-2v-8a2 2 0 00-2-2zm-7-2a2 2 0 114 0v2h-4V7z"/></svg>'
         f'<svg class="lk-open" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M17 9h-7V7a2 2 0 013.9-.6l1.9-.6A4 4 0 008 7v2H7a2 2 0 00-2 2v8a2 2 0 002 2h10a2 2 0 002-2v-8a2 2 0 00-2-2z"/></svg>'
         f'<span class="lk-t-locked">{i18n.raw("lock_on")}</span><span class="lk-t-open">{i18n.raw("lock_off")}</span></button>'
@@ -1625,7 +1636,7 @@ def _animation_block(i18n: _I18n, scenarios: list[dict], prefix: str, data_rel: 
         f'<span>{i18n.raw("rain_lbl")}</span><span class="sw" aria-hidden="true"><i></i></span></button>'
         f'<label class="exagctl" title="{_esc(i18n.plain("exag_tip"))}"><span>{i18n.raw("exag_lbl")}</span>'
         f'<input type="range" class="exagslider" min="0.5" max="6" step="0.25" value="1" aria-label="{_esc(i18n.plain("exag_lbl"))}">'
-        f'<b class="exagv">1×</b></label></div>'
+        f'<b class="exagv">1×</b></label></div></div>'
         f'</div>'
         f'</section>'
     )
