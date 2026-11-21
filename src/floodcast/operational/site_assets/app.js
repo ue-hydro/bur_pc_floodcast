@@ -533,6 +533,23 @@
   if (amaps.length) loadLeaflet(function () { for (var k = 0; k < amaps.length; k++) initAnimMap(amaps[k]); });
   var wcmaps = document.querySelectorAll(".wcmap");
   if (wcmaps.length) loadLeaflet(function () { for (var k = 0; k < wcmaps.length; k++) initCamMap(wcmaps[k]); });
+  // hover label drawn on <body> (fixed position), so it is never clipped by a small map's box
+  function outsideTip(marker, text) {
+    var tip = null;
+    function show() {
+      var pe = marker.getElement && marker.getElement();
+      if (!pe) return;
+      if (!tip) { tip = document.createElement("div"); tip.className = "fc-outtip"; tip.textContent = text; document.body.appendChild(tip); }
+      var r = pe.getBoundingClientRect(), w = tip.offsetWidth, h = tip.offsetHeight;
+      var x = Math.max(6, Math.min(window.innerWidth - w - 6, r.left + r.width / 2 - w / 2));
+      var y = r.top - h - 8; if (y < 6) y = r.bottom + 8;
+      tip.style.left = x + "px"; tip.style.top = y + "px"; tip.style.visibility = "visible";
+    }
+    function hide() { if (tip) tip.style.visibility = "hidden"; }
+    marker.on("mouseover", show); marker.on("mouseout", hide);
+    marker.on("click", function () { if (tip && tip.style.visibility === "visible") hide(); else show(); });
+    window.addEventListener("scroll", hide, true);
+  }
   function initCamMap(el) {   // small inset: where the webcam is (and which way it looks)
     var L = window.L, lat = +el.getAttribute("data-lat"), lon = +el.getAttribute("data-lon");
     var map = L.map(el, { scrollWheelZoom: false, zoomControl: false, attributionControl: true, dragging: false, doubleClickZoom: false, boxZoom: false, keyboard: false }).setView([lat, lon], 13);
@@ -543,8 +560,8 @@
       L.polyline([[lat, lon], [lat + d * Math.cos(a), lon + d * Math.sin(a) / Math.cos(lat * Math.PI / 180)]],
                  { color: "#ffd54f", weight: 3, dashArray: "4 4" }).addTo(map);
     }
-    L.circleMarker([lat, lon], { radius: 7, color: "#fff", weight: 2, fillColor: "#c62828", fillOpacity: 1 }).addTo(map)
-      .bindTooltip(el.getAttribute("data-name"), { direction: "top", offset: [0, -8] });
+    var dot = L.circleMarker([lat, lon], { radius: 7, color: "#fff", weight: 2, fillColor: "#c62828", fillOpacity: 1 }).addTo(map);
+    outsideTip(dot, el.getAttribute("data-name"));   // the inset is too small: label floats outside the map
     setTimeout(function () { map.invalidateSize(); }, 80);
     if (window.ResizeObserver) new ResizeObserver(function () { map.invalidateSize(); map.setView([lat, lon], 13); }).observe(el);
   }

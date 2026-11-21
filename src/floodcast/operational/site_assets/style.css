@@ -973,3 +973,5 @@ html[data-scn="lower"] .wide-chart .chart .scn.lo,html[data-scn="upper"] .wide-c
 .viewctl > .viewlock{flex:none;height:38px;padding:0 12px}
 /* small maps: marker labels wrap so they stay inside the map instead of being cut at its edges */
 .gmap .leaflet-tooltip,.wcmap .leaflet-tooltip,.snapmap .leaflet-tooltip{white-space:normal;width:max-content;max-width:170px;text-align:center;line-height:1.25}
+
+.fc-outtip{position:fixed;z-index:10000;visibility:hidden;pointer-events:none;max-width:260px;padding:5px 9px;background:#fff;color:#1b2430;border-radius:4px;box-shadow:0 1px 6px rgba(0,0,0,.35);font-size:.8rem;line-height:1.3;text-align:center}
