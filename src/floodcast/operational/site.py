@@ -700,8 +700,8 @@ def _precip_chart(i18n: _I18n, screening: dict, ens: dict | None = None) -> str:
         return ""
     times, interval = times[:count], interval[:count]
     cumulative = cumulative[:count] if len(cumulative) >= count else []
-    w, h = 640, 380   # half-width chart next to its map
-    x0, x1, y0, y1 = 40, w - 42, 20, h - 40
+    w, h = 440, 300   # half-width chart next to its map (close to its on-screen size, so text stays legible)
+    x0, x1, y0, y1 = 48, w - 50, 20, h - 42
     pw, ph = x1 - x0, y1 - y0
     ymax = _nice_max(max(interval) * 1.15 if max(interval) > 0 else 1)
     # ensemble cumulative rain (all sources) sampled at the chart's interval-end times
@@ -755,7 +755,7 @@ def _precip_chart(i18n: _I18n, screening: dict, ens: dict | None = None) -> str:
             y = y1 - ph * tick / cmax
             parts.append(f'<text x="{x1 + 6}" y="{y + 4:.1f}">{tick:g}</text>')
     parts.append(f'<line class="axis" x1="{x0}" x2="{x1}" y1="{y1}" y2="{y1}"/>')
-    labels = _time_labels(times, x0 + slot / 2, pw - slot, 6).replace("{y}", str(y1 + 18))
+    labels = _time_labels(times, x0 + slot / 2, pw - slot, 4).replace("{y}", str(y1 + 20))
     parts.append(labels)
     parts.append("</svg>")
     legend = (
@@ -784,8 +784,8 @@ def _hydro_chart(i18n: _I18n, summary: dict) -> str:
     data_max = max(series["p90"] + (series["max"] if len(series["max"]) == count else []) + [0.0])
     ymax_raw = max(data_max * 1.1, (min(thresholds.values()) * 1.15) if thresholds else 0, 1.0)
     ymax = _nice_max(ymax_raw)
-    w, h = 640, 380   # half-width chart next to its map
-    x0, x1, y0, y1 = 48, w - 12, 20, h - 40
+    w, h = 440, 300   # half-width chart next to its map (close to its on-screen size, so text stays legible)
+    x0, x1, y0, y1 = 64, w - 14, 20, h - 42
     pw, ph = x1 - x0, y1 - y0
 
     def px(i):
@@ -803,7 +803,7 @@ def _hydro_chart(i18n: _I18n, summary: dict) -> str:
         y = py(tick)
         parts.append(f'<line class="gridl" x1="{x0}" x2="{x1}" y1="{y:.1f}" y2="{y:.1f}"/>')
         parts.append(f'<text x="{x0 - 6}" y="{y + 4:.1f}" text-anchor="end">{tick:g}</text>')
-    parts.append(f'<text x="12" y="{y0 + ph / 2:.1f}" transform="rotate(-90 12 {y0 + ph / 2:.1f})" text-anchor="middle">m³/s</text>')
+    parts.append(f'<text class="ax-t" x="14" y="{y0 + ph / 2:.1f}" transform="rotate(-90 14 {y0 + ph / 2:.1f})" text-anchor="middle">m³/s</text>')
     upper = " ".join(f"{px(i):.1f},{py(v):.1f}" for i, v in enumerate(series["p90"]))
     lower = " ".join(f"{px(i):.1f},{py(v):.1f}" for i, v in reversed(list(enumerate(series["p10"]))))
     parts.append(f'<polygon class="band" points="{upper} {lower}"/>')
@@ -829,7 +829,7 @@ def _hydro_chart(i18n: _I18n, summary: dict) -> str:
                 f'<text class="thr-t" x="{x1 - 4}" y="{y - 4:.1f}" text-anchor="end">{label}<tspan> {value:g}</tspan></text>'
             )
     parts.append(f'<line class="axis" x1="{x0}" x2="{x1}" y1="{y1}" y2="{y1}"/>')
-    parts.append(_time_labels(times, x0, pw, 6).replace("{y}", str(y1 + 18)))
+    parts.append(_time_labels(times, x0, pw, 4).replace("{y}", str(y1 + 20)))
     parts.append("</svg>")
     legend = (
         f'<p class="legend"><span><i style="background:var(--band)"></i>{i18n.raw("band")}</span>'
@@ -1180,7 +1180,7 @@ def _gauge_chart(i18n: _I18n, doc: dict) -> str:
     allv = [v for s in (*sc.values(), ob) for v in s if v is not None] + [0.0]
     ticks = _level_ticks(min(allv) - 0.1, max(allv) + 0.15)
     lo, hi = ticks[0], ticks[-1]
-    w, h = 640, 380
+    w, h = 440, 300
     x0, x1, y0, y1 = 48, w - 12, 20, h - 40
     pw, ph = x1 - x0, y1 - y0
 
@@ -1212,7 +1212,7 @@ def _gauge_chart(i18n: _I18n, doc: dict) -> str:
         y = py(tk)
         parts.append(f'<line class="gridl{" zero" if tk == 0 else ""}" x1="{x0}" x2="{x1}" y1="{y:.1f}" y2="{y:.1f}"/>')
         parts.append(f'<text x="{x0 - 6}" y="{y + 4:.1f}" text-anchor="end">{tk:g}</text>')
-    parts.append(f'<text x="12" y="{y0 + ph / 2:.1f}" transform="rotate(-90 12 {y0 + ph / 2:.1f})" text-anchor="middle">m</text>')
+    parts.append(f'<text class="ax-t" x="14" y="{y0 + ph / 2:.1f}" transform="rotate(-90 14 {y0 + ph / 2:.1f})" text-anchor="middle">m</text>')
     if lo < 0 < hi:
         parts.append(f'<text class="msl-t" x="{x0 + 4}" y="{py(0) - 4:.1f}">{_tspans(i18n.raw("lvl_msl"))}</text>')
     i0 = idx.get(ptimes[0], 0)
@@ -1230,9 +1230,9 @@ def _gauge_chart(i18n: _I18n, doc: dict) -> str:
     parts.append("".join(f'<circle class="obsdot" cx="{px(i):.1f}" cy="{py(v):.1f}" r="1.9"/>'
                          for i, v in enumerate(ob) if v is not None))
     parts.append(f'<line class="fcstart" x1="{xs:.1f}" x2="{xs:.1f}" y1="{y0}" y2="{y1}"/>'
-                 f'<text class="fcstart-t" x="{xs + 4:.1f}" y="{y0 + 28}">{_tspans(i18n.raw("lvl_start"))} ▸</text>')
+                 f'<text class="fcstart-t" x="{xs + 4:.1f}" y="{y0 + 48}">{_tspans(i18n.raw("lvl_start"))} ▸</text>')
     parts.append(f'<line class="axis" x1="{x0}" x2="{x1}" y1="{y1}" y2="{y1}"/>')
-    parts.append(_time_labels(times, x0, pw, 6).replace("{y}", str(y1 + 18)))
+    parts.append(_time_labels(times, x0, pw, 4).replace("{y}", str(y1 + 20)))
     parts.append("</svg>")
     legend = (f'<p class="legend"><span><i class="ln obsc"></i>{i18n.raw("lvl_obs")}</span>'
               f'<span><i class="ln selc"></i>{i18n.raw("lvl_pred")} · {i18n.raw("scn_sel")}</span>'
@@ -1491,7 +1491,7 @@ def _hydraulics_block(i18n: _I18n, scenarios: list[dict], status: dict, prefix: 
     )
 
 
-STRIP_W, STRIP_H = 1200, 72   # rain / flow / sea-level strips: full page width, stacked, short
+STRIP_W, STRIP_H = 860, 86   # rain / flow / sea-level strips: full page width, stacked, short
 
 
 def _strip_tick(x0, x1, y, y_axis, text, labelled=True):
@@ -1499,8 +1499,10 @@ def _strip_tick(x0, x1, y, y_axis, text, labelled=True):
     no room for more), and a label on the axis sits just above it, clear of the time labels."""
     out = f'<line class="gridl" x1="{x0}" x2="{x1}" y1="{y:.1f}" y2="{y:.1f}"/>'
     if labelled:
-        ty = y_axis - 1 if y >= y_axis - 1 else y + 4
-        out += f'<text x="{x0 - 6}" y="{ty:.1f}" text-anchor="end">{text}</text>'
+        if y >= y_axis - 1:   # on the axis: sits just above it
+            out += f'<text x="{x0 - 6}" y="{y_axis - 1:.1f}" text-anchor="end">{text}</text>'
+        else:                 # top value: hangs below its grid line, so it never rises above the strip
+            out += f'<text x="{x0 - 6}" y="{y + 1:.1f}" text-anchor="end" dominant-baseline="hanging">{text}</text>'
     return out
 
 
@@ -1522,7 +1524,7 @@ def _anim_rain_strip(i18n: _I18n, ens: dict | None, hours: int = 72) -> str:
     rmax = _nice_max(max(max(v) for v in rain.values()) * 1.15 or 1)
     times = [(c0 + timedelta(hours=float(h) + 1)).isoformat() for h in hrs]   # interval ends
     w, h = STRIP_W, STRIP_H
-    x0, x1, y0, y1 = 46, w - 12, 12, h - 24
+    x0, x1, y0, y1 = 50, w - 12, 14, h - 28
     pw, ph = x1 - x0, y1 - y0
     slot = pw / n
     parts = [f'<svg class="chart wide strip rainstrip" viewBox="0 0 {w} {h}"'
@@ -1557,7 +1559,7 @@ def _tide_strip(i18n: _I18n, tide: dict | None, hours: int = 72) -> str:
     if n < 2 or len(pts_ok) < 2:
         return ""
     w, h = STRIP_W, STRIP_H
-    x0, x1, y0, y1 = 46, w - 12, 12, h - 24
+    x0, x1, y0, y1 = 50, w - 12, 14, h - 28
     pw, ph = x1 - x0, y1 - y0
     lo = min(v for _, v in pts_ok); hi = max(v for _, v in pts_ok)
     lo, hi = (min(lo, -1.0), max(hi, 1.0))
@@ -1581,7 +1583,7 @@ def _tide_strip(i18n: _I18n, tide: dict | None, hours: int = 72) -> str:
             i = times.index(ht["time_utc"])
             parts.append(f'<circle class="hw" cx="{px(i):.1f}" cy="{py(float(ht["level_m"])):.1f}" r="3"/>')
     parts.append(f'<line class="axis" x1="{x0}" x2="{x1}" y1="{y1}" y2="{y1}"/>')
-    parts.append(_time_labels(times, x0, pw, 8).replace("{y}", str(y1 + 16)))
+    parts.append(_time_labels(times, x0, pw, 6).replace("{y}", str(y1 + 20)))
     parts.append("</svg>")
     return (f'<div class="animhyd tidehead"><div class="animhyd-head"><strong>{i18n.raw("tide_h")}</strong>'
             f'<span class="muted">m ({i18n.raw("tide_ref")}) · ● {i18n.raw("tide_hw")}</span></div>{"".join(parts)}</div>')
@@ -1605,7 +1607,7 @@ def _anim_hydrograph(i18n: _I18n, forcing: dict | None, hyd: dict | None = None,
     if n < 2:
         return ""
     w, h = STRIP_W, STRIP_H
-    x0, x1, y0, y1 = 46, w - 12, 12, h - 24
+    x0, x1, y0, y1 = 50, w - 12, 14, h - 28
     pw, ph = x1 - x0, y1 - y0
     qmax = _nice_max(max(max(v) for v in series.values()) * 1.1 or 1)
 
@@ -1627,7 +1629,7 @@ def _anim_hydrograph(i18n: _I18n, forcing: dict | None, hyd: dict | None = None,
         xb = x0 + pw * min(span, (s1 - t0).total_seconds()) / span
         if xb > xa:
             parts.append(f'<rect class="simwin" x="{xa:.1f}" y="{y0}" width="{xb - xa:.1f}" height="{ph}"/>'
-                         f'<text class="simwin-t" x="{xa + 4:.1f}" y="{y0 + 11}">FLUXOS</text>')
+                         f'<text class="simwin-t" x="{xb - 4:.1f}" y="{y1 - 4}" text-anchor="end">FLUXOS</text>')
     for k, tick in enumerate(_ticks(qmax, 3)):
         parts.append(_strip_tick(x0, x1, py(tick), y1, f"{tick:g}", k in (0, 3)))
     for k in ("lo", "up", "ce"):
@@ -1635,7 +1637,7 @@ def _anim_hydrograph(i18n: _I18n, forcing: dict | None, hyd: dict | None = None,
             pts = " ".join(f"{px(i):.1f},{py(v):.1f}" for i, v in enumerate(series[k]))
             parts.append(f'<polyline class="scn {k}" points="{pts}"/>')
     parts.append(f'<line class="axis" x1="{x0}" x2="{x1}" y1="{y1}" y2="{y1}"/>')
-    parts.append(_time_labels(times, x0, pw, 8).replace("{y}", str(y1 + 16)))
+    parts.append(_time_labels(times, x0, pw, 6).replace("{y}", str(y1 + 20)))
     parts.append("</svg>")
     return (
         f'<div class="animhyd"><div class="animhyd-head"><strong>{i18n.raw("anim_hyd2")}</strong>'

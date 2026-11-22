@@ -134,12 +134,12 @@ details.tech[open] summary::before{transform:rotate(90deg)}
 }
 
 /* ---------- charts */
-.chart{width:100%;max-width:720px;height:auto;display:block;margin:0 auto}
+.chart{width:100%;max-width:720px;overflow:visible;height:auto;display:block;margin:0 auto}
 .split .chart{max-width:none}
-.chart text{fill:var(--mute);font-size:13px;font-family:inherit}
+.chart text{fill:var(--mute);font-size:calc(15px * var(--fk, 1));font-family:inherit}
 .chart .gridl{stroke:var(--grid);stroke-width:1}
 .chart .axis{stroke:var(--mute);stroke-width:1}
-.chart .t-lbl{font-size:13px}
+.chart .t-lbl{font-size:calc(15px * var(--fk, 1))}
 .chart .bar{fill:var(--bar)}
 .chart .cum{fill:none;stroke:var(--cum);stroke-width:2}
 .chart .band{fill:var(--band);opacity:.55}
@@ -489,7 +489,7 @@ footer.site{background:#1d2329;color:#c3c9d0;border-top:4px solid var(--navy)}
 @media (max-width:760px){.pg-row{grid-template-columns:1fr 46px}.pg-name{grid-column:1/-1}.pg-meta{grid-column:1/-1}}
 /* "now" line on charts */
 .chart g.now line{stroke:var(--ink);stroke-width:1.5}
-.chart g.now text{fill:var(--ink);font-size:11px;font-weight:700}
+.chart g.now text{fill:var(--ink);font-size:calc(14px * var(--fk, 1));font-weight:700;paint-order:stroke;stroke:var(--surface);stroke-width:3px;stroke-linejoin:round}
 
 /* compact 72-h strip above the 3-D viewer */
 .animhyd{margin:4px 0 8px}
@@ -497,7 +497,7 @@ footer.site{background:#1d2329;color:#c3c9d0;border-top:4px solid var(--navy)}
 .animhyd-head .legend{margin:0}
 .chart.strip{max-height:150px}
 .chart .simwin{fill:var(--band);opacity:.18}
-.chart .simwin-t{font-size:10px;fill:var(--mute)}
+.chart .simwin-t{font-size:calc(13px * var(--fk, 1));fill:var(--mute);paint-order:stroke;stroke:var(--surface);stroke-width:3px;stroke-linejoin:round}
 .legend i.sw-sim{display:inline-block;width:14px;height:10px;background:var(--band);opacity:.35;margin-right:6px;vertical-align:-1px}
 .animhyd .chart .scn{stroke-width:1.4;opacity:.55}
 html:not([data-scn]) .animhyd .chart .scn.ce,html[data-scn="central"] .animhyd .chart .scn.ce,
@@ -855,7 +855,7 @@ html[data-scn="lower"] .wide-chart .chart .scn.lo,html[data-scn="upper"] .wide-c
 .chart .obsdot{fill:var(--obs)}
 .chart .pastbg{fill:var(--grid);opacity:.45}
 .chart .fcstart{stroke:var(--mute);stroke-width:1.2;stroke-dasharray:4 3}
-.chart .fcstart-t,.chart .msl-t{font-size:11px;fill:var(--mute)}
+.chart .fcstart-t,.chart .msl-t{font-size:calc(14px * var(--fk, 1));fill:var(--mute)}
 .chart .gridl.zero{stroke:var(--mute);stroke-opacity:.6}
 .legend i.ln.obsc{border-top:2.5px solid var(--obs)}
 .charttip .ct-k.obs{background:var(--obs)}

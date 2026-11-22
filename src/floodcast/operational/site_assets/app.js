@@ -147,6 +147,20 @@
     new MutationObserver(function () { renderProgress(lastDoc); }).observe(root, { attributes: true, attributeFilter: ["data-lang"] });
   }
 
+  // drop the "now" label a line at a time until it touches no other chart label
+  function nowClear(svg, tx) {
+    var others = [].slice.call(svg.querySelectorAll("text")).filter(function (t) {
+      return t !== tx && !t.closest("g.now") && t.style.visibility !== "hidden"; });
+    var steps = ["1em", "2.2em", "3.4em", "4.6em"];
+    for (var i = 0; i < steps.length; i++) {
+      tx.setAttribute("dy", steps[i]);
+      var r = tx.getBoundingClientRect();
+      if (!r.width) return;
+      if (!others.some(function (t) { var q = t.getBoundingClientRect();
+        return q.width && r.left < q.right + 3 && r.right + 3 > q.left && r.top < q.bottom && r.bottom > q.top; })) return;
+    }
+    tx.setAttribute("dy", "1em");
+  }
   // ---- "now" reference line on every time chart, moving with the clock ------------------
   function nowLines() {
     var svgs = document.querySelectorAll("svg.chart[data-cursor]"), s = Date.now() / 1000;
@@ -163,13 +177,16 @@
         var ln = document.createElementNS("http://www.w3.org/2000/svg", "line");
         ln.setAttribute("y1", c.y0); ln.setAttribute("y2", c.y1);
         var tx = document.createElementNS("http://www.w3.org/2000/svg", "text");
-        tx.setAttribute("y", Math.max(9, c.y0 - 3)); tx.setAttribute("text-anchor", "middle");  // above the plot area
+        tx.setAttribute("dy", "1em"); tx.setAttribute("y", c.y0 + 2);  // inside the plot, beside the line (never above the chart)
         g.appendChild(ln); g.appendChild(tx); svg.appendChild(g);
       }
       g.style.display = x == null ? "none" : "";
       if (x != null) {
         g.firstChild.setAttribute("x1", x); g.firstChild.setAttribute("x2", x);
-        g.lastChild.setAttribute("x", x); g.lastChild.textContent = word;
+        var right = x > c.x[0] + 0.8 * (c.x[n - 1] - c.x[0]);   // near the right edge: label on the left of the line
+        g.lastChild.setAttribute("x", right ? x - 4 : x + 4); g.lastChild.setAttribute("text-anchor", right ? "end" : "start");
+        g.lastChild.textContent = word;
+        nowClear(svg, g.lastChild);
       }
     }
   }
@@ -531,6 +548,36 @@
   }
   var amaps = document.querySelectorAll(".amap");
   if (amaps.length) loadLeaflet(function () { for (var k = 0; k < amaps.length; k++) initAnimMap(amaps[k]); });
+
+  // ---- chart text: keep it legible (>= ~12 px on screen) whatever the chart's displayed width, and hide
+  // labels that would then collide (time / value ticks go first; thresholds, titles and markers stay)
+  function fitChart(svg) {
+    var vb = svg.viewBox && svg.viewBox.baseVal, w = svg.getBoundingClientRect().width;
+    if (!vb || !vb.width || !w) return;
+    var k = Math.min(1.8, Math.max(1, 12.5 / (15 * w / vb.width)));
+    svg.style.setProperty("--fk", k.toFixed(3));
+    var texts = [].slice.call(svg.querySelectorAll("text")).filter(function (t) { return !t.closest("g.now"); });
+    texts.forEach(function (t) { t.style.visibility = ""; });
+    var tick = function (t) { return !t.getAttribute("class") || t.classList.contains("t-lbl"); };
+    texts.sort(function (a, b) { return (tick(a) ? 1 : 0) - (tick(b) ? 1 : 0); });   // stable: DOM order within a group
+    var kept = [], sr = svg.getBoundingClientRect();
+    texts.forEach(function (t) {
+      var r = t.getBoundingClientRect();
+      if (!r.width) return;
+      var hit = kept.some(function (q) { return r.left < q.right + 4 && r.right + 4 > q.left && r.top < q.bottom && r.bottom > q.top; });
+      var out = r.left < sr.left - 40 || r.right > sr.right + 40;   // far outside the chart box
+      if ((hit || out) && tick(t)) { t.style.visibility = "hidden"; return; }
+      kept.push(r);
+    });
+  }
+  function fitCharts() { [].forEach.call(document.querySelectorAll("svg.chart"), fitChart); }
+  if (window.ResizeObserver) {
+    var chartRO = new ResizeObserver(function (es) { es.forEach(function (e) { fitChart(e.target); }); });
+    [].forEach.call(document.querySelectorAll("svg.chart"), function (s) { chartRO.observe(s); });
+  }
+  var fitT; window.addEventListener("resize", function () { clearTimeout(fitT); fitT = setTimeout(function () { fitCharts(); nowLines(); }, 150); });
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(function () { fitCharts(); nowLines(); });
+  fitCharts(); nowLines();
   var wcmaps = document.querySelectorAll(".wcmap");
   if (wcmaps.length) loadLeaflet(function () { for (var k = 0; k < wcmaps.length; k++) initCamMap(wcmaps[k]); });
   // hover label drawn on <body> (fixed position), so it is never clipped by a small map's box
