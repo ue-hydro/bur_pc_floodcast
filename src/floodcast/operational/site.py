@@ -754,6 +754,14 @@ def _precip_chart(i18n: _I18n, screening: dict, ens: dict | None = None) -> str:
         for tick in _ticks(cmax):
             y = y1 - ph * tick / cmax
             parts.append(f'<text x="{x1 + 6}" y="{y + 4:.1f}">{tick:g}</text>')
+    # y-axis titles (one tspan per language; the page's lang switch hides the others)
+    def _ytitle(key, x, angle):
+        spans = "".join(f'<tspan lang="{lg}">{_esc(i18n.plain(key, lg))}</tspan>' for lg in i18n.langs)
+        yc = y0 + ph / 2
+        return f'<text class="ax-t" x="{x}" y="{yc:.1f}" transform="rotate({angle} {x} {yc:.1f})" text-anchor="middle">{spans}</text>'
+    parts.append(_ytitle("interval", 12, -90))
+    if cmax and (cumulative or band):
+        parts.append(_ytitle("cumul", w - 8, 90))
     parts.append(f'<line class="axis" x1="{x0}" x2="{x1}" y1="{y1}" y2="{y1}"/>')
     labels = _time_labels(times, x0 + slot / 2, pw - slot, 4).replace("{y}", str(y1 + 20))
     parts.append(labels)
