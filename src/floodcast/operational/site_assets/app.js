@@ -552,9 +552,10 @@
   // ---- chart text: keep it legible (>= ~12 px on screen) whatever the chart's displayed width, and hide
   // labels that would then collide (time / value ticks go first; thresholds, titles and markers stay)
   function fitChart(svg) {
-    var vb = svg.viewBox && svg.viewBox.baseVal, w = svg.getBoundingClientRect().width;
-    if (!vb || !vb.width || !w) return;
-    var k = Math.min(1.8, Math.max(1, 12.5 / (15 * w / vb.width)));
+    var vb = svg.viewBox && svg.viewBox.baseVal, bx = svg.getBoundingClientRect();
+    if (!vb || !vb.width || !bx.width || !bx.height) return;
+    var sc = Math.min(bx.width / vb.width, bx.height / vb.height);   // real drawing scale (letterboxing included)
+    var k = Math.min(1.8, Math.max(1, 12.5 / (15 * sc)));
     svg.style.setProperty("--fk", k.toFixed(3));
     var texts = [].slice.call(svg.querySelectorAll("text")).filter(function (t) { return !t.closest("g.now"); });
     texts.forEach(function (t) { t.style.visibility = ""; });

@@ -649,7 +649,7 @@ def _time_labels(times, plot_x0, plot_w, n_labels=6):
             continue
         x = plot_x0 + (plot_w * i / max(1, count - 1))
         last = i + step >= count and i != 0
-        anchor = "end" if last else "middle"
+        anchor = "end" if last else ("start" if i == 0 else "middle")   # edge labels stay inside the plot
         out.append(
             f'<text class="t-lbl" x="{x:.1f}" y="{{y}}" text-anchor="{anchor}">{ts.strftime("%d/%m %Hh")}</text>'
         )
@@ -700,7 +700,7 @@ def _precip_chart(i18n: _I18n, screening: dict, ens: dict | None = None) -> str:
         return ""
     times, interval = times[:count], interval[:count]
     cumulative = cumulative[:count] if len(cumulative) >= count else []
-    w, h = 440, 300   # half-width chart next to its map (close to its on-screen size, so text stays legible)
+    w, h = 480, 285   # half-width chart next to its map (close to its on-screen size, so text stays legible)
     x0, x1, y0, y1 = 48, w - 50, 20, h - 42
     pw, ph = x1 - x0, y1 - y0
     ymax = _nice_max(max(interval) * 1.15 if max(interval) > 0 else 1)
@@ -784,7 +784,7 @@ def _hydro_chart(i18n: _I18n, summary: dict) -> str:
     data_max = max(series["p90"] + (series["max"] if len(series["max"]) == count else []) + [0.0])
     ymax_raw = max(data_max * 1.1, (min(thresholds.values()) * 1.15) if thresholds else 0, 1.0)
     ymax = _nice_max(ymax_raw)
-    w, h = 440, 300   # half-width chart next to its map (close to its on-screen size, so text stays legible)
+    w, h = 480, 285   # half-width chart next to its map (close to its on-screen size, so text stays legible)
     x0, x1, y0, y1 = 64, w - 14, 20, h - 42
     pw, ph = x1 - x0, y1 - y0
 
@@ -1180,7 +1180,7 @@ def _gauge_chart(i18n: _I18n, doc: dict) -> str:
     allv = [v for s in (*sc.values(), ob) for v in s if v is not None] + [0.0]
     ticks = _level_ticks(min(allv) - 0.1, max(allv) + 0.15)
     lo, hi = ticks[0], ticks[-1]
-    w, h = 440, 300
+    w, h = 480, 285
     x0, x1, y0, y1 = 48, w - 12, 20, h - 40
     pw, ph = x1 - x0, y1 - y0
 
