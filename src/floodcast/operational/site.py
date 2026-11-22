@@ -716,7 +716,16 @@ def _precip_chart(i18n: _I18n, screening: dict, ens: dict | None = None) -> str:
         for nm, arr in (ens.get("scenario_cum") or {}).items():
             band["s_" + nm] = [at(arr, t) for t in times]
     cvals = (cumulative or []) + (band["cum_p90"] + band.get("s_upper", []) if band else [])
-    cmax = _nice_max(max(cvals) * 1.05) if cvals and max(cvals) > 0 else None
+    # rain thresholds of the screening (basin-mean total over 72 h), drawn on the cumulative axis like the
+    # flow thresholds: the curve crossing a line means that total is reached within the window
+    rthr = {}
+    for lvl in ("watch", "warning", "alert"):
+        v = ((screening.get("thresholds") or {}).get(lvl) or {}).get("72")
+        if v is not None:
+            rthr[lvl] = float(v)
+    cmax = None
+    if cvals and max(cvals) > 0:
+        cmax = _nice_max(max(max(cvals) * 1.05, rthr.get("watch", 0) * 1.15))
     slot0 = pw / count
     hover = [{"l": _sl(i18n, "interval"), "u": "mm", "v": interval, "c": "bar"}]
     if cumulative:
@@ -754,6 +763,19 @@ def _precip_chart(i18n: _I18n, screening: dict, ens: dict | None = None) -> str:
         for tick in _ticks(cmax):
             y = y1 - ph * tick / cmax
             parts.append(f'<text x="{x1 + 6}" y="{y + 4:.1f}">{tick:g}</text>')
+    if cmax and (cumulative or band):
+        last_y = None
+        for name, value in sorted(rthr.items(), key=lambda kv: kv[1]):
+            if value > cmax:
+                continue
+            y = y1 - ph * value / cmax
+            parts.append(f'<line class="thr thr-{name}" x1="{x0}" x2="{x1}" y1="{y:.1f}" y2="{y:.1f}"/>')
+            if last_y is not None and last_y - y < 14:
+                continue
+            last_y = y
+            label = i18n.level_label(name).replace("<span ", "<tspan ").replace("</span>", "</tspan>")
+            parts.append(f'<text class="thr-t" x="{x1 - 4}" y="{y - 4:.1f}" text-anchor="end">{label}'
+                         f'<tspan> {value:g} mm / 72 h</tspan></text>')
     # y-axis titles (one tspan per language; the page's lang switch hides the others)
     def _ytitle(key, x, angle):
         spans = "".join(f'<tspan lang="{lg}">{_esc(i18n.plain(key, lg))}</tspan>' for lg in i18n.langs)

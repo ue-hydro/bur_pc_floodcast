@@ -147,7 +147,7 @@ details.tech[open] summary::before{transform:rotate(90deg)}
 .chart .ext{fill:none;stroke:var(--mute);stroke-width:1;stroke-dasharray:3 3}
 .chart .thr{stroke-width:1.5;stroke-dasharray:6 4}
 .chart .thr-watch{stroke:var(--watch-bd)}.chart .thr-warning{stroke:var(--warning-bd)}.chart .thr-alert{stroke:var(--alert-bd)}
-.chart text.thr-t{font-weight:600}
+.chart text.thr-t{font-weight:600;paint-order:stroke;stroke:var(--surface);stroke-width:4px;stroke-linejoin:round}
 .chart line.cursor{stroke:#d7301f;stroke-width:2;stroke-dasharray:4 3;pointer-events:none}
 .legend{display:flex;flex-wrap:wrap;gap:4px 16px;font-size:.85rem;color:var(--mute);margin:6px 0 0}
 .legend i{display:inline-block;width:14px;height:10px;margin-right:6px;border-radius:2px;vertical-align:-1px}
