@@ -94,7 +94,11 @@ T: dict[str, tuple[str, str]] = {
     "wc_h": ("Webcam em direto", "Live webcam"),
     "wc_big": ("Ampliar imagem", "Enlarge image"),
     "wc_close": ("Fechar", "Close"),
-    "wc_credit": ("imagem: {c}", "image: {c}"),
+    "wc_credit": ("Imagem: webcam {c}", "Image: webcam {c}"),
+    "wc_partner": ("em parceria com a Universidade de Évora", "in partnership with the University of Évora"),
+    "wc_badge": ("© {c}", "© {c}"),
+    "credits_partner": ("Webcam de Alcácer do Sal: {c}, em parceria com o projeto.",
+                        "Alcácer do Sal webcam: {c}, in partnership with the project."),
     "wc_upd": ("atualizada às", "updated at"),
     "wc_err": ("imagem indisponível de momento", "image unavailable at the moment"),
     "wc_where": ("Localização da câmara", "Camera location"),
@@ -1282,6 +1286,7 @@ def _webcam_block(i18n: _I18n, cams: list) -> str:
             continue
         link = c.get("link") or c["url"]
         credit = _esc(c.get("credit") or "")
+        cred_a = _Html(f'<a href="{_esc(link)}" target="_blank" rel="noopener"><strong>{credit}</strong></a>')
         out.append(
             f'<figure class="webcam" data-src="{_esc(c["url"])}" data-refresh="{int(c.get("refresh_s") or 120)}" '
             f'data-upd="{_esc(json.dumps(_sl(i18n, "wc_upd")))}" data-err="{_esc(json.dumps(_sl(i18n, "wc_err")))}">'
@@ -1293,7 +1298,8 @@ def _webcam_block(i18n: _I18n, cams: list) -> str:
             f'<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" '
             f'd="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5"/></svg></button>'
             f'<dialog class="wc-dlg" aria-label="{_esc(i18n.plain("wc_h"))}"><div class="wc-dlg-head"><span class="wc-dlg-t"></span>'
-            f'<button type="button" class="wc-close" title="{_esc(i18n.plain("wc_close"))}" aria-label="{_esc(i18n.plain("wc_close"))}">✕</button></div>'
+            + (f'<span class="wc-dlg-c">{i18n.raw("wc_credit", c=cred_a)}</span>' if credit else "")
+            + f'<button type="button" class="wc-close" title="{_esc(i18n.plain("wc_close"))}" aria-label="{_esc(i18n.plain("wc_close"))}">✕</button></div>'
             f'<img alt="{_esc(i18n.plain("wc_h"))}"></dialog>'
             + (f'<div class="wcmap" data-lat="{float(c["lat"])}" data-lon="{float(c["lon"])}"'
                f'{"" if c.get("view_deg") is None else f" data-view={float(c["view_deg"])}"} '
@@ -1301,11 +1307,15 @@ def _webcam_block(i18n: _I18n, cams: list) -> str:
                f'title="{_esc(i18n.plain("wc_where_approx" if c.get("approx") else "wc_where"))}" '
                f'role="img" aria-label="{_esc(i18n.plain("wc_where"))}"></div>'
                if c.get("lat") is not None and c.get("lon") is not None else "")
-            + f'</div><p class="muted wc-meta">'
-            f'{i18n.raw("wc_credit", c=credit) if credit else ""}'
-            + (f' · <span class="wc-dot">●</span> {i18n.raw("wc_where_approx" if c.get("approx") else "wc_where")}'
+            + (f'<a class="wc-badge" href="{_esc(link)}" target="_blank" rel="noopener">{i18n.raw("wc_badge", c=_Html(credit))}</a>'
+               if credit else "")
+            + f'</div>'
+            + (f'<p class="wc-credit">{i18n.raw("wc_credit", c=cred_a)} · {i18n.raw("wc_partner")}</p>'
+               if credit else "")
+            + (f'<p class="muted wc-meta"><span class="wc-dot">●</span> '
+               f'{i18n.raw("wc_where_approx" if c.get("approx") else "wc_where")}</p>'
                if c.get("lat") is not None else "")
-            + '</p></figure>')
+            + '</figure>')
     return f'<div class="webcams">{"".join(out)}</div>' if out else ""
 
 
@@ -2121,6 +2131,15 @@ def _burpc_logo(prefix: str) -> str:
     return '<span class="burpc-badge" title="INTERREG VI-A España–Portugal (POCTEP)">BUR_PC</span>'
 
 
+def _partner_credits(i18n: _I18n) -> str:
+    """Credit for the partners whose material the site shows (the webcam owner)."""
+    out = ""
+    for c in getattr(i18n, "partners", []) or []:
+        a = _Html(f'<a href="{_esc(c.get("link") or c["url"])}" rel="noopener">{_esc(c["credit"])}</a>')
+        out += " " + i18n.raw("credits_partner", c=a)
+    return out
+
+
 def _footer(i18n: _I18n, prefix: str = "") -> str:
     return (
         f'<div class="fgrid"><div><p class="f-brand">Floodcast · BUR_PC</p><p>{i18n.raw("foot_about")}</p></div>'
@@ -2141,7 +2160,7 @@ def _footer(i18n: _I18n, prefix: str = "") -> str:
         f'<div class="f-funding"><img src="{prefix}assets/logos/burpc_funding_banner.jpg" '
         f'alt="Interreg España–Portugal · Cofinanciado por la Unión Europea / pela União Europeia · BUR_PC"></div>'
         f'<p class="f-legal"><strong>{i18n.raw("legal_h")}.</strong> {i18n.raw("legal")}</p>'
-        f'<p class="f-credits">{i18n.raw("credits")}</p>'
+        f'<p class="f-credits">{i18n.raw("credits")}{_partner_credits(i18n)}</p>'
     )
 
 
@@ -2228,7 +2247,7 @@ def _about_content(i18n: _I18n) -> str:
         f'<section class="card"><h2>{i18n.raw("about_lim_h")}</h2><ul>{items}</ul></section>'
         f"{_emergency_block(i18n)}"
         f'<section class="card" id="legal"><h2>{i18n.raw("legal_h")}</h2><p>{i18n.raw("legal")}</p></section>'
-        f'<section class="card"><h2>{i18n.raw("about_data_h")}</h2><p>{i18n.raw("credits")}</p></section>'
+        f'<section class="card"><h2>{i18n.raw("about_data_h")}</h2><p>{i18n.raw("credits")}{_partner_credits(i18n)}</p></section>'
     )
 
 
@@ -2398,6 +2417,7 @@ def build_site(
     op = Path(operational_dir)
     out_dir = Path(out_dir)
     i18n = _I18n(languages)
+    i18n.partners = [c for c in (webcams or []) if c.get("url") and c.get("credit")]
     template = (ASSET_DIR / "page.html").read_text(encoding="utf-8")
     out_dir.parent.mkdir(parents=True, exist_ok=True)
     token = uuid.uuid4().hex[:8]
