@@ -17,16 +17,16 @@ max_cycle_age_h = 30
 # Basin-mean precipitation accumulations (mm) that trigger the hydrological ensemble.
 # PLACEHOLDERS: to be tuned with APA/SNIRH rainfall-runoff history of the Sado.
 [operational.screening.watch]
-mm_24h = 25
-mm_48h = 40
-mm_72h = 50
-hru_mm_24h = 50
+mm_24h = 15
+mm_48h = 18
+mm_72h = 20
+hru_mm_24h = 25
 
 [operational.screening.warning]
-mm_24h = 50
-mm_48h = 80
-mm_72h = 100
-hru_mm_24h = 100
+mm_24h = 35
+mm_48h = 45
+mm_72h = 55
+hru_mm_24h = 50
 
 [operational.hydrology]
 probability_to_declare = 0.2

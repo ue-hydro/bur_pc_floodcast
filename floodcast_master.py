@@ -395,7 +395,11 @@ def handle_cycle(cfg: OperationalConfig, p: CycleProcessor, cycle: datetime, *, 
 
                             hs_ = cfg.hydraulics
                             pre = hs_.steady_max_hours if hs_.initial_condition == "steady" else hs_.warmup_hours
-                            back = int(pre + hs_.tide_lag_h) + 6
+                            # +18 h: the mouth -> town transfer starts at the first high/low water
+                            # (up to one tidal cycle, ~12.4 h, after the first sample) plus its lag
+                            # (~1-2.5 h); 6 h left the boundary uncovered whenever the tide phase
+                            # put that point after the run start, and FLUXOS then ran without tide.
+                            back = int(pre + hs_.tide_lag_h) + 18
                             span = back + cfg.hydraulics.simulated_hours + 24
                             tide_bc = _tide.fetch(cycle - timedelta(hours=back), span,   # window in the name:
                                                   cache / f"tide_bc_m{back}h_{span}h.json")  # never reuse a shorter one
