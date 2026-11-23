@@ -217,6 +217,14 @@ ES = {
         "Los fallos de datos o de los modelos pueden provocar previsiones ausentes o desactualizadas; en ese caso el sitio "
         "muestra «Sin datos fiables».",
     ),
+    "prod_h": "Productos de previsión de lluvia utilizados",
+    "prod_p": ("Todas las previsiones de lluvia gratuitas disponibles para la cuenca se recogen en cada ciclo y se ordenan por la lluvia "
+               "acumulada; los tres escenarios (inferior, central, superior) son previsiones reales elegidas en los totales P10, P50 y P90. "
+               "Estado en la previsión más reciente ({c}): {n} previsiones."),
+    "prod_p0": "Todas las previsiones de lluvia gratuitas disponibles para la cuenca se recogen en cada ciclo y se ordenan por la lluvia acumulada.",
+    "prod_centre": "Centro", "prod_model": "Producto", "prod_type": "Tipo", "prod_grid": "Resolución nominal",
+    "prod_via": "Obtenido vía", "prod_ens": "Conjunto ({n} miembros)", "prod_ens0": "Conjunto",
+    "prod_det": "Determinista", "prod_fail": "no disponible en esta previsión", "prod_ai": "modelo de IA",
     "about_data_h": "Datos y créditos",
     "credits": "Proyecto BUR_PC (INTERREG-POCTEP), Universidad de Évora y socios. Datos meteorológicos: ECMWF Open Data (IFS), "
                "licencia CC-BY-4.0, © ECMWF. Modelos: SUMMA, mizuRoute y FLUXOS. Mapa base: © colaboradores de OpenStreetMap. "

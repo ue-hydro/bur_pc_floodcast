@@ -518,6 +518,25 @@ T: dict[str, tuple[str, str]] = {
             "Data or model failures can lead to missing or outdated forecasts; in that case the site shows “No reliable data”.",
         ),
     ),
+    "prod_h": ("Produtos de previsão de chuva utilizados", "Rainfall forecast products used"),
+    "prod_p": ("Todas as previsões de chuva gratuitas disponíveis para a bacia são recolhidas a cada ciclo e ordenadas pela chuva "
+               "acumulada; os três cenários (inferior, central, superior) são previsões reais escolhidas nos totais P10, P50 e P90. "
+               "Estado na previsão mais recente ({c}): {n} previsões.",
+               "Every free rainfall forecast available for the basin is collected each cycle and ranked by cumulative rain; "
+               "the three scenarios (lower, central, upper) are real forecasts picked at the P10, P50 and P90 totals. "
+               "Status in the latest forecast ({c}): {n} forecasts."),
+    "prod_p0": ("Todas as previsões de chuva gratuitas disponíveis para a bacia são recolhidas a cada ciclo e ordenadas pela chuva acumulada.",
+                "Every free rainfall forecast available for the basin is collected each cycle and ranked by cumulative rain."),
+    "prod_centre": ("Centro", "Centre"),
+    "prod_model": ("Produto", "Product"),
+    "prod_type": ("Tipo", "Type"),
+    "prod_grid": ("Resolução nominal", "Nominal grid"),
+    "prod_via": ("Obtido via", "Obtained via"),
+    "prod_ens": ("Conjunto ({n} membros)", "Ensemble ({n} members)"),
+    "prod_ens0": ("Conjunto", "Ensemble"),
+    "prod_det": ("Determinística", "Deterministic"),
+    "prod_fail": ("indisponível nesta previsão", "unavailable in this forecast"),
+    "prod_ai": ("modelo de IA", "AI model"),
     "about_data_h": ("Dados e créditos", "Data and credits"),
     "credits": (
         "Projeto BUR_PC (INTERREG-POCTEP), Universidade de Évora e parceiros. "
@@ -2285,7 +2304,48 @@ def _starting_content(i18n: _I18n) -> str:
     )
 
 
-def _about_content(i18n: _I18n) -> str:
+# (status key in precip_ensemble.json "sources", centre, product, ensemble?, nominal grid, via, AI model?)
+PRECIP_PRODUCTS = [
+    ("ECMWF IFS ENS", "ECMWF", "IFS ENS", True, "0.25° (~25 km)", "ECMWF Open Data", False),
+    ("ECMWF AIFS ENS", "ECMWF", "AIFS ENS", True, "0.25° (~25 km)", "Open-Meteo", True),
+    ("NOAA GEFS", "NOAA (USA)", "GEFS", True, "0.25° (~25 km)", "Open-Meteo", False),
+    ("DWD ICON-EU-EPS", "DWD (DE)", "ICON-EU-EPS", True, "~13 km", "Open-Meteo", False),
+    ("DWD ICON-EPS", "DWD (DE)", "ICON-EPS", True, "~26 km", "Open-Meteo", False),
+    ("ECCC GEM ENS", "ECCC (CA)", "GEM ENS", True, "~25 km", "Open-Meteo", False),
+    ("UK Met Office MOGREPS-G", "Met Office (UK)", "MOGREPS-G", True, "~20 km", "Open-Meteo", False),
+    ("ECMWF AIFS (deterministic)", "ECMWF", "AIFS", False, "0.25° (~25 km)", "Open-Meteo", True),
+    ("NOAA GFS (deterministic)", "NOAA (USA)", "GFS", False, "~13–25 km", "Open-Meteo", False),
+    ("DWD ICON (deterministic)", "DWD (DE)", "ICON", False, "~13 km", "Open-Meteo", False),
+    ("DWD ICON-EU (deterministic)", "DWD (DE)", "ICON-EU", False, "~7 km", "Open-Meteo", False),
+    ("Météo-France ARPEGE (deterministic)", "Météo-France", "ARPEGE", False, "~11 km", "Open-Meteo", False),
+    ("UK Met Office Global (deterministic)", "Met Office (UK)", "UM Global", False, "~10 km", "Open-Meteo", False),
+    ("ECCC GEM (deterministic)", "ECCC (CA)", "GEM", False, "~15 km", "Open-Meteo", False),
+    ("JMA GSM (deterministic)", "JMA (JP)", "GSM", False, "~55 km", "Open-Meteo", False),
+    ("CMA GRAPES (deterministic)", "CMA (CN)", "GRAPES", False, "~15 km", "Open-Meteo", False),
+]
+
+
+def _products_block(i18n: _I18n, ens: dict | None) -> str:
+    """About page: every rainfall forecast product in the pool, with its status in the latest forecast."""
+    srcs = (ens or {}).get("sources") or {}
+    rows = ""
+    for key, centre, prod, is_ens, grid, via, ai in PRECIP_PRODUCTS:
+        st = str(srcs.get(key, ""))
+        n = st.split()[0] if is_ens and st.split() and st.split()[0].isdigit() else ""
+        kind = (i18n.raw("prod_ens", n=n) if n else i18n.raw("prod_ens0")) if is_ens else i18n.raw("prod_det")
+        name = _esc(prod) + (f' <span class="muted">({i18n.raw("prod_ai")})</span>' if ai else "")
+        if st.startswith("failed"):
+            kind += f' <span class="muted">· {i18n.raw("prod_fail")}</span>'
+        rows += f"<tr><td>{_esc(centre)}</td><td>{name}</td><td>{kind}</td><td>{_esc(grid)}</td><td>{_esc(via)}</td></tr>"
+    head = "".join(f"<th>{i18n.raw(k)}</th>" for k in ("prod_centre", "prod_model", "prod_type", "prod_grid", "prod_via"))
+    cyc = str((ens or {}).get("cycle") or "")
+    intro = (i18n.raw("prod_p", c=f"{cyc[:10]} {cyc[11:13]} UTC", n=ens.get("members_total", "–"))
+             if ens and cyc else i18n.raw("prod_p0"))
+    return (f'<section class="card" id="products"><h2>{i18n.raw("prod_h")}</h2><p>{intro}</p>'
+            f'<div class="tablewrap"><table class="prodtbl"><thead><tr>{head}</tr></thead><tbody>{rows}</tbody></table></div></section>')
+
+
+def _about_content(i18n: _I18n, ens: dict | None = None) -> str:
     lim = _texts("about_lim")
     items = ""
     for pt, en, es in zip(lim["pt"], lim["en"], lim["es"], strict=True):
@@ -2297,6 +2357,7 @@ def _about_content(i18n: _I18n) -> str:
         f'<section class="card"><h2>{i18n.raw("about_what_h")}</h2><p>{i18n.raw("about_what")}</p></section>'
         f'<section class="card"><h2>{i18n.raw("about_how_h")}</h2><p>{i18n.raw("about_how")}</p></section>'
         f'<section class="card"><h2>{i18n.raw("about_lim_h")}</h2><ul>{items}</ul></section>'
+        f"{_products_block(i18n, ens)}"
         f"{_emergency_block(i18n)}"
         f'<section class="card" id="legal"><h2>{i18n.raw("legal_h")}</h2><p>{i18n.raw("legal")}</p></section>'
         f'<section class="card"><h2>{i18n.raw("about_data_h")}</h2><p>{i18n.raw("credits")}{_partner_credits(i18n)}</p></section>'
@@ -2540,7 +2601,8 @@ def build_site(
         )
         pages["about.html"] = _page(
             template, i18n, site_title=site_title, title=f"{site_title} – {i18n.plain('about_h')}",
-            description=description_default, prefix="", current="about", content=_about_content(i18n),
+            description=description_default, prefix="", current="about",
+            content=_about_content(i18n, _load_cycle(op, latest_rel).get("precip_ens") if latest_rel else None),
             base_url=base_url, rel_path="about.html",
         )
         if chat_endpoint:
