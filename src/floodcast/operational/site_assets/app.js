@@ -809,8 +809,10 @@
     "OpenStreetMap": ["https://tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19, attribution: "&copy; OpenStreetMap contributors" }],
     "Satélite / Satellite": ["https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
       { maxZoom: 19, attribution: "Tiles &copy; Esri — Source: Esri, Maxar, Earthstar Geographics, GIS User Community" }],
-    "Claro / Light": ["https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png",
-      { maxZoom: 19, subdomains: "abcd", attribution: "&copy; OpenStreetMap contributors &copy; CARTO" }],
+    // Esri Light Gray Canvas (no key; CARTO's free tiles now return "API key required")
+    "Claro / Light": ["https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}",
+      { maxZoom: 19, maxNativeZoom: 16, attribution: "Tiles &copy; Esri — Esri, HERE, Garmin, &copy; OpenStreetMap contributors" },
+      "https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Reference/MapServer/tile/{z}/{y}/{x}"],
     "Topográfico / Topographic": ["https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png",
       { maxZoom: 17, attribution: "&copy; OpenStreetMap contributors, SRTM | &copy; OpenTopoMap (CC-BY-SA)" }]
   };
@@ -818,7 +820,10 @@
   function addBasemaps(map) {
     var L = window.L, layers = {}, chosen = "Satélite / Satellite";   // satellite by default
     try { chosen = sessionStorage.getItem("fc-basemap-v2") || chosen; } catch (e) {}
-    Object.keys(BASEMAPS).forEach(function (k) { layers[k] = L.tileLayer(BASEMAPS[k][0], BASEMAPS[k][1]); });
+    Object.keys(BASEMAPS).forEach(function (k) {
+      var b = BASEMAPS[k], base = L.tileLayer(b[0], b[1]);
+      layers[k] = b[2] ? L.layerGroup([base, L.tileLayer(b[2], { maxZoom: b[1].maxZoom, maxNativeZoom: b[1].maxNativeZoom })]) : base;   // optional label overlay
+    });
     (layers[chosen] || layers["Satélite / Satellite"]).addTo(map);
     var ctl = L.control.layers(layers, null, { position: "topright", collapsed: true }).addTo(map);
     map.on("baselayerchange", function (ev) {   // the same basemap on every map of the page
