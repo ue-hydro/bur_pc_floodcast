@@ -993,3 +993,10 @@ html[data-scn="lower"] .wide-chart .chart .scn.lo,html[data-scn="upper"] .wide-c
 .chart .mems polyline{fill:none;stroke:#b9c3cd;stroke-width:.8;opacity:.75}
 :root[data-theme="dark"] .chart .mems polyline{stroke:#55636f;opacity:.8}
 .legend i.ln.memc{border-top:1.5px solid #b9c3cd}
+
+/* rain chart, two panels: per-interval forecast spread (upper) + panel titles */
+.chart .irng{fill:#c5ced7;opacity:.85}
+:root[data-theme="dark"] .chart .irng{fill:#3b4754}
+.legend i.irngc{background:#c5ced7}
+.chart text.pnl-t{font-weight:600;fill:var(--mute);paint-order:stroke;stroke:var(--surface);stroke-width:4px;stroke-linejoin:round}
+.charttip .ct-k.rng{background:#c5ced7}

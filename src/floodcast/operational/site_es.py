@@ -93,11 +93,18 @@ ES = {
     "s_failed": "falló",
     "s_unknown": "sin información",
     "precip_h": "Previsión de lluvia en la cuenca",
-    "precip_p": "Lluvia media en la cuenca aguas arriba de Alcácer do Sal. Barras y línea acumulada: miembro de control del "
-                "ECMWF IFS (0,25°). Líneas grises: todas las previsiones usadas (conjuntos y modelos deterministas); "
-                "líneas de color: los tres escenarios elegidos entre ellas y ejecutados en los modelos.",
+    "precip_p": "Lluvia media en la cuenca aguas arriba de Alcácer do Sal, de todas las previsiones usadas (conjuntos y "
+                "modelos deterministas). Arriba: lluvia en cada 3 h, mediana de las previsiones (azul) e intervalo P10–P90 "
+                "(gris). Abajo: lluvia acumulada, cada previsión en gris, el control del ECMWF IFS en naranja y los tres "
+                "escenarios ejecutados en los modelos en color.",
     "interval": "Por intervalo (mm)",
     "cumul": "Acumulada (mm)",
+    "pnl_int": "Lluvia en cada 3 h (mm)",
+    "pnl_cum": "Lluvia acumulada (mm)",
+    "int_med": "Mediana de las previsiones (3 h)",
+    "int_rng": "P10–P90 de las previsiones (3 h)",
+    "int_p90": "P90 de las previsiones (3 h)",
+    "cum_ctl": "Acumulada, control ECMWF IFS",
     "win_h": "Ventanas de acumulación",
     "win_hours": "Ventana",
     "win_basin": "Máx. media de la cuenca (mm)",

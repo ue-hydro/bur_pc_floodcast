@@ -334,15 +334,23 @@ T: dict[str, tuple[str, str]] = {
     "s_unknown": ("sem informação", "no information"),
     "precip_h": ("Previsão de precipitação na bacia", "Rainfall outlook for the basin"),
     "precip_p": (
-        "Precipitação média na bacia a montante de Alcácer do Sal. Barras e linha acumulada: membro de controlo do "
-        "ECMWF IFS (0,25°). Linhas cinzentas: todas as previsões usadas (conjuntos e modelos determinísticos); "
-        "linhas coloridas: os três cenários escolhidos entre elas e corridos nos modelos.",
-        "Mean rainfall over the basin upstream of Alcácer do Sal. Bars and cumulative line: ECMWF IFS control member "
-        "(0.25°). Grey lines: every forecast used (ensembles and deterministic models); coloured lines: the three "
-        "scenarios picked from them and run through the models.",
+        "Precipitação média na bacia a montante de Alcácer do Sal, de todas as previsões usadas (conjuntos e modelos "
+        "determinísticos). Em cima: chuva em cada 3 h, mediana das previsões (azul) e intervalo P10–P90 (cinzento). "
+        "Em baixo: chuva acumulada, cada previsão a cinzento, o controlo do ECMWF IFS a laranja e os três cenários "
+        "corridos nos modelos a cores.",
+        "Mean rainfall over the basin upstream of Alcácer do Sal, from every forecast used (ensembles and "
+        "deterministic models). Top: rain in each 3 h, median of the forecasts (blue) and P10–P90 range (grey). "
+        "Bottom: accumulated rain, each forecast in grey, the ECMWF IFS control in orange and the three scenarios "
+        "run through the models in colour.",
     ),
     "interval": ("Por intervalo (mm)", "Per interval (mm)"),
     "cumul": ("Acumulada (mm)", "Cumulative (mm)"),
+    "pnl_int": ("Chuva em cada 3 h (mm)", "Rain in each 3 h (mm)"),
+    "pnl_cum": ("Chuva acumulada (mm)", "Accumulated rain (mm)"),
+    "int_med": ("Mediana das previsões (3 h)", "Median of the forecasts (3 h)"),
+    "int_rng": ("P10–P90 das previsões (3 h)", "Forecast P10–P90 (3 h)"),
+    "int_p90": ("P90 das previsões (3 h)", "Forecast P90 (3 h)"),
+    "cum_ctl": ("Acumulada, controlo ECMWF IFS", "Accumulated, ECMWF IFS control"),
     "win_h": ("Janelas de acumulação", "Accumulation windows"),
     "win_hours": ("Janela", "Window"),
     "win_basin": ("Máx. média na bacia (mm)", "Max basin mean (mm)"),
@@ -709,11 +717,14 @@ def _precip_chart(i18n: _I18n, screening: dict, ens: dict | None = None) -> str:
         return ""
     times, interval = times[:count], interval[:count]
     cumulative = cumulative[:count] if len(cumulative) >= count else []
-    w, h = 480, 285   # half-width chart next to its map (close to its on-screen size, so text stays legible)
-    x0, x1, y0, y1 = 48, w - 50, 20, h - 42
-    pw, ph = x1 - x0, y1 - y0
-    ymax = _nice_max(max(interval) * 1.15 if max(interval) > 0 else 1)
-    # ensemble cumulative rain (all sources) sampled at the chart's interval-end times
+    w, h = 480, 285   # same box as before (page layout unchanged), now two panels sharing the time axis
+    x0, x1 = 44, w - 14
+    uy0, uy1 = 16, 112          # upper: rain per 3-h interval
+    ly0, ly1 = 140, h - 42      # lower: cumulative rain
+    pw, uh, lh = x1 - x0, uy1 - uy0, ly1 - ly0
+    slot = pw / count
+    xs = [x0 + slot * (i + 0.5) for i in range(count)]
+    # every forecast (all sources) sampled at the chart's interval-end times
     band, members = None, []
     if ens and ens.get("cum_p90") and screening.get("forecast_cycle"):
         c0 = _parse_ts(screening.get("forecast_cycle"))
@@ -730,6 +741,16 @@ def _precip_chart(i18n: _I18n, screening: dict, ens: dict | None = None) -> str:
         members = [[at_m(a, t) for t in times] for a in (ens.get("member_cum") or []) if a] if mstep else []
         for nm, arr in (ens.get("scenario_cum") or {}).items():
             band["s_" + nm] = [at(arr, t) for t in times]
+    # upper panel: per-interval rain of all forecasts -> median (blue bar) + P10-P90 range (grey box);
+    # without the per-forecast series (older forecasts) the ECMWF control bars as before
+    istats = None
+    if members:
+        import numpy as _np
+        cm = _np.array(members)
+        inc = _np.diff(_np.concatenate([_np.zeros((cm.shape[0], 1)), cm], axis=1), axis=1).clip(min=0)
+        istats = {q: _np.percentile(inc, v, axis=0).round(2).tolist() for q, v in (("p10", 10), ("p50", 50), ("p90", 90))}
+    top = max(istats["p90"]) if istats else max(interval)
+    ymax = _nice_max(top * 1.1 if top > 0 else 1)
     cvals = (cumulative or []) + (band["cum_p90"] + band.get("s_upper", []) if band else [])
     cvals += [max(m) for m in members]
     # rain thresholds of the screening (basin-mean total over 72 h), drawn on the cumulative axis like the
@@ -742,53 +763,60 @@ def _precip_chart(i18n: _I18n, screening: dict, ens: dict | None = None) -> str:
     cmax = None
     if cvals and max(cvals) > 0:
         cmax = _nice_max(max(max(cvals) * 1.05, rthr.get("watch", 0) * 1.15))
-    slot0 = pw / count
-    hover = [{"l": _sl(i18n, "interval"), "u": "mm", "v": interval, "c": "bar"}]
+    if istats:
+        hover = [{"l": _sl(i18n, "int_med"), "u": "mm", "v": istats["p50"], "c": "bar"},
+                 {"l": _sl(i18n, "int_p90"), "u": "mm", "v": istats["p90"], "c": "rng"}]
+    else:
+        hover = [{"l": _sl(i18n, "interval"), "u": "mm", "v": interval, "c": "bar"}]
     if cumulative:
-        hover.append({"l": _sl(i18n, "cumul"), "u": "mm", "v": cumulative, "c": "cum"})
+        hover.append({"l": _sl(i18n, "cum_ctl"), "u": "mm", "v": cumulative, "c": "cum"})
     if band:
         hover += _scn_series(i18n, {"up": band.get("s_upper"), "ce": band.get("s_central"), "lo": band.get("s_lower")}, "mm")
-    cursor = _cursor_attr(times, [x0 + slot0 * (i + 0.5) for i in range(count)], y0, y1, hover)
+    cursor = _cursor_attr(times, xs, uy0, ly1, hover)
     parts = [
         f'<svg class="chart" viewBox="0 0 {w} {h}"{cursor} role="img" aria-label="{_esc(i18n.plain("precip_h"))} / {_esc(i18n.plain("precip_h", "en"))}">'
     ]
-    for tick in _ticks(ymax):
-        y = y1 - ph * tick / ymax
-        parts.append(f'<line class="gridl" x1="{x0}" x2="{x1}" y1="{y:.1f}" y2="{y:.1f}"/>')
-        parts.append(f'<text x="{x0 - 6}" y="{y + 4:.1f}" text-anchor="end">{tick:g}</text>')
-    slot = pw / count
-    barw = max(1.5, slot * 0.78)
-    for i, value in enumerate(interval):
-        bh = ph * value / ymax
+    def yu(v):
+        return uy1 - uh * v / ymax
+    def yl(v):
+        return ly1 - lh * v / cmax
+    for tick in _ticks(ymax, 2):
+        parts.append(f'<line class="gridl" x1="{x0}" x2="{x1}" y1="{yu(tick):.1f}" y2="{yu(tick):.1f}"/>')
+        parts.append(f'<text x="{x0 - 6}" y="{yu(tick) + 4:.1f}" text-anchor="end">{tick:g}</text>')
+    barw = max(1.5, slot * 0.72)
+    for i in range(count):
         x = x0 + slot * i + (slot - barw) / 2
-        parts.append(f'<rect class="bar" x="{x:.1f}" y="{y1 - bh:.1f}" width="{barw:.1f}" height="{bh:.1f}"/>')
-    if cmax and band:
-        xs = [x0 + slot * (i + 0.5) for i in range(count)]
-        up = " ".join(f"{x:.1f},{y1 - ph * v / cmax:.1f}" for x, v in zip(xs, band["cum_p90"]))
-        lo = " ".join(f"{x:.1f},{y1 - ph * v / cmax:.1f}" for x, v in reversed(list(zip(xs, band["cum_p10"]))))
-        if members:   # every forecast used, thin grey, under the band and the scenarios
-            parts.append('<g class="mems">' + "".join(
-                '<polyline points="' + " ".join(f"{x:.1f},{y1 - ph * v / cmax:.1f}" for x, v in zip(xs, m)) + '"/>'
-                for m in members) + "</g>")
-        parts.append(f'<polygon class="cumband" points="{up} {lo}"/>')
-        for nm, cls in (("s_lower", "scn lo"), ("s_central", "scn ce"), ("s_upper", "scn up")):
-            if nm in band:
-                pts = " ".join(f"{x:.1f},{y1 - ph * v / cmax:.1f}" for x, v in zip(xs, band[nm]))
-                parts.append(f'<polyline class="{cls}" points="{pts}"/>')
-    if cmax and cumulative:
-        pts = " ".join(
-            f"{x0 + slot * (i + 0.5):.1f},{y1 - ph * v / cmax:.1f}" for i, v in enumerate(cumulative)
-        )
-        parts.append(f'<polyline class="cum" points="{pts}"/>')
-        for tick in _ticks(cmax):
-            y = y1 - ph * tick / cmax
-            parts.append(f'<text x="{x1 + 6}" y="{y + 4:.1f}">{tick:g}</text>')
-    if cmax and (cumulative or band):
+        if istats:
+            lo, md, hi = istats["p10"][i], istats["p50"][i], min(istats["p90"][i], ymax)
+            if hi > lo:
+                parts.append(f'<rect class="irng" x="{x - 1:.1f}" y="{yu(hi):.1f}" width="{barw + 2:.1f}" height="{yu(lo) - yu(hi):.1f}"/>')
+            if md > 0:
+                parts.append(f'<rect class="bar" x="{x:.1f}" y="{yu(md):.1f}" width="{barw:.1f}" height="{uy1 - yu(md):.1f}"/>')
+        elif interval[i] > 0:
+            parts.append(f'<rect class="bar" x="{x:.1f}" y="{yu(interval[i]):.1f}" width="{barw:.1f}" height="{uy1 - yu(interval[i]):.1f}"/>')
+    parts.append(f'<line class="axis" x1="{x0}" x2="{x1}" y1="{uy1}" y2="{uy1}"/>')
+    if cmax:
+        for tick in _ticks(cmax, 2):
+            parts.append(f'<line class="gridl" x1="{x0}" x2="{x1}" y1="{yl(tick):.1f}" y2="{yl(tick):.1f}"/>')
+            parts.append(f'<text x="{x0 - 6}" y="{yl(tick) + 4:.1f}" text-anchor="end">{tick:g}</text>')
+        if band:
+            if members:   # every forecast used, thin grey, under the band and the scenarios
+                parts.append('<g class="mems">' + "".join(
+                    '<polyline points="' + " ".join(f"{x:.1f},{yl(v):.1f}" for x, v in zip(xs, m)) + '"/>'
+                    for m in members) + "</g>")
+            up = " ".join(f"{x:.1f},{yl(v):.1f}" for x, v in zip(xs, band["cum_p90"]))
+            lo = " ".join(f"{x:.1f},{yl(v):.1f}" for x, v in reversed(list(zip(xs, band["cum_p10"]))))
+            parts.append(f'<polygon class="cumband" points="{up} {lo}"/>')
+            for nm, cls in (("s_lower", "scn lo"), ("s_central", "scn ce"), ("s_upper", "scn up")):
+                if nm in band:
+                    parts.append(f'<polyline class="{cls}" points="' + " ".join(f"{x:.1f},{yl(v):.1f}" for x, v in zip(xs, band[nm])) + '"/>')
+        if cumulative:
+            parts.append('<polyline class="cum" points="' + " ".join(f"{x:.1f},{yl(v):.1f}" for x, v in zip(xs, cumulative)) + '"/>')
         last_y = None
         for name, value in sorted(rthr.items(), key=lambda kv: kv[1]):
             if value > cmax:
                 continue
-            y = y1 - ph * value / cmax
+            y = yl(value)
             parts.append(f'<line class="thr thr-{name}" x1="{x0}" x2="{x1}" y1="{y:.1f}" y2="{y:.1f}"/>')
             if last_y is not None and last_y - y < 14:
                 continue
@@ -796,21 +824,22 @@ def _precip_chart(i18n: _I18n, screening: dict, ens: dict | None = None) -> str:
             label = i18n.level_label(name).replace("<span ", "<tspan ").replace("</span>", "</tspan>")
             parts.append(f'<text class="thr-t" x="{x1 - 4}" y="{y - 4:.1f}" text-anchor="end">{label}'
                          f'<tspan> {value:g} mm / 72 h</tspan></text>')
-    # y-axis titles (one tspan per language; the page's lang switch hides the others)
-    def _ytitle(key, x, angle):
+    # panel titles, horizontal at the top left of each panel (one tspan per language)
+    def _ptitle(key, y):
         spans = "".join(f'<tspan lang="{lg}">{_esc(i18n.plain(key, lg))}</tspan>' for lg in i18n.langs)
-        yc = y0 + ph / 2
-        return f'<text class="ax-t" x="{x}" y="{yc:.1f}" transform="rotate({angle} {x} {yc:.1f})" text-anchor="middle">{spans}</text>'
-    parts.append(_ytitle("interval", 12, -90))
-    if cmax and (cumulative or band):
-        parts.append(_ytitle("cumul", w - 8, 90))
-    parts.append(f'<line class="axis" x1="{x0}" x2="{x1}" y1="{y1}" y2="{y1}"/>')
-    labels = _time_labels(times, x0 + slot / 2, pw - slot, 4).replace("{y}", str(y1 + 20))
-    parts.append(labels)
+        return f'<text class="pnl-t" x="{x0 + 4}" y="{y}" dominant-baseline="hanging">{spans}</text>'
+    parts.append(_ptitle("pnl_int", uy0 - 12))
+    if cmax:
+        parts.append(_ptitle("pnl_cum", ly0 - 14))
+    parts.append(f'<line class="axis" x1="{x0}" x2="{x1}" y1="{ly1}" y2="{ly1}"/>')
+    parts.append(_time_labels(times, x0 + slot / 2, pw - slot, 4).replace("{y}", str(ly1 + 20)))
     parts.append("</svg>")
     legend = (
-        f'<p class="legend"><span><i style="background:var(--bar)"></i>{i18n.raw("interval")}</span>'
-        + (f'<span><i style="background:var(--cum)"></i>{i18n.raw("cumul")}</span>' if cmax else "")
+        '<p class="legend">'
+        + (f'<span><i style="background:var(--bar)"></i>{i18n.raw("int_med")}</span>'
+           f'<span><i class="irngc"></i>{i18n.raw("int_rng")}</span>' if istats
+           else f'<span><i style="background:var(--bar)"></i>{i18n.raw("interval")}</span>')
+        + (f'<span><i style="background:var(--cum)"></i>{i18n.raw("cum_ctl")}</span>' if cmax and cumulative else "")
         + (f'<span><i class="ln memc"></i>{i18n.raw("ens_members", n=len(members))}</span>' if members else "")
         + (f'<span><i style="background:var(--band)"></i>{i18n.raw("ens_band")}</span>'
            f'<span><i class="ln selc"></i>{i18n.raw("scn_sel")}</span><span><i class="ln othc"></i>{i18n.raw("scn_oth")}</span>'
