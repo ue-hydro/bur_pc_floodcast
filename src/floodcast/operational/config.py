@@ -161,6 +161,7 @@ class WebcamSettings(_Model):
     name: str = ""
     credit: str = ""
     link: str = ""
+    logo: str = ""   # owner's logo file in site_assets/logos/ (credit line + footer partners)
     refresh_s: int = Field(default=120, ge=60)
     # where the camera is (map inset next to the image); approx = position estimated, not surveyed
     lat: float | None = None

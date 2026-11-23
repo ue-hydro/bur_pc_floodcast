@@ -1310,7 +1310,10 @@ def _webcam_block(i18n: _I18n, cams: list) -> str:
             + (f'<a class="wc-badge" href="{_esc(link)}" target="_blank" rel="noopener">{i18n.raw("wc_badge", c=_Html(credit))}</a>'
                if credit else "")
             + f'</div>'
-            + (f'<p class="wc-credit">{i18n.raw("wc_credit", c=cred_a)} · {i18n.raw("wc_partner")}</p>'
+            + (f'<p class="wc-credit">'
+               + (f'<a class="wc-logo" href="{_esc(link)}" target="_blank" rel="noopener">'
+                  f'<img src="assets/logos/{_esc(c["logo"])}" alt="{credit}"></a>' if c.get("logo") else "")
+               + f'<span>{i18n.raw("wc_credit", c=cred_a)} · {i18n.raw("wc_partner")}</span></p>'
                if credit else "")
             + (f'<p class="muted wc-meta"><span class="wc-dot">●</span> '
                f'{i18n.raw("wc_where_approx" if c.get("approx") else "wc_where")}</p>'
@@ -2156,7 +2159,10 @@ def _footer(i18n: _I18n, prefix: str = "") -> str:
         f'<a href="https://www.uevora.pt" rel="noopener"><img src="{prefix}assets/logos/uevora_white.png" alt="Universidade de Évora"></a>'
         f'<a href="https://www.med.uevora.pt" rel="noopener"><img src="{prefix}assets/logos/med_white.svg" alt="MED"></a>'
         f'<a href="https://www.create.uevora.pt" rel="noopener"><img class="lg-create" src="{prefix}assets/logos/create_white.png" alt="CREATE"></a>'
-        f'</div></div></div>'
+        + "".join(f'<a href="{_esc(c.get("link") or c["url"])}" rel="noopener"><img class="lg-partner" '
+                  f'src="{prefix}assets/logos/{_esc(c["logo"])}" alt="{_esc(c["credit"])}"></a>'
+                  for c in getattr(i18n, "partners", []) or [] if c.get("logo"))
+        + f'</div></div></div>'
         f'<div class="f-funding"><img src="{prefix}assets/logos/burpc_funding_banner.jpg" '
         f'alt="Interreg España–Portugal · Cofinanciado por la Unión Europea / pela União Europeia · BUR_PC"></div>'
         f'<p class="f-legal"><strong>{i18n.raw("legal_h")}.</strong> {i18n.raw("legal")}</p>'

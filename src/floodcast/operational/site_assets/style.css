@@ -984,3 +984,7 @@ html[data-scn="lower"] .wide-chart .chart .scn.lo,html[data-scn="upper"] .wide-c
 .webcam .wc-credit a{color:inherit;text-decoration:underline;text-underline-offset:2px}
 .wc-dlg-c{font-size:.85rem;white-space:nowrap}
 .wc-dlg-c a{color:#fff;text-decoration:underline}
+.webcam .wc-credit{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.webcam .wc-logo{flex:none;display:block;line-height:0}
+.webcam .wc-logo img{height:28px;width:auto;display:block;aspect-ratio:auto;object-fit:contain;border:0;background:none}
+.f-logos img.lg-partner{height:34px}
