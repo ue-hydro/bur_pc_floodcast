@@ -988,3 +988,8 @@ html[data-scn="lower"] .wide-chart .chart .scn.lo,html[data-scn="upper"] .wide-c
 .webcam .wc-logo{flex:none;display:block;line-height:0}
 .webcam .wc-logo img{height:28px;width:auto;display:block;aspect-ratio:auto;object-fit:contain;border:0;background:none}
 .f-logos img.lg-partner{height:34px}
+
+/* every rain forecast used (section 1): thin light grey under the P10-P90 band and the scenarios */
+.chart .mems polyline{fill:none;stroke:#b9c3cd;stroke-width:.8;opacity:.75}
+:root[data-theme="dark"] .chart .mems polyline{stroke:#55636f;opacity:.8}
+.legend i.ln.memc{border-top:1.5px solid #b9c3cd}

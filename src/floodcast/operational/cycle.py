@@ -305,6 +305,11 @@ class CycleProcessor:
             "cum_min": np.round(sel["cum_min"], 2).tolist(), "cum_max": np.round(sel["cum_max"], 2).tolist(),
             "scenario_cum": {names[p]: np.round(np.cumsum(sel["basin_mm_h"][i]), 2).tolist()
                              for p, i in sel["picks"].items()},
+            # every forecast's basin-mean cumulative rain (3-hourly, 0.1 mm): drawn in grey on the site
+            # so readers see how many forecasts the three scenarios were picked from
+            "member_cum_step_h": 3,
+            "member_cum": np.round(np.cumsum(np.asarray(sel["basin_mm_h"], float), axis=1)[:, 2::3], 1).tolist(),
+            "member_sources": [m.source for m in members],
         }
         return scenarios
 

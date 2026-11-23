@@ -93,7 +93,9 @@ ES = {
     "s_failed": "falló",
     "s_unknown": "sin información",
     "precip_h": "Previsión de lluvia en la cuenca",
-    "precip_p": "Lluvia media en la cuenca aguas arriba de Alcácer do Sal (miembro de control del ECMWF IFS, 0,25°).",
+    "precip_p": "Lluvia media en la cuenca aguas arriba de Alcácer do Sal. Barras y línea acumulada: miembro de control del "
+                "ECMWF IFS (0,25°). Líneas grises: todas las previsiones usadas (conjuntos y modelos deterministas); "
+                "líneas de color: los tres escenarios elegidos entre ellas y ejecutados en los modelos.",
     "interval": "Por intervalo (mm)",
     "cumul": "Acumulada (mm)",
     "win_h": "Ventanas de acumulación",
@@ -215,6 +217,7 @@ ES = {
     "kpi_range": "intervalo {lo}–{hi} {u}",
     "kpi_worst": "Escenario superior (peor plausible)",
     "ens_band": "Conjunto multifuente P10–P90 (acumulada)",
+    "ens_members": "{n} previsiones usadas (acumulada)",
     "scn_lower": "Inferior", "scn_central": "Central", "scn_upper": "Superior", "scn_median": "Mediana",
     "lg_rivers": "Red hidrográfica del modelo (tramos de mizuRoute)",
     "lg_toggle": "Capas de referencia (cuenca, subcuencas, red hidrográfica): casillas a la derecha del mapa · ⌖ recentra el mapa · fondo: botón de capas (satélite por defecto).",

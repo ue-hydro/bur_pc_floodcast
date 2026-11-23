@@ -64,6 +64,7 @@ T: dict[str, tuple[str, str]] = {
     "kpi_range": ("intervalo {lo}–{hi} {u}", "range {lo}–{hi} {u}"),
     "kpi_worst": ("Cenário superior (pior plausível)", "Upper scenario (plausible worst)"),
     "ens_band": ("Conjunto multi-fonte P10–P90 (acumulada)", "Multi-source ensemble P10–P90 (cumulative)"),
+    "ens_members": ("{n} previsões usadas (acumulada)", "{n} forecasts used (cumulative)"),
     "scn_sel": ("Cenário selecionado", "Selected scenario"),
     "scn_oth": ("Outros cenários", "Other scenarios"),
     "scn_lower": ("Inferior", "Lower"),
@@ -333,8 +334,12 @@ T: dict[str, tuple[str, str]] = {
     "s_unknown": ("sem informação", "no information"),
     "precip_h": ("Previsão de precipitação na bacia", "Rainfall outlook for the basin"),
     "precip_p": (
-        "Precipitação média na bacia a montante de Alcácer do Sal (membro de controlo do ECMWF IFS, 0,25°).",
-        "Mean rainfall over the basin upstream of Alcácer do Sal (ECMWF IFS control member, 0.25°).",
+        "Precipitação média na bacia a montante de Alcácer do Sal. Barras e linha acumulada: membro de controlo do "
+        "ECMWF IFS (0,25°). Linhas cinzentas: todas as previsões usadas (conjuntos e modelos determinísticos); "
+        "linhas coloridas: os três cenários escolhidos entre elas e corridos nos modelos.",
+        "Mean rainfall over the basin upstream of Alcácer do Sal. Bars and cumulative line: ECMWF IFS control member "
+        "(0.25°). Grey lines: every forecast used (ensembles and deterministic models); coloured lines: the three "
+        "scenarios picked from them and run through the models.",
     ),
     "interval": ("Por intervalo (mm)", "Per interval (mm)"),
     "cumul": ("Acumulada (mm)", "Cumulative (mm)"),
@@ -709,7 +714,7 @@ def _precip_chart(i18n: _I18n, screening: dict, ens: dict | None = None) -> str:
     pw, ph = x1 - x0, y1 - y0
     ymax = _nice_max(max(interval) * 1.15 if max(interval) > 0 else 1)
     # ensemble cumulative rain (all sources) sampled at the chart's interval-end times
-    band = None
+    band, members = None, []
     if ens and ens.get("cum_p90") and screening.get("forecast_cycle"):
         c0 = _parse_ts(screening.get("forecast_cycle"))
         def at(arr, t):
@@ -717,9 +722,16 @@ def _precip_chart(i18n: _I18n, screening: dict, ens: dict | None = None) -> str:
             k = int(round((dt - c0).total_seconds() / 3600)) - 1 if dt and c0 else -1
             return float(arr[min(max(k, 0), len(arr) - 1)])
         band = {k: [at(ens[k], t) for t in times] for k in ("cum_p10", "cum_p50", "cum_p90")}
+        mstep = int(ens.get("member_cum_step_h") or 0)
+        def at_m(arr, t):
+            dt = _parse_ts(t)
+            j = int(round((dt - c0).total_seconds() / 3600 / mstep)) - 1 if dt and c0 else -1
+            return float(arr[min(max(j, 0), len(arr) - 1)])
+        members = [[at_m(a, t) for t in times] for a in (ens.get("member_cum") or []) if a] if mstep else []
         for nm, arr in (ens.get("scenario_cum") or {}).items():
             band["s_" + nm] = [at(arr, t) for t in times]
     cvals = (cumulative or []) + (band["cum_p90"] + band.get("s_upper", []) if band else [])
+    cvals += [max(m) for m in members]
     # rain thresholds of the screening (basin-mean total over 72 h), drawn on the cumulative axis like the
     # flow thresholds: the curve crossing a line means that total is reached within the window
     rthr = {}
@@ -754,6 +766,10 @@ def _precip_chart(i18n: _I18n, screening: dict, ens: dict | None = None) -> str:
         xs = [x0 + slot * (i + 0.5) for i in range(count)]
         up = " ".join(f"{x:.1f},{y1 - ph * v / cmax:.1f}" for x, v in zip(xs, band["cum_p90"]))
         lo = " ".join(f"{x:.1f},{y1 - ph * v / cmax:.1f}" for x, v in reversed(list(zip(xs, band["cum_p10"]))))
+        if members:   # every forecast used, thin grey, under the band and the scenarios
+            parts.append('<g class="mems">' + "".join(
+                '<polyline points="' + " ".join(f"{x:.1f},{y1 - ph * v / cmax:.1f}" for x, v in zip(xs, m)) + '"/>'
+                for m in members) + "</g>")
         parts.append(f'<polygon class="cumband" points="{up} {lo}"/>')
         for nm, cls in (("s_lower", "scn lo"), ("s_central", "scn ce"), ("s_upper", "scn up")):
             if nm in band:
@@ -795,6 +811,7 @@ def _precip_chart(i18n: _I18n, screening: dict, ens: dict | None = None) -> str:
     legend = (
         f'<p class="legend"><span><i style="background:var(--bar)"></i>{i18n.raw("interval")}</span>'
         + (f'<span><i style="background:var(--cum)"></i>{i18n.raw("cumul")}</span>' if cmax else "")
+        + (f'<span><i class="ln memc"></i>{i18n.raw("ens_members", n=len(members))}</span>' if members else "")
         + (f'<span><i style="background:var(--band)"></i>{i18n.raw("ens_band")}</span>'
            f'<span><i class="ln selc"></i>{i18n.raw("scn_sel")}</span><span><i class="ln othc"></i>{i18n.raw("scn_oth")}</span>'
            if band else "")
