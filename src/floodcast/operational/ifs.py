@@ -100,12 +100,35 @@ def mirrors_for(source: str) -> tuple[str, ...]:
     return tuple(s for s in ("aws", "azure", "google", "ecmwf") if s != source)
 
 
+STALL_TIMEOUT_S = (30, 120)   # (connect, seconds without any data) for every Open Data download
+
+
+def _install_stall_timeout() -> None:
+    """ecmwf-opendata downloads through multiurl without a timeout, so a connection that stops
+    sending data (seen 23 Nov 2026: 19:43 -> 09:14) blocks the loop forever. Give every multiurl
+    download a read timeout instead; the stall then raises and the retries below take over."""
+    try:
+        import multiurl.base as mb
+    except ImportError:
+        return
+    if getattr(mb.DownloaderBase.__init__, "_fc_stall", False):
+        return
+    orig = mb.DownloaderBase.__init__
+
+    def __init__(self, *args, timeout=None, **kwargs):
+        orig(self, *args, timeout=STALL_TIMEOUT_S if timeout is None else timeout, **kwargs)
+
+    __init__._fc_stall = True
+    mb.DownloaderBase.__init__ = __init__
+
+
 def _retrieve(clients: list, request: dict, target: Path, retries: int) -> None:
     """Try each mirror in turn, with exponential backoff between rounds (503 SlowDown).
 
     ``clients`` are zero-argument factories: some mirrors (azure) contact an authorisation
     service when the client is built, which can itself be rate limited.
     """
+    _install_stall_timeout()
     last: Exception | None = None
     for attempt in range(1, retries + 1):
         for factory in clients:

@@ -178,7 +178,7 @@ class PublishSettings(_Model):
     # "rsync -a --delete ./ user@host:/var/www/floodcast/" or
     # "npx wrangler pages deploy . --project-name floodcast". Empty = serve output_dir yourself.
     post_command: str = ""
-    post_command_timeout_s: int = Field(default=300, ge=10)
+    post_command_timeout_s: int = Field(default=1800, ge=10)   # a full-site push can take >5 min
     # Keep this many cycles of history on disk (older cycle folders are pruned, JSON kept).
     # forecasts kept on disk (older ones deleted); 0 = keep everything (manual clean-up)
     keep_cycles: int = Field(default=0, ge=0)
