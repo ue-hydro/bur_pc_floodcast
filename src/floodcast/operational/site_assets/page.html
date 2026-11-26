@@ -7,7 +7,7 @@
 <meta name="description" content="{{description}}">
 <meta name="theme-color" content="#003a70">
 {{canonical}}
-<script>try{if(localStorage.getItem("floodcast-theme")==="dark")document.documentElement.setAttribute("data-theme","dark")}catch(e){}</script>
+<script>try{var q=new URLSearchParams(location.search).get("theme");if(q==="light"||q==="dark")localStorage.setItem("floodcast-theme",q);if(localStorage.getItem("floodcast-theme")==="dark")document.documentElement.setAttribute("data-theme","dark")}catch(e){}</script>
 <link rel="stylesheet" href="{{prefix}}assets/style.css?v={{assetver}}">
 </head>
 <body data-updated="{{updated}}">
