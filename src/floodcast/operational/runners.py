@@ -6,6 +6,8 @@ import logging
 import os
 import shlex
 import subprocess
+import threading
+import time
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -13,11 +15,55 @@ from .config import ModelSettings
 
 log = logging.getLogger("floodcast.operational.runners")
 
+# Signs that the Docker engine itself is down or wedged (e.g. Docker Desktop's Resource Saver
+# failed to wake the VM), as opposed to the model failing inside its container.
+DAEMON_ERRORS = ("Internal Server Error", "Cannot connect to the Docker daemon",
+                 "Is the docker daemon running", "error during connect", "no route to host")
+_HEAL_LOCK = threading.Lock()
+_last_heal = 0.0
+
+
+def docker_ok(timeout_s: int = 20) -> bool:
+    try:
+        return subprocess.run(["docker", "info"], capture_output=True, timeout=timeout_s).returncode == 0
+    except (subprocess.TimeoutExpired, OSError):
+        return False
+
+
+def heal_docker(wait_s: int = 300) -> bool:
+    """Restart Docker Desktop if the engine does not answer; one restart at a time across threads."""
+    global _last_heal
+    with _HEAL_LOCK:
+        if docker_ok():
+            return True
+        if time.time() - _last_heal < 60:  # another thread just restarted it: only wait
+            restart = False
+        else:
+            restart, _last_heal = True, time.time()
+        if restart:
+            log.warning("Docker engine not answering; restarting Docker Desktop")
+            try:
+                subprocess.run(["docker", "desktop", "restart"], capture_output=True, timeout=wait_s)
+            except (subprocess.TimeoutExpired, OSError):
+                subprocess.run(["open", "-a", "Docker"], capture_output=True, check=False)
+        deadline = time.time() + wait_s
+        while time.time() < deadline:
+            if docker_ok():
+                log.info("Docker engine is back")
+                return True
+            time.sleep(5)
+        log.error("Docker engine still down after %d s", wait_s)
+        return False
+
 
 class ModelRunError(RuntimeError):
     def __init__(self, model: str, returncode: int | None, log_path: Path, reason: str = "") -> None:
         super().__init__(f"{model} failed ({reason or f'exit {returncode}'}); see {log_path}")
         self.model, self.returncode, self.log_path = model, returncode, log_path
+
+
+class DockerUnavailable(ModelRunError):
+    """The Docker engine could not start the container (not a model failure): retry the cycle later."""
 
 
 @dataclass(frozen=True)
@@ -92,19 +138,29 @@ class ModelRunner:
             cmd += [self.image_for(model), *args]
             cwd, environment = None, None
         log.info("run %s: %s", model, shlex.join(cmd))
-        for attempt in (1, 2):
+        docker = self.settings.runtime != "local"
+        if docker and not docker_ok():
+            heal_docker()
+        for attempt in (1, 2, 3):
             proc = self._exec(cmd, log_path, timeout_s, cwd, environment, model)
-            # Docker Desktop can briefly fail to see a just-created host folder (mount race): retry once
             text = log_path.read_text(errors="replace") if log_path.is_file() else ""
-            if (attempt == 1 and self.settings.runtime != "local"
+            if attempt < 3 and docker and proc.returncode == 125 and any(e in text for e in DAEMON_ERRORS):
+                log.warning("docker engine error for %s; healing Docker and retrying", model)
+                if heal_docker():
+                    continue
+                break
+            # Docker Desktop can briefly fail to see a just-created host folder (mount race): retry once
+            if (attempt == 1 and docker
                     and ((proc.returncode in (125, 127) and "mount source path" in text)
                          or (proc.returncode == 1 and "cannot open model log" in text))):
                 log.warning("docker mount race for %s; retrying", model)
-                import time
                 time.sleep(3)
                 continue
             break
         if proc.returncode != 0:
+            text = log_path.read_text(errors="replace") if log_path.is_file() else ""
+            if docker and proc.returncode == 125 and any(e in text for e in DAEMON_ERRORS):
+                raise DockerUnavailable(model, proc.returncode, log_path, "docker engine unavailable")
             raise ModelRunError(model, proc.returncode, log_path)
 
     @staticmethod

@@ -464,7 +464,8 @@ def handle_cycle(cfg: OperationalConfig, p: CycleProcessor, cycle: datetime, *, 
         final = "unknown"  # triggered but hydrology not run (older catch-up cycle)
     status["level"] = final
     status["message_pt"], status["message"] = MESSAGES[final]
-    unavailable = any(e.get("type") == "IfsUnavailable" for e in status["errors"])
+    # input data not out yet, or Docker down: transient, so the next poll tries this cycle again
+    unavailable = any(e.get("type") in ("IfsUnavailable", "DockerUnavailable") for e in status["errors"])
     age_h = (now_utc() - cycle).total_seconds() / 3600
     if unavailable and age_h < cfg.forecast.max_cycle_age_h:
         status["retry_pending"] = True   # not "finished": the next poll tries this cycle again
